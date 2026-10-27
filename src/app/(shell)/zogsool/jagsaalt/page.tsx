@@ -97,28 +97,42 @@ const RealTimeDuration = ({
   orsonTsag,
   garsanTsag,
   niitKhugatsaa,
+  zurchil,
+  tuluv,
+  updatedAt,
+  isClosed,
 }: {
   orsonTsag?: string;
   garsanTsag?: string;
   niitKhugatsaa?: number;
+  zurchil?: string;
+  tuluv?: number;
+  updatedAt?: string;
+  isClosed?: boolean;
 }) => {
+  const hasZurchil = !!zurchil || tuluv === -2 || tuluv === -3;
+  const isLive = !garsanTsag && !isClosed && !hasZurchil;
   const [now, setNow] = useState(moment());
   useEffect(() => {
-    if (!garsanTsag) {
+    if (isLive) {
       const interval = setInterval(() => {
         setNow(moment());
       }, 1000);
       return () => clearInterval(interval);
     }
-  }, [garsanTsag]);
+  }, [isLive]);
   if (!orsonTsag) return <span />;
   const start = moment(orsonTsag);
-  const end = garsanTsag ? moment(garsanTsag) : now;
+  const end = garsanTsag
+    ? moment(garsanTsag)
+    : hasZurchil || isClosed
+      ? (updatedAt ? moment(updatedAt) : start)
+      : now;
   const diff = moment.duration(end.diff(start));
   const hours = Math.floor(diff.asHours());
   const minutes = diff.minutes();
   const seconds = diff.seconds();
-  if (!garsanTsag) {
+  if (isLive) {
     return (
       <span className="text-[11px] font-mono">
         {String(hours).padStart(2, "0")} : {String(minutes).padStart(2, "0")} :{" "}
@@ -208,8 +222,10 @@ function murNiiluulye(transaction: any) {
   const garsanTsag = tsag?.garsanTsag;
   const tuluv = mur?.tuluv;
   const niitDun = transaction?.niitDun || 0;
-  const isCurrentlyIn = !mur?.garsanKhaalga;
-  const isFreeExit = (!!mur?.uneguiGarsan || tuluv === -1) && tuluv !== -2;
+  const zurchil = transaction?.zurchil || mur?.zurchil;
+  const hasZurchil = !!zurchil || tuluv === -2 || tuluv === -3;
+  const isCurrentlyIn = !mur?.garsanKhaalga && !garsanTsag && !hasZurchil;
+  const isFreeExit = (!!mur?.uneguiGarsan || tuluv === -1) && !hasZurchil;
   const rawTulbur = mur?.tulbur;
   const tulburArr: any[] = Array.isArray(rawTulbur)
     ? rawTulbur
@@ -243,7 +259,7 @@ function murNiiluulye(transaction: any) {
 
   // Төлвийн өнгө — Хугацаа болон Төлөв багана хоёулаа үүнийг хуваалцана.
   const getStatusColor = () => {
-    if (tuluv === -2) return "bg-danger border-danger";
+    if (tuluv === -2 || hasZurchil) return "bg-danger border-danger";
     if (isFreeExit || tuluv === -1) return "bg-neutral border-neutral";
     if (hasRemainingBalance) return "bg-warning border-warning";
     if (tuluv === 1 || (positivePaid >= effectiveOwed && effectiveOwed > 0))
@@ -262,6 +278,9 @@ function murNiiluulye(transaction: any) {
     garsanTsag,
     tuluv,
     niitDun,
+    zurchil,
+    hasZurchil,
+    updatedAt: transaction?.updatedAt || mur?.updatedAt,
     isCurrentlyIn,
     isFreeExit,
     isDebt,
@@ -427,6 +446,8 @@ export default function Jagsaalt() {
 
       if (status === "active") {
         query["tuukh.garsanKhaalga"] = { $exists: false };
+        query["tuukh.0.tuluv"] = { $nin: [-2, -3] };
+        query.zurchil = { $exists: false };
       } else if (status === "cancelled") {
         query.$or = [
           { "tuukh.tuluv": -2 },
@@ -451,7 +472,8 @@ export default function Jagsaalt() {
         ];
       } else if (status === "free") {
         query["tuukh.garsanKhaalga"] = { $exists: true };
-        query["tuukh.0.tuluv"] = { $nin: [-2] };
+        query["tuukh.0.tuluv"] = { $nin: [-2, -3] };
+        query.zurchil = { $exists: false };
       }
 
       if (payMethod && payMethod !== "all") {
@@ -902,7 +924,9 @@ export default function Jagsaalt() {
       const garsanTsag = tsag?.garsanTsag;
       const niitDun = t.niitDun || 0;
       const tuluv = mur?.tuluv;
-      const isCurrentlyIn = !mur?.garsanKhaalga;
+      const zurchil = (t as any)?.zurchil || (mur as any)?.zurchil;
+      const hasZurchil = !!zurchil || tuluv === -2 || tuluv === -3;
+      const isCurrentlyIn = !mur?.garsanKhaalga && !garsanTsag && !hasZurchil;
 
       // Calculate payment and discount separately from tulbur array
       const tulburArray = mur?.tulbur || [];
@@ -929,11 +953,13 @@ export default function Jagsaalt() {
         return h > 0 ? `${h}ц ${m}м` : `${m}м`;
       })();
 
-      const status = isCurrentlyIn
-        ? "Идэвхтэй"
-        : tuluv !== undefined
-          ? STATUS_LABEL[tuluv] ?? "Гарсан"
-          : niitDun > 0 ? "Төлбөртэй" : "Гарсан";
+      const status = hasZurchil || tuluv === -2
+        ? "Зөрчилтэй"
+        : isCurrentlyIn
+          ? "Идэвхтэй"
+          : tuluv !== undefined
+            ? STATUS_LABEL[tuluv] ?? "Гарсан"
+            : niitDun > 0 ? "Төлбөртэй" : "Гарсан";
 
       const gereeTuluv = (() => {
         const raw =
@@ -1225,7 +1251,7 @@ export default function Jagsaalt() {
         return aDur - bDur;
       },
       render: (_: any, transaction: any) => {
-        const { mur, orsonTsag, garsanTsag, getStatusColor } =
+        const { mur, orsonTsag, garsanTsag, tuluv, zurchil, updatedAt, getStatusColor } =
           murNiiluulye(transaction);
         return (
           <div
@@ -1236,6 +1262,9 @@ export default function Jagsaalt() {
               orsonTsag={orsonTsag}
               garsanTsag={garsanTsag}
               niitKhugatsaa={mur?.niitKhugatsaa}
+              zurchil={zurchil}
+              tuluv={tuluv}
+              updatedAt={updatedAt}
             />
           </div>
         );
@@ -1399,8 +1428,9 @@ export default function Jagsaalt() {
           hasRemainingBalance,
           getStatusColor,
         } = murNiiluulye(transaction);
+        const { hasZurchil } = murNiiluulye(transaction);
         const label =
-          tuluv === -2
+          tuluv === -2 || hasZurchil
             ? "Зөрчилтэй"
             : isFreeExit || tuluv === -1
               ? "Үнэгүй"

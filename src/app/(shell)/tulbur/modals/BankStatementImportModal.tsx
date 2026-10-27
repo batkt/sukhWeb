@@ -46,6 +46,8 @@ export type BankRow = {
 export type HomeRow = {
   id: string | number;
   name: string;
+  ovog?: string;
+  phone?: string;
   building: string;
   unit: string;
   amount: number;
@@ -85,9 +87,11 @@ export default function BankStatementImportModal({
   const [banks, setBanks] = useState<BankRow[]>([]);
   const [homes, setHomes] = useState<HomeRow[]>([]);
 
-  // Selection states
+  // Selection states: selB stores checked bank transaction IDs for registration (auto-checked for matched rows)
   const [selB, setSelB] = useState<Set<number>>(new Set());
-  const [selH, setSelH] = useState<Set<string | number>>(new Set());
+  // Manual pairing selection for matching
+  const [pairBankId, setPairBankId] = useState<number | null>(null);
+  const [pairHomeId, setPairHomeId] = useState<string | number | null>(null);
 
   // Tabs: 'all' | 'open' (Тулгаагүй) | 'match' (Тулгасан) | 'done' (Бүртгэсэн)
   const [tab, setTab] = useState<"all" | "open" | "match" | "done">("all");
@@ -166,14 +170,26 @@ export default function BankStatementImportModal({
           const loadedHomes: HomeRow[] = jagsaalt.map((c: any, idx: number) => ({
             id: c._id || `c-${idx}`,
             name: c.ner || c.orshinSuugchId?.ner || "Нэргүй",
+            ovog: c.ovog || c.orshinSuugchId?.ovog || "",
+            phone: Array.isArray(c.utas) ? c.utas.join(", ") : (c.utas || ""),
             building: c.bairNer || c.barilgiinId?.dugaar || "Байр",
-            unit: String(c.toot || ""),
+            unit: String(c.toot || "").trim(),
             amount: Number(c.suhTulbur || c.niitTulbur || c.sarBuriinTulbur || c.nekhemjlekhDun || c.sarBuriinUilchilgee || c.uilchilgeeniiZardal || 0),
             note: "СӨХ-ийн төлбөр",
             status: "open",
             gereeId: c._id,
           }));
           setHomes(loadedHomes);
+
+          // If bank statements are already uploaded and waiting, auto-match right away
+          setBanks((prevBanks) => {
+            if (prevBanks.length > 0 && prevBanks.some((b) => b.status === "open")) {
+              setTimeout(() => {
+                autoMatch(prevBanks, loadedHomes);
+              }, 60);
+            }
+            return prevBanks;
+          });
         } else {
           setHomes([]);
         }
@@ -229,13 +245,21 @@ export default function BankStatementImportModal({
         if ((hasDate && hasDesc) || (hasDate && hasIncome) || (hasDesc && hasIncome)) {
           headerRowIdx = i;
           row.forEach((col: string, cIdx: number) => {
-            if (col.includes("тайлант огноо") || (col.includes("огноо") && dateIdx === -1)) dateIdx = cIdx;
-            if (col.includes("цаг")) timeIdx = cIdx;
-            if (col.includes("утга")) descIdx = cIdx;
-            if (col.includes("орлого") || (col.includes("дүн") && orlogoIdx === -1)) orlogoIdx = cIdx;
-            if (col.includes("зарлага")) zarlagaIdx = cIdx;
-            if (col.includes("дансны нэр") || col.includes("харилцагч")) accNameIdx = cIdx;
-            if (col.includes("журнал")) journalIdx = cIdx;
+            const colLower = col.toLowerCase();
+            if (colLower.includes("тайлант огноо") || (colLower.includes("огноо") && dateIdx === -1)) dateIdx = cIdx;
+            if (
+              !colLower.includes("харилцагч") &&
+              !colLower.includes("нэр") &&
+              !colLower.includes("ажилтан") &&
+              (colLower === "цаг" || colLower.startsWith("цаг ") || colLower.includes("гүйлгээний цаг") || colLower === "time")
+            ) {
+              timeIdx = cIdx;
+            }
+            if (colLower.includes("утга")) descIdx = cIdx;
+            if (colLower.includes("орлого") || (colLower.includes("дүн") && orlogoIdx === -1)) orlogoIdx = cIdx;
+            if (colLower.includes("зарлага")) zarlagaIdx = cIdx;
+            if (colLower.includes("дансны нэр") || colLower.includes("харилцагч")) accNameIdx = cIdx;
+            if (colLower.includes("журнал") || colLower.includes("гүйлгээний дугаар") || colLower.includes("дугаар") || colLower.includes("лавлах")) journalIdx = cIdx;
           });
           break;
         }
@@ -244,7 +268,7 @@ export default function BankStatementImportModal({
       if (headerRowIdx === -1) {
         headerRowIdx = 0;
         dateIdx = 0;
-        timeIdx = 1;
+        timeIdx = -1;
         descIdx = 4;
         orlogoIdx = 5;
         zarlagaIdx = 6;
@@ -259,6 +283,89 @@ export default function BankStatementImportModal({
         return isNaN(n) ? 0 : n;
       };
 
+      // Comprehensive Excel Date & Time parser
+      const formatExcelDate = (rawDateVal: any, rawTimeVal?: any) => {
+        const now = new Date();
+        let dateFormatted = `${now.getFullYear()}.${String(now.getMonth() + 1).padStart(2, "0")}.${String(now.getDate()).padStart(2, "0")}`;
+        let fullDate = dateFormatted;
+        let timeStr = "12:00";
+        let rowMonth = `${now.getFullYear()}.${String(now.getMonth() + 1).padStart(2, "0")}`;
+
+        const num = typeof rawDateVal === "number" ? rawDateVal : parseFloat(String(rawDateVal || "").trim());
+
+        if (typeof rawDateVal === "number" || (!isNaN(num) && /^\.?\d+(\.\d+)?$/.test(String(rawDateVal || "").trim()))) {
+          if (num >= 35000 && num <= 60000) {
+            // Excel serial date number with possible fractional time (e.g. 46315.01180555556)
+            const d = new Date(Math.round((Math.floor(num) - 25569) * 86400 * 1000));
+            const yyyy = String(d.getUTCFullYear());
+            const mm = String(d.getUTCMonth() + 1).padStart(2, "0");
+            const dd = String(d.getUTCDate()).padStart(2, "0");
+            dateFormatted = `${yyyy}.${mm}.${dd}`;
+            fullDate = `${yyyy}.${mm}.${dd}`;
+            rowMonth = `${yyyy}.${mm}`;
+
+            const fraction = num - Math.floor(num);
+            if (fraction > 0.00001) {
+              const totalSec = Math.round(fraction * 86400);
+              const hh = String(Math.floor(totalSec / 3600)).padStart(2, "0");
+              const min = String(Math.floor((totalSec % 3600) / 60)).padStart(2, "0");
+              timeStr = `${hh}:${min}`;
+            }
+          } else if (num > 0 && num < 1) {
+            // Pure time fraction
+            const totalSec = Math.round(num * 86400);
+            const hh = String(Math.floor(totalSec / 3600)).padStart(2, "0");
+            const min = String(Math.floor((totalSec % 3600) / 60)).padStart(2, "0");
+            timeStr = `${hh}:${min}`;
+          }
+        } else {
+          const s = String(rawDateVal || "").trim();
+          const fullMatch = s.match(/(\d{4})[-/.](\d{1,2})[-/.](\d{1,2})(?:\s+(\d{1,2}):(\d{1,2}))?/);
+          if (fullMatch) {
+            const yyyy = fullMatch[1];
+            const mm = fullMatch[2].padStart(2, "0");
+            const dd = fullMatch[3].padStart(2, "0");
+            dateFormatted = `${yyyy}.${mm}.${dd}`;
+            fullDate = `${yyyy}.${mm}.${dd}`;
+            rowMonth = `${yyyy}.${mm}`;
+            if (fullMatch[4] && fullMatch[5]) {
+              timeStr = `${fullMatch[4].padStart(2, "0")}:${fullMatch[5].padStart(2, "0")}`;
+            }
+          } else {
+            const shortMatch = s.match(/(\d{1,2})[-/.](\d{1,2})(?:\s+(\d{1,2}):(\d{1,2}))?/);
+            if (shortMatch) {
+              const mm = shortMatch[1].padStart(2, "0");
+              const dd = shortMatch[2].padStart(2, "0");
+              dateFormatted = `${now.getFullYear()}.${mm}.${dd}`;
+              fullDate = `${now.getFullYear()}.${mm}.${dd}`;
+              rowMonth = `${now.getFullYear()}.${mm}`;
+              if (shortMatch[3] && shortMatch[4]) {
+                timeStr = `${shortMatch[3].padStart(2, "0")}:${shortMatch[4].padStart(2, "0")}`;
+              }
+            }
+          }
+        }
+
+        // Only parse rawTimeVal if it actually contains a time (not a person's name)
+        if (rawTimeVal) {
+          const tStr = String(rawTimeVal).trim();
+          const tMatch = tStr.match(/(\d{1,2}):(\d{1,2})/);
+          if (tMatch) {
+            timeStr = `${tMatch[1].padStart(2, "0")}:${tMatch[2].padStart(2, "0")}`;
+          } else {
+            const tNum = parseFloat(tStr);
+            if (!isNaN(tNum) && tNum > 0 && tNum < 1) {
+              const totalSec = Math.round(tNum * 86400);
+              const hh = String(Math.floor(totalSec / 3600)).padStart(2, "0");
+              const min = String(Math.floor((totalSec % 3600) / 60)).padStart(2, "0");
+              timeStr = `${hh}:${min}`;
+            }
+          }
+        }
+
+        return { dateFormatted, fullDate, timeStr, rowMonth };
+      };
+
       const extractedBanks: BankRow[] = [];
       const detectedMonths = new Set<string>();
 
@@ -266,8 +373,8 @@ export default function BankStatementImportModal({
         const row = rawRows[r];
         if (!row || row.length === 0) continue;
 
-        const dateStr = dateIdx !== -1 ? String(row[dateIdx] || "").trim() : "";
-        const timeStr = timeIdx !== -1 ? String(row[timeIdx] || "").trim() : "";
+        const rawDateVal = dateIdx !== -1 ? row[dateIdx] : "";
+        const rawTimeVal = timeIdx !== -1 ? row[timeIdx] : "";
         const descStr = descIdx !== -1 ? String(row[descIdx] || "").trim() : "";
         const orlogoRaw = orlogoIdx !== -1 ? parseNumber(row[orlogoIdx]) : 0;
         const zarlagaRaw = zarlagaIdx !== -1 ? parseNumber(row[zarlagaIdx]) : 0;
@@ -293,17 +400,30 @@ export default function BankStatementImportModal({
         const explicitMatch = cleanedDesc.match(
           /(?:байр\s*)?(\d{1,4})\s*(?:-|–|_|\/|н|\*|\s*(?:р\s*)?байр\s*)\s*(?:тоот\s*)?(\d{1,4})\s*(?:тоот|toot)?/i
         );
+
+        const explicitTootWord =
+          cleanedDesc.match(/\b(\d{1,4})\s*(?:тоот|toot)\b/i) ||
+          cleanedDesc.match(/(?:тоот|toot)\s*[:.]?\s*(\d{1,4})\b/i);
+
         if (explicitMatch) {
           building = explicitMatch[1];
           unit = explicitMatch[2];
+        } else if (explicitTootWord) {
+          unit = explicitTootWord[1];
         } else {
-          const dashMatch = cleanedDesc.match(/(?:^|\s)[-–]\s*(\d{1,4})\b|\b(\d{1,4})\s*[-–]/);
+          const dashMatch = cleanedDesc.match(/(?:^|\s)[-–_#]\s*(\d{1,4})\b|\b(\d{1,4})\s*[-–_#]/);
           if (dashMatch) {
             unit = dashMatch[1] || dashMatch[2];
           } else {
-            const tootMatch = cleanedDesc.match(/\b(\d{1,4})\s*(?:тоот|toot)\b/i);
-            if (tootMatch) unit = tootMatch[1];
+            const standaloneMatch = cleanedDesc.match(/(?:^|\s)([1-9]\d{1,3})(?:\s|$)/);
+            if (standaloneMatch && Number(standaloneMatch[1]) <= 2500) {
+              unit = standaloneMatch[1];
+            }
           }
+        }
+
+        if (unit) {
+          unit = unit.trim().replace(/^0+/, "");
         }
 
         if (!name) {
@@ -311,17 +431,8 @@ export default function BankStatementImportModal({
           if (words.length > 0) name = words[words.length - 1];
         }
 
-        const rawDateNorm = dateStr.replace(/-/g, ".");
-        let rowMonth = "2026.10";
-        const mMatch = rawDateNorm.match(/^(\d{4}\.\d{2})/);
-        if (mMatch) {
-          rowMonth = mMatch[1];
-        } else if (/^\d{2}\.\d{2}$/.test(rawDateNorm)) {
-          rowMonth = `2026.${rawDateNorm.substring(0, 2)}`;
-        }
+        const { dateFormatted, fullDate, timeStr, rowMonth } = formatExcelDate(rawDateVal, rawTimeVal);
         detectedMonths.add(rowMonth);
-
-        const dateFormatted = rawDateNorm ? rawDateNorm.substring(5) : "10.26";
 
         extractedBanks.push({
           id: extractedBanks.length,
@@ -330,9 +441,9 @@ export default function BankStatementImportModal({
           building: building || "Байр",
           amount: amount,
           date: dateFormatted,
-          rawDate: rawDateNorm,
+          rawDate: fullDate,
           month: rowMonth,
-          time: timeStr || "12:00",
+          time: timeStr,
           description: descStr,
           accName,
           journal,
@@ -347,7 +458,8 @@ export default function BankStatementImportModal({
 
       setBanks(extractedBanks);
       setSelB(new Set());
-      setSelH(new Set());
+      setPairBankId(null);
+      setPairHomeId(null);
       setTab("all");
 
       // Show ALL transactions by default so user sees every row
@@ -363,94 +475,208 @@ export default function BankStatementImportModal({
     }
   };
 
-  // Auto matching logic
+  // String & Toot Normalization Helpers
+  const normalizeToot = (val: any): string => {
+    if (!val && val !== 0) return "";
+    const s = String(val)
+      .trim()
+      .replace(/\s*тоот$/i, "")
+      .replace(/^0+/, "")
+      .toLowerCase();
+    if (s === "—" || s === "-" || s === "–" || s === "_" || s === "null" || s === "undefined") return "";
+    return s;
+  };
+
+  const cleanNameStr = (val: any): string => {
+    if (!val) return "";
+    return String(val)
+      .toLowerCase()
+      .replace(/[^a-z0-9а-яөүё]/gi, "")
+      .trim();
+  };
+
+  // Name matching helper with typo tolerance (e.g. Мичидмаа vs Мичдмаа) and ovog support
+  const isNameMatch = (payerName: string, desc: string, residentName: string, ovog?: string) => {
+    const cleanResident = cleanNameStr(residentName);
+    if (!cleanResident || cleanResident.length < 2) return false;
+
+    const cleanPayer = cleanNameStr(payerName);
+    const cleanDesc = cleanNameStr(desc);
+    const cleanOvog = ovog ? cleanNameStr(ovog) : "";
+
+    // 1. Direct contains check
+    if (cleanPayer.includes(cleanResident) || cleanDesc.includes(cleanResident)) return true;
+    if (cleanResident.includes(cleanPayer) && cleanPayer.length >= 3) return true;
+
+    // 2. Ovog match
+    if (cleanOvog && cleanOvog.length >= 3 && (cleanPayer.includes(cleanOvog) || cleanDesc.includes(cleanOvog))) return true;
+
+    // 3. Word-by-word comparison with typo tolerance
+    const combinedTokens = `${payerName} ${desc}`
+      .split(/[\s,./_–\-]+/)
+      .map(cleanNameStr)
+      .filter((w) => w.length >= 3);
+
+    for (const token of combinedTokens) {
+      if (token === cleanResident) return true;
+      if (cleanResident.includes(token) && token.length >= 3) return true;
+      if (token.includes(cleanResident) && cleanResident.length >= 3) return true;
+
+      if (Math.abs(token.length - cleanResident.length) <= 2) {
+        let diff = 0;
+        let i = 0, j = 0;
+        while (i < token.length && j < cleanResident.length) {
+          if (token[i] !== cleanResident[j]) {
+            diff++;
+            if (token.length > cleanResident.length) i++;
+            else if (cleanResident.length > token.length) j++;
+            else { i++; j++; }
+          } else {
+            i++; j++;
+          }
+        }
+        diff += (token.length - i) + (cleanResident.length - j);
+        if (diff <= 1 || (diff <= 2 && token.length >= 6)) return true;
+      }
+    }
+
+    return false;
+  };
+
+  // Intelligent Multi-Tier Auto Matching
   const autoMatch = (currentBanks = banks, currentHomes = homes) => {
     let matchCount = 0;
     const newBanks = [...currentBanks];
     const newHomes = [...currentHomes];
 
+    const pairMatch = (b: BankRow, h: HomeRow) => {
+      b.status = "match";
+      b.matchedHomeId = h.id;
+      if ((!b.unit || b.unit === "—") && h.unit && h.unit !== "-") {
+        b.unit = h.unit;
+      }
+      if ((!b.building || b.building === "Байр") && h.building && h.building !== "Байр") {
+        b.building = h.building;
+      }
+      h.status = "match";
+      h.matchedBankId = b.id;
+      matchCount++;
+    };
+
+    // TIER 1: Exact Apartment Toot AND Resident Name match (100% verified match)
+    newBanks.forEach((b) => {
+      if (b.status !== "open") return;
+      const bToot = normalizeToot(b.unit);
+      if (!bToot) return;
+
+      const candidates = newHomes.filter((h) => {
+        if (h.status !== "open") return false;
+        const hToot = normalizeToot(h.unit);
+        if (hToot !== bToot) return false;
+        return isNameMatch(b.name, b.description, h.name, h.ovog);
+      });
+
+      if (candidates.length >= 1) {
+        pairMatch(b, candidates[0]);
+      }
+    });
+
+    // TIER 2: Exact Apartment Toot match alone (unique Toot in the building)
+    newBanks.forEach((b) => {
+      if (b.status !== "open") return;
+      const bToot = normalizeToot(b.unit);
+      if (!bToot) return;
+
+      const candidates = newHomes.filter((h) => {
+        if (h.status !== "open") return false;
+        return normalizeToot(h.unit) === bToot;
+      });
+
+      if (candidates.length === 1) {
+        pairMatch(b, candidates[0]);
+      } else if (candidates.length > 1) {
+        const amt = candidates.find((h) => h.amount === b.amount);
+        pairMatch(b, amt || candidates[0]);
+      }
+    });
+
+    // TIER 3: Match by Resident Name (e.g. Sisi online shop or Отгонбилэг)
     newBanks.forEach((b) => {
       if (b.status !== "open") return;
 
       const candidates = newHomes.filter((h) => {
         if (h.status !== "open") return false;
-        if (h.amount !== b.amount && h.amount !== 0) return false;
-
-        if (b.unit && b.unit !== "—" && h.unit && h.unit === b.unit) return true;
-
-        if (b.name && h.name) {
-          const cleanB = b.name.toLowerCase().replace(/[^a-zа-яөүё]/gi, "");
-          const cleanH = h.name.toLowerCase().replace(/[^a-zа-яөүё]/gi, "");
-          if (cleanB && cleanH && (cleanB.includes(cleanH) || cleanH.includes(cleanB))) return true;
-        }
-
-        return false;
+        return isNameMatch(b.name, b.description, h.name, h.ovog);
       });
 
       if (candidates.length === 1) {
-        const h = candidates[0];
-        b.status = "match";
-        b.matchedHomeId = h.id;
-        h.status = "match";
-        h.matchedBankId = b.id;
-        matchCount++;
+        pairMatch(b, candidates[0]);
+      } else if (candidates.length > 1) {
+        const amt = candidates.find((h) => h.amount === b.amount);
+        pairMatch(b, amt || candidates[0]);
+      }
+    });
+
+    // TIER 4: Phone number match in description
+    newBanks.forEach((b) => {
+      if (b.status !== "open") return;
+      const phoneMatch = b.description.match(/\b([89]\d{7})\b/);
+      if (!phoneMatch) return;
+      const phone = phoneMatch[1];
+
+      const candidates = newHomes.filter((h) => {
+        if (h.status !== "open") return false;
+        return Boolean(h.phone && h.phone.includes(phone));
+      });
+
+      if (candidates.length >= 1) {
+        pairMatch(b, candidates[0]);
       }
     });
 
     setBanks(newBanks);
     setHomes(newHomes);
-    setSelB(new Set());
-    setSelH(new Set());
+    // Auto check all matched / tulgagdsan transactions!
+    const matchedIds = new Set(newBanks.filter((b) => b.status === "match").map((b) => b.id));
+    setSelB(matchedIds);
+    setPairBankId(null);
+    setPairHomeId(null);
 
+    const totalMatched = newBanks.filter((b) => b.status === "match").length;
     if (matchCount > 0) {
-      toast.success(`${matchCount} гүйлгээг автоматаар тулгалаа.`);
+      toast.success(`${matchCount} гүйлгээг автоматаар амжилттай тулгаж сонголоо!`);
+    } else if (totalMatched > 0) {
+      toast.success(`Бүх тохирох гүйлгээ (${totalMatched}) аль хэдийн тулгагдсан байна.`);
     } else {
       toast("Шинээр тохирох гүйлгээ олдсонгүй.");
     }
   };
 
-  // Row toggles
+  // Toggle bank row checkbox (check / uncheck for registration)
   const toggleBankRow = (id: number) => {
-    const row = banks[id];
-    if (!row || row.status === "done") return;
-
     setSelB((prev) => {
-      const next = new Set<number>();
-      if (!prev.has(id)) next.add(id);
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
       return next;
     });
   };
 
+  // Toggle home row pairing selection
   const toggleHomeRow = (id: string | number) => {
-    const row = homes.find((h) => h.id === id);
-    if (!row || row.status === "done") return;
-
-    setSelH((prev) => {
-      const next = new Set<string | number>();
-      if (!prev.has(id)) next.add(id);
-      return next;
-    });
+    setPairHomeId((prev) => (prev === id ? null : id));
   };
 
-  // Selected Bank & Home for Manual Match
+  // Selected Bank & Home for Manual Match / Pairing
   const selectedBankRow = useMemo(() => {
-    if (selB.size !== 1) return null;
-    const id = Array.from(selB)[0];
-    return banks.find((b) => b.id === id) || null;
-  }, [selB, banks]);
+    if (pairBankId === null) return null;
+    return banks.find((b) => b.id === pairBankId) || null;
+  }, [pairBankId, banks]);
 
   const selectedHomeRow = useMemo(() => {
-    if (selH.size !== 1) return null;
-    const id = Array.from(selH)[0];
-    return homes.find((h) => h.id === id) || null;
-  }, [selH, homes]);
-
-  // When exactly 1 bank row and 1 home row are selected, automatically prompt confirmation modal
-  useEffect(() => {
-    if (selB.size === 1 && selH.size === 1) {
-      setShowManualMatchModal(true);
-    }
-  }, [selB, selH]);
+    if (pairHomeId === null) return null;
+    return homes.find((h) => h.id === pairHomeId) || null;
+  }, [pairHomeId, homes]);
 
   const confirmManualMatch = () => {
     if (!selectedBankRow || !selectedHomeRow) return;
@@ -461,7 +687,16 @@ export default function BankStatementImportModal({
     setBanks((prev) =>
       prev.map((b) =>
         b.id === bankId
-          ? { ...b, status: "match", matchedHomeId: homeId }
+          ? {
+              ...b,
+              status: "match",
+              matchedHomeId: homeId,
+              unit: (b.unit === "—" || !b.unit) && selectedHomeRow.unit ? selectedHomeRow.unit : b.unit,
+              building:
+                (b.building === "Байр" || !b.building) && selectedHomeRow.building && selectedHomeRow.building !== "Байр"
+                  ? selectedHomeRow.building
+                  : b.building,
+            }
           : b.matchedHomeId === homeId
           ? { ...b, status: "open", matchedHomeId: null }
           : b
@@ -478,11 +713,31 @@ export default function BankStatementImportModal({
       )
     );
 
+    // Auto-check the newly matched transaction!
+    setSelB((prev) => new Set([...Array.from(prev), bankId]));
+    setPairBankId(null);
+    setPairHomeId(null);
     setShowManualMatchModal(false);
-    setSelB(new Set());
-    setSelH(new Set());
-    toast.success(`${selectedBankRow.name || selectedBankRow.unit} болон ${selectedHomeRow.unit} тоот амжилттай тулгагдлаа!`);
+
+    toast.success(
+      `${selectedBankRow.name || selectedBankRow.unit || ""} болон ${selectedHomeRow.unit} тоот амжилттай тулгагдлаа!`
+    );
   };
+
+  // Pairing trigger:
+  // RED rows (unmatched) NEED THAT CONFIRMATION! GREEN rows (already matched) DO NOT!
+  useEffect(() => {
+    if (selectedBankRow && selectedHomeRow) {
+      const isRed = selectedBankRow.status === "open" || selectedHomeRow.status === "open";
+      if (isRed) {
+        // Red rows prompt the confirmation modal!
+        setShowManualMatchModal(true);
+      } else {
+        // Green does not need confirmation
+        confirmManualMatch();
+      }
+    }
+  }, [selectedBankRow, selectedHomeRow]);
 
   const handleUnlink = (e: React.MouseEvent, bankId?: number | null, homeId?: string | number | null) => {
     e.stopPropagation();
@@ -490,26 +745,33 @@ export default function BankStatementImportModal({
       setBanks((prev) =>
         prev.map((b) => (b.id === bankId ? { ...b, status: "open", matchedHomeId: null } : b))
       );
+      setSelB((prev) => {
+        const next = new Set(prev);
+        next.delete(bankId);
+        return next;
+      });
+      if (pairBankId === bankId) setPairBankId(null);
     }
     if (homeId != null) {
       setHomes((prev) =>
         prev.map((h) => (h.id === homeId ? { ...h, status: "open", matchedBankId: null } : h))
       );
+      if (pairHomeId === homeId) setPairHomeId(null);
     }
     toast.success("Тулгалтыг салгалаа");
   };
 
   const handleClear = () => {
     setSelB(new Set());
-    setSelH(new Set());
+    setPairBankId(null);
+    setPairHomeId(null);
   };
 
   const handleRegisterConfirm = async () => {
-    const matchedBanks = banks.filter((b) => b.status === "match");
-    const targetBanks = matchedBanks.length > 0 ? matchedBanks : banks.filter((b) => selB.has(b.id));
+    const targetBanks = banks.filter((b) => b.status === "match");
 
     if (targetBanks.length === 0) {
-      toast.error("Бүртгэх гүйлгээ сонгогдоогүй байна");
+      toast.error("Бүртгэх тулгасан гүйлгээ байхгүй байна");
       return;
     }
 
@@ -517,9 +779,15 @@ export default function BankStatementImportModal({
       setSubmitting(true);
       const payloadRows = targetBanks.map((b) => {
         const linkedHome = homes.find((h) => h.id === b.matchedHomeId);
+        let fullDate = b.rawDate || b.date;
+        if (fullDate && !/^\d{4}/.test(fullDate)) {
+          const yr = b.month?.substring(0, 4) || new Date().getFullYear();
+          fullDate = `${yr}.${fullDate}`;
+        }
+        const tootStr = b.unit !== "—" ? b.unit : linkedHome?.unit || "";
         return {
-          journal: b.journal || `J-${b.id}`,
-          date: b.rawDate || b.date,
+          journal: b.journal && !b.journal.startsWith("J-") ? b.journal : `EXCEL-${Date.now()}-${b.id}`,
+          date: fullDate,
           time: b.time,
           description: b.description,
           orlogo: b.amount,
@@ -529,8 +797,9 @@ export default function BankStatementImportModal({
           accName: b.accName || b.name,
           bank: "Банк",
           matchedGereeId: linkedHome?.gereeId,
-          detectedToot: b.unit !== "—" ? b.unit : linkedHome?.unit,
+          detectedToot: tootStr,
           action: linkedHome?.gereeId ? "IMPORT_AND_PAY" : "IMPORT_ONLY",
+          tailbar: `Банк тулгалт - ${fullDate}${tootStr ? ` - ${tootStr} тоот` : ""}`,
         };
       });
 
@@ -542,8 +811,16 @@ export default function BankStatementImportModal({
 
       if (resp.data?.success) {
         toast.success(resp.data.message || "Гүйлгээнүүд амжилттай бүртгэгдлээ!");
-        setBanks((prev) => prev.map((b) => (b.status === "match" ? { ...b, status: "done" } : b)));
-        setHomes((prev) => prev.map((h) => (h.status === "match" ? { ...h, status: "done" } : h)));
+        const registeredIds = new Set(targetBanks.map((b) => b.id));
+        setBanks((prev) => prev.map((b) => (registeredIds.has(b.id) ? { ...b, status: "done" } : b)));
+        setHomes((prev) =>
+          prev.map((h) => (targetBanks.some((b) => b.matchedHomeId === h.id) ? { ...h, status: "done" } : h))
+        );
+        setSelB((prev) => {
+          const next = new Set(prev);
+          registeredIds.forEach((id) => next.delete(id));
+          return next;
+        });
         setShowRegisterConfirm(false);
         onSuccess();
       } else {
@@ -590,24 +867,33 @@ export default function BankStatementImportModal({
 
   // Aligned side-by-side row display:
   // Each entry in displayRows has { bank: BankRow | null, home: HomeRow | null }
-  // This ensures row i of bank sits on the exact same row as row i of home!
+  // Both "match" and "done" (burtgegdsen) rows remain paired side-by-side!
   const displayRows = useMemo(() => {
-    // Sort banks: matched first, then open
+    // Sort banks: matched & done first, then open
     const sBanks = [...filteredBanks].sort((a, b) => {
-      if (a.status === "match" && b.status !== "match") return -1;
-      if (a.status !== "match" && b.status === "match") return 1;
+      const aDoneOrMatch = a.status === "match" || a.status === "done";
+      const bDoneOrMatch = b.status === "match" || b.status === "done";
+      if (aDoneOrMatch && !bDoneOrMatch) return -1;
+      if (!aDoneOrMatch && bDoneOrMatch) return 1;
       return a.id - b.id;
     });
 
     const rows: { bank: BankRow | null; home: HomeRow | null }[] = [];
     const usedHomeIds = new Set<string | number>();
 
-    // 1. For each bank row, place its matched home on the exact same row
+    // 1. For each bank row, place its matched home on the exact same row (works for both "match" and "done")
     sBanks.forEach((b) => {
-      if (b.status === "match" && b.matchedHomeId != null) {
-        const matchedHome = filteredHomes.find((h) => h.id === b.matchedHomeId);
+      if ((b.status === "match" || b.status === "done") && b.matchedHomeId != null) {
+        const matchedHome =
+          filteredHomes.find((h) => h.id === b.matchedHomeId) ||
+          homes.find((h) => h.id === b.matchedHomeId);
         if (matchedHome) {
-          rows.push({ bank: b, home: matchedHome });
+          const pairedHome = {
+            ...matchedHome,
+            status: matchedHome.status === "open" ? b.status : matchedHome.status,
+            matchedBankId: matchedHome.matchedBankId || b.id,
+          };
+          rows.push({ bank: b, home: pairedHome });
           usedHomeIds.add(matchedHome.id);
           return;
         }
@@ -632,7 +918,7 @@ export default function BankStatementImportModal({
     });
 
     return rows;
-  }, [filteredBanks, filteredHomes]);
+  }, [filteredBanks, filteredHomes, homes]);
 
   // Statistics calculation
   const stats = useMemo(() => {
@@ -665,7 +951,7 @@ export default function BankStatementImportModal({
   }, [banks, selectedMonth]);
 
   const selBankSum = useMemo(() => {
-    return Array.from(selB).reduce((s, id) => s + (banks[id]?.amount || 0), 0);
+    return banks.filter((b) => selB.has(b.id)).reduce((s, b) => s + b.amount, 0);
   }, [selB, banks]);
 
   return (
@@ -740,7 +1026,8 @@ export default function BankStatementImportModal({
                           setFile(null);
                           setBanks([]);
                           setSelB(new Set());
-                          setSelH(new Set());
+                          setPairBankId(null);
+                          setPairHomeId(null);
                           setSelectedMonth("ALL");
                         }}
                         className="text-gray-400 hover:text-rose-500 ml-1 p-0.5 cursor-pointer"
@@ -785,12 +1072,12 @@ export default function BankStatementImportModal({
                   {/* Card 1: Нийт орлогын гүйлгээ */}
                   <div className="bg-white dark:bg-zinc-900 border border-[#e7ece9] dark:border-zinc-800 rounded-lg px-3 py-1.5 shadow-xs flex items-center justify-between">
                     <div>
-                      <div className="text-[11px] text-[#7c8b85] font-medium leading-none">Нийт орлогын гүйлгээ</div>
-                      <div className="text-base font-bold text-[#203a35] dark:text-white leading-tight mt-1">
+                      <div className="text-[11px] text-black dark:text-zinc-200 leading-none">Нийт орлогын гүйлгээ</div>
+                      <div className="text-base text-black dark:text-white leading-tight mt-1">
                         {stats.totalCount}
                       </div>
                     </div>
-                    <div className="text-xs text-[#96a09b] font-medium tabular-nums text-right">
+                    <div className="text-xs text-black dark:text-zinc-200 tabular-nums text-right">
                       {formatNumber(stats.totalSum)} ₮
                     </div>
                   </div>
@@ -798,12 +1085,12 @@ export default function BankStatementImportModal({
                   {/* Card 2: Тулгасан (Green) */}
                   <div className="bg-white dark:bg-zinc-900 border border-emerald-200 dark:border-emerald-900/50 rounded-lg px-3 py-1.5 shadow-xs flex items-center justify-between bg-emerald-50/30">
                     <div>
-                      <div className="text-[11px] text-emerald-700 dark:text-emerald-400 font-medium leading-none">✓ Тулгасан</div>
-                      <div className="text-base font-bold text-[#087f64] leading-tight mt-1">
+                      <div className="text-[11px] text-emerald-900 dark:text-emerald-300 leading-none">✓ Тулгасан</div>
+                      <div className="text-base text-emerald-800 dark:text-emerald-300 leading-tight mt-1">
                         {stats.matchedCount}
                       </div>
                     </div>
-                    <div className="text-xs text-emerald-600 dark:text-emerald-400 font-medium tabular-nums text-right">
+                    <div className="text-xs text-emerald-800 dark:text-emerald-300 tabular-nums text-right">
                       {formatNumber(stats.matchedSum)} ₮
                     </div>
                   </div>
@@ -811,12 +1098,12 @@ export default function BankStatementImportModal({
                   {/* Card 3: Тулгаагүй (Red / Rose) */}
                   <div className="bg-white dark:bg-zinc-900 border border-rose-200 dark:border-rose-900/50 rounded-lg px-3 py-1.5 shadow-xs flex items-center justify-between bg-rose-50/30">
                     <div>
-                      <div className="text-[11px] text-rose-700 dark:text-rose-400 font-medium leading-none">✕ Тулгаагүй</div>
-                      <div className="text-base font-bold text-rose-600 leading-tight mt-1">
+                      <div className="text-[11px] text-rose-900 dark:text-rose-300 leading-none">✕ Тулгаагүй</div>
+                      <div className="text-base text-rose-700 dark:text-rose-400 leading-tight mt-1">
                         {stats.openCount}
                       </div>
                     </div>
-                    <div className="text-xs text-rose-600 dark:text-rose-400 font-medium tabular-nums text-right">
+                    <div className="text-xs text-rose-700 dark:text-rose-400 tabular-nums text-right">
                       {formatNumber(stats.openSum)} ₮
                     </div>
                   </div>
@@ -824,12 +1111,12 @@ export default function BankStatementImportModal({
                   {/* Card 4: Бүртгэсэн */}
                   <div className="bg-white dark:bg-zinc-900 border border-[#e7ece9] dark:border-zinc-800 rounded-lg px-3 py-1.5 shadow-xs flex items-center justify-between">
                     <div>
-                      <div className="text-[11px] text-[#7c8b85] font-medium leading-none">Бүртгэсэн</div>
-                      <div className="text-base font-bold text-[#203a35] dark:text-white leading-tight mt-1">
+                      <div className="text-[11px] text-black dark:text-zinc-200 leading-none">Бүртгэсэн</div>
+                      <div className="text-base text-black dark:text-white leading-tight mt-1">
                         {stats.doneCount}
                       </div>
                     </div>
-                    <div className="text-xs text-[#96a09b] font-medium tabular-nums text-right">
+                    <div className="text-xs text-black dark:text-zinc-200 tabular-nums text-right">
                       {formatNumber(stats.doneSum)} ₮
                     </div>
                   </div>
@@ -866,9 +1153,13 @@ export default function BankStatementImportModal({
                     </div>
 
                     <div className="flex items-center gap-2">
-                      {selB.size === 1 && selH.size === 1 && (
+                      {pairBankId !== null && pairHomeId !== null && (
                         <button
-                          onClick={() => setShowManualMatchModal(true)}
+                          onClick={() => {
+                            const isRed = selectedBankRow?.status === "open" || selectedHomeRow?.status === "open";
+                            if (isRed) setShowManualMatchModal(true);
+                            else confirmManualMatch();
+                          }}
                           className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-sky-600 hover:bg-sky-700 text-white text-xs font-bold shadow-sm transition animate-pulse cursor-pointer"
                         >
                           <Link2 className="w-3.5 h-3.5" />
@@ -906,10 +1197,10 @@ export default function BankStatementImportModal({
                   )}
 
                   {/* Panel Heads & Searches (Fixed above the synchronized scroll container) */}
-                  <div className="grid grid-cols-1 lg:grid-cols-2 divide-y lg:divide-y-0 lg:divide-x divide-[#e7ece9] dark:divide-zinc-800 border-b border-[#e7ece9] dark:border-zinc-800 shrink-0 bg-white dark:bg-zinc-900">
+                  <div className="grid grid-cols-1 lg:grid-cols-2 divide-y lg:divide-y-0 lg:divide-x divide-[#e7ece9] dark:divide-zinc-800 border-b border-[#e7ece9] dark:border-zinc-800 shrink-0 bg-white dark:bg-zinc-900 relative z-20">
                     {/* Left Head & Search */}
                     <div className="flex flex-col">
-                      <div className="px-4 py-2.5 flex items-center justify-between border-b border-[#e7ece9] dark:border-zinc-800">
+                      <div className="px-4 py-2.5 h-[52px] flex items-center justify-between border-b border-[#e7ece9] dark:border-zinc-800">
                         <div className="flex items-center gap-2.5">
                           <div className="w-7 h-7 rounded-lg bg-[#eaf2ff] text-[#1268c1] flex items-center justify-center font-bold">
                             <Landmark className="w-4 h-4" />
@@ -939,7 +1230,7 @@ export default function BankStatementImportModal({
                         </div>
                       </div>
 
-                      <div className="p-2 bg-[#fbfcfb] dark:bg-zinc-900/60">
+                      <div className="p-2 h-11 bg-[#fbfcfb] dark:bg-zinc-900/60 flex items-center">
                         <input
                           type="text"
                           value={bankSearch}
@@ -952,7 +1243,7 @@ export default function BankStatementImportModal({
 
                     {/* Right Head & Search */}
                     <div className="flex flex-col">
-                      <div className="px-4 py-2.5 flex items-center justify-between border-b border-[#e7ece9] dark:border-zinc-800">
+                      <div className="px-4 py-2.5 h-[52px] flex items-center justify-between border-b border-[#e7ece9] dark:border-zinc-800">
                         <div className="flex items-center gap-2.5">
                           <div className="w-7 h-7 rounded-lg bg-[#e9f6ef] text-[#087f64] flex items-center justify-center font-bold">
                             <Receipt className="w-4 h-4 text-[#087f64]" />
@@ -972,7 +1263,7 @@ export default function BankStatementImportModal({
                         </span>
                       </div>
 
-                      <div className="p-2 bg-[#fbfcfb] dark:bg-zinc-900/60">
+                      <div className="p-2 h-11 bg-[#fbfcfb] dark:bg-zinc-900/60 flex items-center">
                         <input
                           type="text"
                           value={homeSearch}
@@ -985,302 +1276,383 @@ export default function BankStatementImportModal({
                   </div>
 
                   {/* SINGLE SYNCHRONIZED SCROLL CONTAINER - SCROLLS BOTH SIDES AT ONCE */}
-                  <div className="flex-1 overflow-y-auto min-h-[360px] max-h-[520px]">
-                    <div className="grid grid-cols-1 lg:grid-cols-2 divide-y lg:divide-y-0 lg:divide-x divide-[#e7ece9] dark:divide-zinc-800 min-h-full">
-                      {/* Left Table: Dans */}
-                      <div className="min-w-0">
-                        {banks.length === 0 ? (
-                          <div
-                            onClick={() => fileInputRef.current?.click()}
-                            className="h-[300px] border-2 border-dashed border-[#e7ece9] dark:border-zinc-800 rounded-xl flex flex-col items-center justify-center p-6 text-center cursor-pointer hover:border-[#087f64] hover:bg-[#edf5f1]/40 transition m-4"
-                          >
-                            <Upload className="w-8 h-8 text-[#087f64] mb-2" />
-                            <div className="text-xs font-bold text-[#203a35] dark:text-white">
-                              Хуулга файл оруулаагүй байна
-                            </div>
-                            <div className="text-[11px] text-[#7c8b85] mt-1 max-w-[220px]">
-                              Энд дарж эсвэл дээрх товчоор Excel хуулга файлаа сонгоно уу
-                            </div>
-                          </div>
-                        ) : (
-                          <table className="w-full text-left text-xs border-collapse">
-                            <thead className="sticky top-0 z-10 bg-[#f8faf9] dark:bg-zinc-800 text-[#85948c] font-semibold border-b border-[#e7ece9] dark:border-zinc-700 shadow-xs">
-                              <tr>
-                                <th className="py-2.5 px-3 w-10 text-center"></th>
-                                <th className="py-2.5 px-2 w-20">Огноо</th>
-                                <th className="py-2.5 px-3">Гүйлгээний утга</th>
-                                <th className="py-2.5 px-4 w-28 text-right">Орлого ₮</th>
-                              </tr>
-                            </thead>
-                            <tbody className="divide-y divide-[#e7ece9] dark:divide-zinc-800">
-                              {displayRows.length === 0 ? (
-                                <tr>
-                                  <td colSpan={4} className="py-12 text-center text-[#9aa69e]">
-                                    Илэрц олдсонгүй
-                                  </td>
-                                </tr>
-                              ) : (
-                                displayRows.map(({ bank: b }, idx) => {
-                                  if (!b) {
-                                    return (
-                                      <tr key={`bank-empty-${idx}`} className="h-[64px] border-b border-[#e7ece9] dark:border-zinc-800 bg-[#fbfcfb]/40 dark:bg-zinc-900/20">
-                                        <td colSpan={4} className="py-2 px-3 text-center text-[11px] text-gray-300 dark:text-zinc-700 italic">
-                                          —
-                                        </td>
-                                      </tr>
-                                    );
+                  <div className="flex-1 overflow-y-auto overflow-x-auto min-h-[360px] max-h-[520px]">
+                    {banks.length === 0 ? (
+                      <div
+                        onClick={() => fileInputRef.current?.click()}
+                        className="h-[300px] border-2 border-dashed border-[#e7ece9] dark:border-zinc-800 rounded-xl flex flex-col items-center justify-center p-6 text-center cursor-pointer hover:border-[#087f64] hover:bg-[#edf5f1]/40 transition m-4"
+                      >
+                        <Upload className="w-8 h-8 text-[#087f64] mb-2" />
+                        <div className="text-xs font-bold text-[#203a35] dark:text-white">
+                          Хуулга файл оруулаагүй байна
+                        </div>
+                        <div className="text-[11px] text-[#7c8b85] mt-1 max-w-[220px]">
+                          Энд дарж эсвэл дээрх товчоор Excel хуулга файлаа сонгоно уу
+                        </div>
+                      </div>
+                    ) : (
+                      <table className="w-full text-left text-xs border-separate border-spacing-0 table-fixed">
+                        {/* 50 / 50 HALF AND HALF COLUMN SPECIFICATION */}
+                        <colgroup>
+                          {/* Left (Bank): 50% - 18px */}
+                          <col style={{ width: "105px" }} />
+                          <col style={{ width: "calc(50% - 228px)" }} />
+                          <col style={{ width: "105px" }} />
+
+                          {/* Center Divider: 36px (Strictly centered at 50%) */}
+                          <col style={{ width: "36px" }} />
+
+                          {/* Right (Home): 50% - 18px */}
+                          <col style={{ width: "85px" }} />
+                          <col style={{ width: "calc(50% - 208px)" }} />
+                          <col style={{ width: "105px" }} />
+                        </colgroup>
+
+                        {/* UNIFIED THEAD: EXACT 50 / 50 HALF AND HALF & 100% OPAQUE SHIELD (HIDES SCROLLING ROW COLORS) */}
+                        <thead className="sticky top-0 z-30 select-none">
+                          <tr className="h-10">
+                            {/* Left Table Headers: Дансны хуулга (50%) */}
+                            <th className="sticky top-0 z-30 h-10 py-0 px-3 text-left align-middle font-semibold text-xs whitespace-nowrap bg-[#f4f7f5] dark:bg-zinc-800 text-zinc-700 dark:text-zinc-200 border-b border-zinc-200 dark:border-zinc-700 shadow-xs">
+                              Огноо
+                            </th>
+                            <th className="sticky top-0 z-30 h-10 py-0 px-3 text-left align-middle font-semibold text-xs truncate bg-[#f4f7f5] dark:bg-zinc-800 text-zinc-700 dark:text-zinc-200 border-b border-zinc-200 dark:border-zinc-700 shadow-xs">
+                              Гүйлгээний утга
+                            </th>
+                            <th className="sticky top-0 z-30 h-10 py-0 px-4 text-right align-middle font-semibold text-xs whitespace-nowrap bg-[#f4f7f5] dark:bg-zinc-800 text-zinc-700 dark:text-zinc-200 border-b border-zinc-200 dark:border-zinc-700 shadow-xs">
+                              Орлого ₮
+                            </th>
+
+                            {/* Center Column: STRICTLY AT 50% DIVIDER */}
+                            <th className="sticky top-0 z-30 h-10 py-0 px-0 text-center align-middle font-bold text-zinc-400 border-b border-x border-zinc-200 dark:border-zinc-700 bg-zinc-100 dark:bg-zinc-800 shadow-xs select-none">
+                              →
+                            </th>
+
+                            {/* Right Table Headers: Айлын төлбөр (50%) */}
+                            <th className="sticky top-0 z-30 h-10 py-0 px-3 text-left align-middle font-semibold text-xs whitespace-nowrap bg-[#f4f7f5] dark:bg-zinc-800 text-zinc-700 dark:text-zinc-200 border-b border-zinc-200 dark:border-zinc-700 shadow-xs">
+                              Тоот
+                            </th>
+                            <th className="sticky top-0 z-30 h-10 py-0 px-3 text-left align-middle font-semibold text-xs truncate bg-[#f4f7f5] dark:bg-zinc-800 text-zinc-700 dark:text-zinc-200 border-b border-zinc-200 dark:border-zinc-700 shadow-xs">
+                              Оршин суугч
+                            </th>
+                            <th className="sticky top-0 z-30 h-10 py-0 px-4 text-right align-middle font-semibold text-xs whitespace-nowrap bg-[#f4f7f5] dark:bg-zinc-800 text-zinc-700 dark:text-zinc-200 border-b border-zinc-200 dark:border-zinc-700 shadow-xs">
+                              Төлбөр ₮
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
+                          {displayRows.length === 0 ? (
+                            <tr>
+                              <td colSpan={7} className="py-12 text-center text-zinc-500 dark:text-zinc-400">
+                                Илэрц олдсонгүй
+                              </td>
+                            </tr>
+                          ) : (
+                            displayRows.map(({ bank: b, home: h }, idx) => {
+                              const isPairSelectedBank = b && pairBankId === b.id;
+                              const isPairSelectedHome = h && pairHomeId === h.id;
+                              const isPairSelected = isPairSelectedBank || isPairSelectedHome;
+                              const isBothMatched = Boolean(
+                                b && h && (b.status === "match" || b.status === "done") && (h.status === "match" || h.status === "done")
+                              );
+                              const isBothDone = Boolean(b && h && b.status === "done" && h.status === "done");
+                              const isBankMatched = Boolean(b && (b.status === "match" || b.status === "done"));
+                              const isHomeMatched = Boolean(h && (h.status === "match" || h.status === "done"));
+
+                              // Distinct cell colors: Green for matched, Red for unmatched, Sky for selected
+                              const bankBg = isPairSelectedBank
+                                ? "bg-[#e0f2fe] dark:bg-sky-950/50"
+                                : !b
+                                ? "bg-zinc-50 dark:bg-zinc-900/30"
+                                : isBankMatched
+                                ? "bg-[#eaf5ef] dark:bg-emerald-950/30 hover:bg-[#e1f0e7]"
+                                : "bg-[#fef2f2] dark:bg-rose-950/30 hover:bg-[#fde8e8]";
+
+                              const homeBg = isPairSelectedHome
+                                ? "bg-[#e0f2fe] dark:bg-sky-950/50"
+                                : !h
+                                ? "bg-zinc-50 dark:bg-zinc-900/30"
+                                : isHomeMatched
+                                ? "bg-[#eaf5ef] dark:bg-emerald-950/30 hover:bg-[#e1f0e7]"
+                                : "bg-[#fef2f2] dark:bg-rose-950/30 hover:bg-[#fde8e8]";
+
+                              // Foolproof Date & Time converter for Bank Statement
+                              const { date: displayDate, time: displayTime } = (() => {
+                                if (!b) return { date: "—", time: "" };
+
+                                const raw = String(b.date || b.rawDate || "").trim();
+                                const rawTime = String(b.time || "").trim();
+
+                                // 1. Excel serial number (e.g. 46315.01180555556, 46315)
+                                const num = parseFloat(raw);
+                                if (!isNaN(num) && num >= 30000 && num <= 65000) {
+                                  const wholeDays = Math.floor(num);
+                                  const fraction = num - wholeDays;
+                                  const jsDate = new Date(Math.round((wholeDays - 25569) * 86400 * 1000));
+                                  const yyyy = jsDate.getUTCFullYear();
+                                  const mm = String(jsDate.getUTCMonth() + 1).padStart(2, "0");
+                                  const dd = String(jsDate.getUTCDate()).padStart(2, "0");
+
+                                  let time = "";
+                                  if (fraction > 0.0001) {
+                                    const totalSec = Math.round(fraction * 86400);
+                                    const hh = String(Math.floor(totalSec / 3600)).padStart(2, "0");
+                                    const min = String(Math.floor((totalSec % 3600) / 60)).padStart(2, "0");
+                                    time = `${hh}:${min}`;
+                                  } else if (rawTime && /^\d{1,2}:\d{2}/.test(rawTime)) {
+                                    time = rawTime;
+                                  } else {
+                                    time = "12:00";
                                   }
 
-                                  const isSelected = selB.has(b.id);
-                                  const isMatch = b.status === "match";
-                                  const isDone = b.status === "done";
+                                  return { date: `${yyyy}.${mm}.${dd}`, time };
+                                }
 
-                                  // Matched is GREEN, Unmatched is RED, Selected is SKY
-                                  const rowBg = isSelected
-                                    ? "bg-sky-100/90 dark:bg-sky-950/60 border-l-4 border-l-sky-500 ring-2 ring-sky-400 ring-inset shadow-xs"
-                                    : isMatch || isDone
-                                    ? "bg-[#ecfdf5] dark:bg-emerald-950/25 border-l-4 border-l-emerald-500"
-                                    : "bg-[#fff1f2] dark:bg-rose-950/25 border-l-4 border-l-rose-500";
+                                // 2. Decimal time fraction (e.g. .01180555556)
+                                if (!isNaN(num) && num > 0 && num < 1) {
+                                  const totalSec = Math.round(num * 86400);
+                                  const hh = String(Math.floor(totalSec / 3600)).padStart(2, "0");
+                                  const min = String(Math.floor((totalSec % 3600) / 60)).padStart(2, "0");
+                                  return { date: "2026.10.20", time: `${hh}:${min}` };
+                                }
 
-                                  return (
-                                    <tr
-                                      key={`bank-${b.id}`}
-                                      onClick={() => toggleBankRow(b.id)}
-                                      className={`h-[64px] cursor-pointer transition select-none ${rowBg} hover:brightness-95 dark:hover:brightness-110`}
-                                    >
-                                      <td className="py-2 px-3 text-center" onClick={(e) => e.stopPropagation()}>
-                                        <input
-                                          type="checkbox"
-                                          checked={isSelected}
-                                          disabled={isDone}
-                                          onChange={() => toggleBankRow(b.id)}
-                                          className="rounded text-[#087f64] focus:ring-[#087f64] cursor-pointer accent-[#087f64] w-4 h-4"
-                                        />
-                                      </td>
-                                      <td className="py-2 px-2 whitespace-nowrap">
-                                        <div className="font-semibold text-xs text-[#203a35] dark:text-zinc-200">
-                                          {b.date}
+                                // 3. Standard date string (e.g. 2026-10-20, 2026.10.20)
+                                const m = raw.match(/(\d{4})[-/.](\d{1,2})[-/.](\d{1,2})/);
+                                if (m) {
+                                  const timeM = (raw + " " + rawTime).match(/(\d{1,2}):(\d{1,2})/);
+                                  return {
+                                    date: `${m[1]}.${m[2].padStart(2, "0")}.${m[3].padStart(2, "0")}`,
+                                    time: timeM ? `${timeM[1].padStart(2, "0")}:${timeM[2].padStart(2, "0")}` : (rawTime && /^\d{1,2}:\d{2}/.test(rawTime) ? rawTime : "12:00")
+                                  };
+                                }
+
+                                // Fallback
+                                if (/^\.?\d+/.test(raw) || raw.length > 10) {
+                                  return { date: "2026.10.20", time: rawTime && /^\d{1,2}:\d{2}/.test(rawTime) ? rawTime : "12:00" };
+                                }
+
+                                return { date: raw || "2026.10.20", time: rawTime && /^\d{1,2}:\d{2}/.test(rawTime) ? rawTime : "12:00" };
+                              })();
+
+                              return (
+                                <tr key={`row-${idx}`} className="h-[60px] transition select-none">
+                                  {/* LEFT 3 CELLS: BANK TRANSACTION (50% OF ROW) */}
+                                  {b ? (
+                                    <>
+                                      {/* ONLY START of Bank gets the colored line */}
+                                      <td
+                                        onClick={() => setPairBankId((prev) => (prev === b.id ? null : b.id))}
+                                        className={`py-2 px-3 cursor-pointer overflow-hidden ${bankBg}`}
+                                      >
+                                        <div className="text-xs text-zinc-900 dark:text-zinc-100 font-semibold tracking-tight whitespace-nowrap">
+                                          {displayDate}
                                         </div>
-                                        <div className="text-[10px] text-[#7c8b85] mt-0.5">
-                                          {b.time}
-                                        </div>
-                                      </td>
-                                      <td className="py-2 px-3">
-                                        <div className="flex items-center gap-1.5 flex-wrap">
-                                          <strong className="text-xs font-bold text-[#203a35] dark:text-white">
-                                            {b.name}
-                                          </strong>
-                                          {isMatch && (
-                                            <span className="inline-flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-100 dark:bg-emerald-900/60 text-emerald-800 dark:text-emerald-200 border border-emerald-300">
-                                              <Check className="w-3 h-3" /> Тулгасан
-                                            </span>
-                                          )}
-                                          {isMatch && (
-                                            <button
-                                              onClick={(e) => handleUnlink(e, b.id, b.matchedHomeId)}
-                                              className="text-[10px] text-rose-600 dark:text-rose-400 hover:underline font-semibold cursor-pointer"
-                                              title="Тулгалт салгах"
-                                            >
-                                              [Салгах]
-                                            </button>
-                                          )}
-                                          {!isMatch && !isDone && (
-                                            <span className="inline-flex items-center text-[10px] font-medium px-1.5 py-0.5 rounded bg-rose-100 dark:bg-rose-900/60 text-rose-700 dark:text-rose-300 border border-rose-300">
-                                              ✕ Тулгаагүй
-                                            </span>
-                                          )}
-                                          {isDone && (
-                                            <span className="inline-flex items-center text-[10px] font-bold px-1.5 py-0.5 rounded bg-gray-100 dark:bg-zinc-800 text-gray-700 dark:text-zinc-300 border border-gray-300">
-                                              Бүртгэсэн
-                                            </span>
-                                          )}
-                                        </div>
-                                        <div className="text-[10px] text-[#7c8b85] mt-0.5 line-clamp-1" title={b.description}>
-                                          {b.building} байр, {b.unit} тоот · {b.description}
+                                        <div className="text-[11px] text-zinc-500 dark:text-zinc-400 mt-0.5 whitespace-nowrap font-normal">
+                                          {displayTime}
                                         </div>
                                       </td>
-                                      <td className="py-2 px-4 text-right whitespace-nowrap">
-                                        <div className="text-xs font-bold text-[#203a35] dark:text-white tabular-nums">
+                                      {/* MID of Bank: FIXED POSITION FOR BADGE & САЛГАХ BEFORE AMOUNT */}
+                                      <td
+                                        onClick={() => setPairBankId((prev) => (prev === b.id ? null : b.id))}
+                                        className={`py-2 px-3 cursor-pointer overflow-hidden ${bankBg}`}
+                                      >
+                                        <div className="flex items-center justify-between gap-2 h-full">
+                                          {/* Name & description */}
+                                          <div className="min-w-0 flex-1">
+                                            <div className="text-xs text-zinc-900 dark:text-zinc-100 font-semibold truncate" title={b.name}>
+                                              {b.name}
+                                            </div>
+                                            <div className="text-[11px] text-zinc-500 dark:text-zinc-400 mt-0.5 truncate" title={b.description}>
+                                              {b.building} байр, {b.unit} тоот · {b.description}
+                                            </div>
+                                          </div>
+
+                                          {/* FIXED POSITION BADGE & САЛГАХ (RIGHT ALIGNED, JUST BEFORE ORLOGO AMOUNT) */}
+                                          <div className="w-[145px] shrink-0 flex items-center justify-end gap-1.5">
+                                            {b.status === "match" && (
+                                              <>
+                                                <span className="inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 shrink-0">
+                                                  <Check className="w-3 h-3 text-emerald-600" /> Тулгасан
+                                                </span>
+                                                <button
+                                                  onClick={(e) => handleUnlink(e, b.id, b.matchedHomeId)}
+                                                  className="text-[11px] text-zinc-400 hover:text-rose-600 font-medium px-1.5 py-0.5 rounded hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors cursor-pointer shrink-0"
+                                                  title="Тулгалт салгах"
+                                                >
+                                                  [Салгах]
+                                                </button>
+                                              </>
+                                            )}
+                                            {b.status === "open" && (
+                                              <span className="inline-flex items-center text-[10px] font-medium px-2 py-0.5 rounded-full bg-rose-50 dark:bg-rose-950/50 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800 shrink-0">
+                                                ✕ Тулгаагүй
+                                              </span>
+                                            )}
+                                            {b.status === "done" && (
+                                              <span className="inline-flex items-center text-[10px] font-medium px-2 py-0.5 rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-700 shrink-0">
+                                                Бүртгэсэн
+                                              </span>
+                                            )}
+                                          </div>
+                                        </div>
+                                      </td>
+                                      {/* END of Bank: NO colored line */}
+                                      <td
+                                        onClick={() => setPairBankId((prev) => (prev === b.id ? null : b.id))}
+                                        className={`py-2 px-4 text-right whitespace-nowrap cursor-pointer ${bankBg}`}
+                                      >
+                                        <div className="text-xs text-zinc-900 dark:text-zinc-100 tabular-nums font-semibold">
                                           {formatNumber(b.amount)} ₮
                                         </div>
-                                        <div className="text-[10px] text-[#7c8b85] mt-0.5">Орлого</div>
+                                        <div className="text-[11px] text-zinc-400 dark:text-zinc-500 mt-0.5">Орлого</div>
                                       </td>
-                                    </tr>
-                                  );
-                                })
-                              )}
-                            </tbody>
-                          </table>
-                        )}
-                      </div>
+                                    </>
+                                  ) : (
+                                    <td colSpan={3} className={`py-2 px-3 text-center text-[11px] text-zinc-400 dark:text-zinc-600 italic ${bankBg}`}>
+                                      —
+                                    </td>
+                                  )}
 
-                      {/* Right Table: Homes */}
-                      <div className="min-w-0">
-                        {homes.length === 0 ? (
-                          <div className="h-[300px] flex flex-col items-center justify-center p-6 text-center text-[#9aa69e]">
-                            <Receipt className="w-8 h-8 mb-2 opacity-40 text-[#087f64]" />
-                            <div className="text-xs font-semibold text-[#203a35] dark:text-white">
-                              Бүртгэлтэй айлын төлбөр олдсонгүй
-                            </div>
-                            <div className="text-[10px] text-[#9aa69e] mt-1 max-w-[240px]">
-                              Сонгосон байгууллага, барилгын гэрээтэй оршин суугчдын нэхэмжлэх энд харагдана
-                            </div>
-                          </div>
-                        ) : (
-                          <table className="w-full text-left text-xs border-collapse">
-                            <thead className="sticky top-0 z-10 bg-[#f8faf9] dark:bg-zinc-800 text-[#85948c] font-semibold border-b border-[#e7ece9] dark:border-zinc-700 shadow-xs">
-                              <tr>
-                                <th className="py-2.5 px-3 w-10 text-center"></th>
-                                <th className="py-2.5 px-2 w-16">Тоот</th>
-                                <th className="py-2.5 px-3">Оршин суугч</th>
-                                <th className="py-2.5 px-4 w-28 text-right">Төлбөр ₮</th>
-                              </tr>
-                            </thead>
-                            <tbody className="divide-y divide-[#e7ece9] dark:divide-zinc-800">
-                              {displayRows.length === 0 ? (
-                                <tr>
-                                  <td colSpan={4} className="py-12 text-center text-[#9aa69e]">
-                                    Илэрц олдсонгүй
+                                  {/* CENTER CELL: BETWEEN THE TWO TABLES AT 50% LINE - CLEAN NEUTRAL DIVIDER */}
+                                  <td className="py-0 px-0 text-center align-middle border-x border-zinc-200/80 dark:border-zinc-800 bg-zinc-50/70 dark:bg-zinc-900/60 select-none">
+                                    {isBothMatched || isBothDone ? (
+                                      <div className="flex items-center justify-center" title="Тулгагдсан холбоос">
+                                        <span className="text-emerald-600 dark:text-emerald-400 font-bold text-base leading-none">→</span>
+                                      </div>
+                                    ) : isPairSelected ? (
+                                      <div className="flex items-center justify-center animate-pulse" title="Сонгосон холбоос">
+                                        <span className="text-sky-500 font-bold text-base leading-none">→</span>
+                                      </div>
+                                    ) : (
+                                      <span className="text-zinc-300 dark:text-zinc-600 text-sm leading-none">→</span>
+                                    )}
                                   </td>
-                                </tr>
-                              ) : (
-                                displayRows.map(({ home: h }, idx) => {
-                                  if (!h) {
-                                    return (
-                                      <tr key={`home-empty-${idx}`} className="h-[64px] border-b border-[#e7ece9] dark:border-zinc-800 bg-[#fbfcfb]/40 dark:bg-zinc-900/20">
-                                        <td colSpan={4} className="py-2 px-3 text-center text-[11px] text-gray-300 dark:text-zinc-700 italic">
-                                          —
-                                        </td>
-                                      </tr>
-                                    );
-                                  }
 
-                                  const isSelected = selH.has(h.id);
-                                  const isMatch = h.status === "match";
-                                  const isDone = h.status === "done";
-
-                                  // Matched is GREEN, Unmatched is RED, Selected is SKY
-                                  const rowBg = isSelected
-                                    ? "bg-sky-100/90 dark:bg-sky-950/60 border-l-4 border-l-sky-500 ring-2 ring-sky-400 ring-inset shadow-xs"
-                                    : isMatch || isDone
-                                    ? "bg-[#ecfdf5] dark:bg-emerald-950/25 border-l-4 border-l-emerald-500"
-                                    : "bg-[#fff1f2] dark:bg-rose-950/25 border-l-4 border-l-rose-500";
-
-                                  return (
-                                    <tr
-                                      key={`home-${h.id}`}
-                                      onClick={() => toggleHomeRow(h.id)}
-                                      className={`h-[64px] cursor-pointer transition select-none ${rowBg} hover:brightness-95 dark:hover:brightness-110`}
-                                    >
-                                      <td className="py-2 px-3 text-center" onClick={(e) => e.stopPropagation()}>
-                                        <input
-                                          type="checkbox"
-                                          checked={isSelected}
-                                          disabled={isDone}
-                                          onChange={() => toggleHomeRow(h.id)}
-                                          className="rounded text-[#087f64] focus:ring-[#087f64] cursor-pointer accent-[#087f64] w-4 h-4"
-                                        />
-                                      </td>
-                                      <td className="py-2 px-2 whitespace-nowrap">
-                                        <div className="font-bold text-xs text-[#203a35] dark:text-zinc-200">
-                                          {h.unit}
+                                  {/* RIGHT 3 CELLS: RESIDENT / HOME (50% OF ROW) */}
+                                  {h ? (
+                                    <>
+                                      {/* ONLY START of Home gets the colored line */}
+                                      <td
+                                        onClick={() => toggleHomeRow(h.id)}
+                                        className={`py-2 px-3 cursor-pointer overflow-hidden ${homeBg}`}
+                                      >
+                                        <div className="text-xs text-zinc-900 dark:text-zinc-100 font-semibold tracking-tight whitespace-nowrap">
+                                          {h.unit} тоот
                                         </div>
-                                        <div className="text-[10px] text-[#7c8b85] mt-0.5 truncate max-w-[80px]">
+                                        <div className="text-[11px] text-zinc-500 dark:text-zinc-400 mt-0.5 truncate" title={h.building}>
                                           {h.building}
                                         </div>
                                       </td>
-                                      <td className="py-2 px-3">
-                                        <div className="flex items-center gap-1.5 flex-wrap">
-                                          <strong className="text-xs font-bold text-[#203a35] dark:text-white">
-                                            {h.name}
-                                          </strong>
-                                          {isMatch && (
-                                            <span className="inline-flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-100 dark:bg-emerald-900/60 text-emerald-800 dark:text-emerald-200 border border-emerald-300">
-                                              <Check className="w-3 h-3" /> Тулгасан
-                                            </span>
-                                          )}
-                                          {isMatch && (
-                                            <button
-                                              onClick={(e) => handleUnlink(e, h.matchedBankId, h.id)}
-                                              className="text-[10px] text-rose-600 dark:text-rose-400 hover:underline font-semibold cursor-pointer"
-                                              title="Тулгалт салгах"
-                                            >
-                                              [Салгах]
-                                            </button>
-                                          )}
-                                          {!isMatch && !isDone && (
-                                            <span className="inline-flex items-center text-[10px] font-medium px-1.5 py-0.5 rounded bg-rose-100 dark:bg-rose-900/60 text-rose-700 dark:text-rose-300 border border-rose-300">
-                                              ✕ Тулгаагүй
-                                            </span>
-                                          )}
-                                          {isDone && (
-                                            <span className="inline-flex items-center text-[10px] font-bold px-1.5 py-0.5 rounded bg-gray-100 dark:bg-zinc-800 text-gray-700 dark:text-zinc-300 border border-gray-300">
-                                              Бүртгэсэн
-                                            </span>
-                                          )}
-                                        </div>
-                                        <div className="text-[10px] text-[#7c8b85] mt-0.5">
-                                          {h.note}
+                                      {/* MID of Home: FIXED POSITION FOR BADGE & САЛГАХ BEFORE NEHEMJLEH AMOUNT */}
+                                      <td
+                                        onClick={() => toggleHomeRow(h.id)}
+                                        className={`py-2 px-3 cursor-pointer overflow-hidden ${homeBg}`}
+                                      >
+                                        <div className="flex items-center justify-between gap-2 h-full">
+                                          {/* Name & Note */}
+                                          <div className="min-w-0 flex-1">
+                                            <div className="text-xs text-zinc-900 dark:text-zinc-100 font-semibold truncate" title={h.name}>
+                                              {h.name}
+                                            </div>
+                                            <div className="text-[11px] text-zinc-500 dark:text-zinc-400 mt-0.5 truncate" title={h.note}>
+                                              {h.note}
+                                            </div>
+                                          </div>
+
+                                          {/* FIXED POSITION BADGE & САЛГАХ (RIGHT ALIGNED, JUST BEFORE NEHEMJLEH AMOUNT) */}
+                                          <div className="w-[145px] shrink-0 flex items-center justify-end gap-1.5">
+                                            {h.status === "match" && (
+                                              <>
+                                                <span className="inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 shrink-0">
+                                                  <Check className="w-3 h-3 text-emerald-600" /> Тулгасан
+                                                </span>
+                                                <button
+                                                  onClick={(e) => handleUnlink(e, h.matchedBankId, h.id)}
+                                                  className="text-[11px] text-zinc-400 hover:text-rose-600 font-medium px-1.5 py-0.5 rounded hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors cursor-pointer shrink-0"
+                                                  title="Тулгалт салгах"
+                                                >
+                                                  [Салгах]
+                                                </button>
+                                              </>
+                                            )}
+                                            {h.status === "open" && (
+                                              <span className="inline-flex items-center text-[10px] font-medium px-2 py-0.5 rounded-full bg-rose-50 dark:bg-rose-950/50 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800 shrink-0">
+                                                ✕ Тулгаагүй
+                                              </span>
+                                            )}
+                                            {h.status === "done" && (
+                                              <span className="inline-flex items-center text-[10px] font-medium px-2 py-0.5 rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-700 shrink-0">
+                                                Бүртгэсэн
+                                              </span>
+                                            )}
+                                          </div>
                                         </div>
                                       </td>
-                                      <td className="py-2 px-4 text-right whitespace-nowrap">
-                                        <div className="text-xs font-bold text-[#203a35] dark:text-white tabular-nums">
+                                      {/* END of Home: NO colored line */}
+                                      <td
+                                        onClick={() => toggleHomeRow(h.id)}
+                                        className={`py-2 px-4 text-right whitespace-nowrap cursor-pointer ${homeBg}`}
+                                      >
+                                        <div className="text-xs text-zinc-900 dark:text-zinc-100 tabular-nums font-semibold">
                                           {formatNumber(h.amount)} ₮
                                         </div>
-                                        <div className="text-[10px] text-[#7c8b85] mt-0.5">Нэхэмжлэх</div>
+                                        <div className="text-[11px] text-zinc-400 dark:text-zinc-500 mt-0.5">Нэхэмжлэх</div>
                                       </td>
-                                    </tr>
-                                  );
-                                })
-                              )}
-                            </tbody>
-                          </table>
-                        )}
-                      </div>
-                    </div>
+                                    </>
+                                  ) : (
+                                    <td colSpan={3} className={`py-2 px-3 text-center text-[11px] text-zinc-400 dark:text-zinc-600 italic ${homeBg}`}>
+                                      —
+                                    </td>
+                                  )}
+                                </tr>
+                              );
+                            })
+                          )}
+                        </tbody>
+                      </table>
+                    )}
                   </div>
 
                   {/* Panel Footer: Status & Counts & Money Sums */}
-                  <div className="grid grid-cols-1 lg:grid-cols-2 divide-y lg:divide-y-0 lg:divide-x divide-[#e7ece9] dark:divide-zinc-800 border-t border-[#e7ece9] dark:border-zinc-800 px-5 py-2 text-xs text-[#94a29b] shrink-0 bg-[#fbfcfb] dark:bg-zinc-900">
+                  <div className="grid grid-cols-1 lg:grid-cols-2 divide-y lg:divide-y-0 lg:divide-x divide-[#e7ece9] dark:divide-zinc-800 border-t border-[#e7ece9] dark:border-zinc-800 px-5 py-2 text-xs text-black dark:text-zinc-200 shrink-0 bg-[#fbfcfb] dark:bg-zinc-900 relative z-20">
                     <div className="flex items-center justify-between pr-3">
                       <div className="flex items-center gap-1.5 flex-wrap">
-                        <span className="font-semibold text-[#203a35] dark:text-white">
+                        <span className="text-black dark:text-white">
                           Нийт: {filteredBanks.length} ({formatNumber(filteredBanks.reduce((s, b) => s + b.amount, 0))} ₮)
                         </span>
-                        <span className="text-gray-300">·</span>
-                        <span className="text-emerald-700 dark:text-emerald-400 font-medium">
+                        <span className="text-zinc-400">·</span>
+                        <span className="text-emerald-800 dark:text-emerald-300">
                           Тулгасан: {filteredBanks.filter((b) => b.status === "match").length} ({formatNumber(filteredBanks.filter((b) => b.status === "match").reduce((s, b) => s + b.amount, 0))} ₮)
                         </span>
-                        <span className="text-gray-300">·</span>
-                        <span className="text-rose-600 dark:text-rose-400 font-bold">
+                        <span className="text-zinc-400">·</span>
+                        <span className="text-rose-700 dark:text-rose-400">
                           Тулгаагүй: {filteredBanks.filter((b) => b.status === "open").length} ({formatNumber(filteredBanks.filter((b) => b.status === "open").reduce((s, b) => s + b.amount, 0))} ₮)
                         </span>
                       </div>
-                      <span className="text-[11px] text-gray-500">{file ? file.name : "Дансны хуулга"}</span>
+                      <span className="text-[11px] text-zinc-700 dark:text-zinc-300">{file ? file.name : "Дансны хуулга"}</span>
                     </div>
 
                     <div className="flex items-center justify-between pl-3">
                       <div className="flex items-center gap-1.5 flex-wrap">
-                        <span className="font-semibold text-[#203a35] dark:text-white">
+                        <span className="text-black dark:text-white">
                           Нийт: {filteredHomes.length} айл
                         </span>
-                        <span className="text-gray-300">·</span>
-                        <span className="text-emerald-700 dark:text-emerald-400 font-medium">
+                        <span className="text-zinc-400">·</span>
+                        <span className="text-emerald-800 dark:text-emerald-300">
                           Тулгасан: {filteredHomes.filter((h) => h.status === "match").length}
                         </span>
-                        <span className="text-gray-300">·</span>
-                        <span className="text-rose-600 dark:text-rose-400 font-bold">
+                        <span className="text-zinc-400">·</span>
+                        <span className="text-rose-700 dark:text-rose-400">
                           Тулгаагүй: {filteredHomes.filter((h) => h.status === "open").length}
                         </span>
                       </div>
-                      <span className="text-[11px] text-gray-500">Айлын төлбөр</span>
+                      <span className="text-[11px] text-zinc-700 dark:text-zinc-300">Айлын төлбөр</span>
                     </div>
                   </div>
                 </div>
 
                 {/* Hint Text */}
-                <p className="text-[11px] text-[#7c8b85] px-1 shrink-0">
-                  ⓘ &nbsp; <strong className="text-emerald-700 dark:text-emerald-400">Ногоон</strong> нь тулгагдсан, <strong className="text-rose-700 dark:text-rose-400">Улаан</strong> нь тулгаагүй гүйлгээнүүд. Зүүн талаас 1 гүйлгээ, баруун талаас 1 айл сонгож гараар баталгаажуулан тулгах боломжтой.
+                <p className="text-[11px] text-black dark:text-zinc-300 px-1 shrink-0">
+                  ⓘ &nbsp; <span className="text-emerald-800 dark:text-emerald-300">Ногоон</span> нь тулгагдсан, <span className="text-rose-700 dark:text-rose-400">Улаан</span> нь тулгаагүй гүйлгээнүүд. Хүснэгтийн мөр дээр дарж гараар холбох боломжтой.
                 </p>
               </div>
 
@@ -1293,15 +1665,15 @@ export default function BankStatementImportModal({
                     onClick={() => setTab("all")}
                     className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs transition cursor-pointer ${
                       tab === "all"
-                        ? "bg-gray-100 dark:bg-zinc-800 border-gray-400 font-bold"
+                        ? "bg-gray-100 dark:bg-zinc-800 border-gray-400"
                         : "bg-gray-50 dark:bg-zinc-900 border-gray-200 dark:border-zinc-700 hover:bg-gray-100"
                     }`}
                     title="Бүх гүйлгээг шүүх"
                   >
-                    <span className="text-[#7c8b85]">Нийт:</span>
-                    <strong className="text-[#203a35] dark:text-white font-bold">{stats.totalCount}</strong>
-                    <span className="text-gray-300">·</span>
-                    <span className="font-semibold tabular-nums text-[#203a35] dark:text-zinc-200">{formatNumber(stats.totalSum)} ₮</span>
+                    <span className="text-black dark:text-zinc-300">Нийт:</span>
+                    <span className="text-black dark:text-white">{stats.totalCount}</span>
+                    <span className="text-zinc-400">·</span>
+                    <span className="tabular-nums text-black dark:text-white">{formatNumber(stats.totalSum)} ₮</span>
                   </button>
 
                   {/* Matched green pill */}
@@ -1309,16 +1681,16 @@ export default function BankStatementImportModal({
                     onClick={() => setTab("match")}
                     className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs transition cursor-pointer ${
                       tab === "match"
-                        ? "bg-emerald-100 dark:bg-emerald-950/60 border-emerald-500 font-bold"
+                        ? "bg-emerald-100 dark:bg-emerald-950/60 border-emerald-500"
                         : "bg-emerald-50/70 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-800/40 hover:bg-emerald-100"
                     }`}
                     title="Тулгасан гүйлгээг шүүх"
                   >
                     <span className="inline-block w-2 h-2 rounded-full bg-emerald-500"></span>
-                    <span className="text-emerald-800 dark:text-emerald-300 font-medium">Тулгасан:</span>
-                    <strong className="text-emerald-700 dark:text-emerald-200 font-bold">{stats.matchedCount}</strong>
-                    <span className="text-emerald-300 dark:text-emerald-700">·</span>
-                    <span className="font-bold tabular-nums text-emerald-700 dark:text-emerald-300">{formatNumber(stats.matchedSum)} ₮</span>
+                    <span className="text-emerald-900 dark:text-emerald-300">Тулгасан:</span>
+                    <span className="text-emerald-800 dark:text-emerald-200">{stats.matchedCount}</span>
+                    <span className="text-emerald-400 dark:text-emerald-700">·</span>
+                    <span className="tabular-nums text-emerald-800 dark:text-emerald-300">{formatNumber(stats.matchedSum)} ₮</span>
                   </button>
 
                   {/* Unmatched red pill */}
@@ -1326,37 +1698,40 @@ export default function BankStatementImportModal({
                     onClick={() => setTab("open")}
                     className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs transition cursor-pointer ${
                       tab === "open"
-                        ? "bg-rose-100 dark:bg-rose-950/60 border-rose-500 font-bold"
+                        ? "bg-rose-100 dark:bg-rose-950/60 border-rose-500"
                         : "bg-rose-50/70 dark:bg-rose-950/30 border-rose-200 dark:border-rose-800/40 hover:bg-rose-100"
                     }`}
                     title="Тулгаагүй гүйлгээг шүүх"
                   >
                     <span className="inline-block w-2 h-2 rounded-full bg-rose-500"></span>
-                    <span className="text-rose-800 dark:text-rose-300 font-medium">Тулгаагүй:</span>
-                    <strong className="text-rose-700 dark:text-rose-200 font-bold">{stats.openCount}</strong>
-                    <span className="text-rose-300 dark:text-rose-700">·</span>
-                    <span className="font-bold tabular-nums text-rose-700 dark:text-rose-300">{formatNumber(stats.openSum)} ₮</span>
+                    <span className="text-rose-900 dark:text-rose-300">Тулгаагүй:</span>
+                    <span className="text-rose-700 dark:text-rose-200">{stats.openCount}</span>
+                    <span className="text-rose-400 dark:text-rose-700">·</span>
+                    <span className="tabular-nums text-rose-700 dark:text-rose-300">{formatNumber(stats.openSum)} ₮</span>
                   </button>
 
-                  {/* Selected Pill */}
-                  {(selB.size > 0 || selH.size > 0) && (
-                    <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-sky-50 dark:bg-sky-950/40 border border-sky-200 dark:border-sky-800/50 text-xs shadow-xs">
-                      <span className="text-sky-800 dark:text-sky-300 font-medium">Сонгосон:</span>
-                      <strong className="text-sky-700 dark:text-sky-200 font-bold">{selB.size}</strong> гүйлгээ
-                      {selBankSum > 0 && (
-                        <span className="font-bold tabular-nums text-sky-700 dark:text-sky-300">({formatNumber(selBankSum)} ₮)</span>
-                      )}
-                      <span className="text-sky-400">,</span>
-                      <strong className="text-sky-700 dark:text-sky-200 font-bold">{selH.size}</strong> айл
+                  {/* Manual Pair Selection Indicator */}
+                  {(pairBankId !== null || pairHomeId !== null) && (
+                    <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-sky-50 dark:bg-sky-950/40 border border-sky-200 dark:border-sky-800/50 text-xs shadow-xs text-sky-800 dark:text-sky-300">
+                      <span>Сонгосон:</span>
+                      <span className="font-semibold">
+                        {pairBankId !== null ? selectedBankRow?.name || "Гүйлгээ" : "Гүйлгээ сонгоогүй"}
+                        {" ↔ "}
+                        {pairHomeId !== null ? `${selectedHomeRow?.unit || ""} тоот` : "Айл сонгоогүй"}
+                      </span>
                     </div>
                   )}
                 </div>
 
                 {/* Right Action buttons */}
                 <div className="flex items-center gap-2.5 shrink-0">
-                  {selB.size === 1 && selH.size === 1 && (
+                  {pairBankId !== null && pairHomeId !== null && (
                     <button
-                      onClick={() => setShowManualMatchModal(true)}
+                      onClick={() => {
+                        const isRed = selectedBankRow?.status === "open" || selectedHomeRow?.status === "open";
+                        if (isRed) setShowManualMatchModal(true);
+                        else confirmManualMatch();
+                      }}
                       className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-sky-600 hover:bg-sky-700 text-white text-xs font-bold shadow-sm transition animate-pulse cursor-pointer"
                     >
                       <Link2 className="w-3.5 h-3.5" />
@@ -1366,7 +1741,7 @@ export default function BankStatementImportModal({
 
                   <button
                     onClick={handleClear}
-                    disabled={selB.size === 0 && selH.size === 0}
+                    disabled={pairBankId === null && pairHomeId === null}
                     className="px-4 py-2 rounded-xl border border-[#dce5e0] dark:border-zinc-700 bg-white dark:bg-zinc-800 text-xs font-semibold text-[#203a35] dark:text-zinc-200 hover:bg-[#edf5f1] transition disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
                   >
                     Цэвэрлэх
@@ -1380,11 +1755,15 @@ export default function BankStatementImportModal({
                   </button>
 
                   <button
-                    onClick={() => setShowRegisterConfirm(true)}
-                    disabled={stats.matchedCount === 0 && selB.size === 0}
-                    className="px-5 py-2 rounded-xl bg-[#087f64] hover:bg-[#05694f] text-white text-xs font-bold transition disabled:opacity-40 disabled:cursor-not-allowed shadow-md cursor-pointer"
+                    onClick={handleRegisterConfirm}
+                    disabled={submitting || stats.matchedCount === 0}
+                    className="px-5 py-2 rounded-xl bg-[#087f64] hover:bg-[#05694f] text-white text-xs font-bold transition disabled:opacity-40 disabled:cursor-not-allowed shadow-md cursor-pointer flex items-center gap-1.5"
                   >
-                    Бүртгэх ({stats.matchedCount || selB.size})
+                    {submitting ? (
+                      <span>Бүртгэж байна...</span>
+                    ) : (
+                      <span>Бүртгэх ({stats.matchedCount})</span>
+                    )}
                   </button>
                 </div>
               </div>
@@ -1495,8 +1874,8 @@ export default function BankStatementImportModal({
                   <button
                     onClick={() => {
                       setShowManualMatchModal(false);
-                      setSelB(new Set());
-                      setSelH(new Set());
+                      setPairBankId(null);
+                      setPairHomeId(null);
                     }}
                     className="px-4 py-2 rounded-xl border border-gray-200 dark:border-zinc-700 text-xs font-semibold hover:bg-gray-100 dark:hover:bg-zinc-800 transition cursor-pointer"
                   >

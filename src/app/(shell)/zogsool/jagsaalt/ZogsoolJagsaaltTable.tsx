@@ -58,29 +58,43 @@ const RealTimeDuration = ({
   orsonTsag,
   garsanTsag,
   niitKhugatsaa,
+  zurchil,
+  tuluv,
+  updatedAt,
+  isClosed,
 }: {
   orsonTsag?: string;
   garsanTsag?: string;
   niitKhugatsaa?: number;
+  zurchil?: string;
+  tuluv?: number;
+  updatedAt?: string;
+  isClosed?: boolean;
 }) => {
+  const hasZurchil = !!zurchil || tuluv === -2 || tuluv === -3;
+  const isLive = !garsanTsag && !isClosed && !hasZurchil;
   const [now, setNow] = React.useState(moment());
 
   React.useEffect(() => {
-    if (!garsanTsag) {
+    if (isLive) {
       const interval = setInterval(() => setNow(moment()), 1000);
       return () => clearInterval(interval);
     }
-  }, [garsanTsag]);
+  }, [isLive]);
 
   if (!orsonTsag) return <span />;
   const start = moment(orsonTsag);
-  const end = garsanTsag ? moment(garsanTsag) : now;
+  const end = garsanTsag
+    ? moment(garsanTsag)
+    : hasZurchil || isClosed
+      ? (updatedAt ? moment(updatedAt) : start)
+      : now;
   const diff = moment.duration(end.diff(start));
   const hours = Math.floor(diff.asHours());
   const minutes = diff.minutes();
   const seconds = diff.seconds();
 
-  if (!garsanTsag) {
+  if (isLive) {
     return (
       <span className="font-mono text-[color:var(--panel-text)]">
         {String(hours).padStart(2, "0")} : {String(minutes).padStart(2, "0")} :{" "}
@@ -201,19 +215,28 @@ export const ZogsoolJagsaaltTable: React.FC<ZogsoolJagsaaltTableProps> = ({
           const orsonTsag = tsag?.orsonTsag;
           const garsanTsag = tsag?.garsanTsag;
           const niitKhugatsaa = mur?.niitKhugatsaa;
-          const isCurrentlyIn = !mur?.garsanKhaalga;
+          const tuluv = mur?.tuluv;
+          const zurchil = record.zurchil || (mur as any)?.zurchil;
+          const hasZurchil = !!zurchil || tuluv === -2 || tuluv === -3;
+          const isCurrentlyIn = !mur?.garsanKhaalga && !garsanTsag && !hasZurchil;
+          const isLive = !garsanTsag && !hasZurchil;
           return (
             <div
               className={`px-2.5 py-0.5 rounded-md text-center inline-block whitespace-nowrap border-2 transition-all ${
-                !garsanTsag
+                isLive
                   ? "bg-theme/10 border-theme/30 text-brand shadow-sm"
-                  : "bg-[color:var(--surface-hover)] border-[color:var(--surface-border)] text-[color:var(--muted-text)]"
+                  : hasZurchil
+                    ? "bg-danger/10 border-danger/30 text-danger"
+                    : "bg-[color:var(--surface-hover)] border-[color:var(--surface-border)] text-[color:var(--muted-text)]"
               }`}
             >
               <RealTimeDuration
                 orsonTsag={orsonTsag}
                 garsanTsag={garsanTsag}
                 niitKhugatsaa={niitKhugatsaa}
+                zurchil={zurchil}
+                tuluv={tuluv}
+                updatedAt={(record as any)?.updatedAt || (mur as any)?.updatedAt}
               />
             </div>
           );
@@ -268,11 +291,25 @@ export const ZogsoolJagsaaltTable: React.FC<ZogsoolJagsaaltTableProps> = ({
           const tuluv = mur?.tuluv;
           const garsanTsag = mur?.tsagiinTuukh?.[0]?.garsanTsag;
           const niitDun = record.niitDun || 0;
-          // Car is currently in if no exit gate AND no exit timestamp
-          const isCurrentlyIn = !mur?.garsanKhaalga && !garsanTsag;
+          const zurchil = record.zurchil || (mur as any)?.zurchil;
+          const hasZurchil = !!zurchil || tuluv === -2 || tuluv === -3;
+          // Car is currently in if no exit gate AND no exit timestamp AND no violation
+          const isCurrentlyIn = !mur?.garsanKhaalga && !garsanTsag && !hasZurchil;
 
           const badgeClass =
             "flex items-center justify-center flex-nowrap w-[100px] min-w-[100px] max-w-[100px] mx-auto px-2 py-0.5 rounded-[6px] overflow-hidden border";
+          if (tuluv === -2 || hasZurchil) {
+            return (
+              <div
+                className={`${badgeClass} bg-danger border-danger`}
+                style={{ borderRadius: "6px" }}
+              >
+                <span className="text-white whitespace-nowrap">
+                  Зөрчилтэй
+                </span>
+              </div>
+            );
+          }
           if (tuluv === 1) {
             return (
               <div
