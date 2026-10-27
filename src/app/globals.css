@@ -2067,6 +2067,10 @@ html[data-mode="dark"]:not([data-theme]),
     width: 100% !important;
     max-width: 56rem !important; /* ~max-w-5xl */
   }
+  /* Wider variant (e.g. client modal) */
+  .modal-responsive.modal-wide {
+    max-width: min(80rem, 96vw) !important;
+  }
 }
 
 /* Ant Design Table Sorting - Prevent white background in dark mode */

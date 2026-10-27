@@ -880,6 +880,56 @@ export default function KhariltsagchModal({
     [findOccupant],
   );
 
+  /**
+   * Үндсэн тоот (орон сууц / оффис) өөр оршин суугч, харилцагч эсвэл идэвхтэй
+   * гэрээнд эзэмшигдсэн эсэх. Мөн энэ модал дээр өөр мөрөнд сонгосон бол эзэмшигдсэн гэж үзнэ.
+   */
+  const isMainTootOccupied = React.useCallback(
+    (tootVal: string, ortsVal: string, selfIdx: number) => {
+      const uToot = String(tootVal || "").trim();
+      if (!uToot) return false;
+      const uOrts = String(ortsVal || "").trim();
+      const ortsMatch = (o: any) => {
+        const so = String(o || "").trim();
+        return !uOrts || !so || so === uOrts;
+      };
+
+      if (Array.isArray(currentResidents)) {
+        for (const r of currentResidents) {
+          if (editingClient && String(editingClient._id || "") === String(r._id || "")) continue;
+          const existingUnits =
+            Array.isArray(r.toots) && r.toots.length > 0
+              ? r.toots
+              : [{ orts: r.orts, davkhar: r.davkhar, toot: r.toot, turul: r.turul }];
+          for (const rt of existingUnits) {
+            if (negjiinTurul(rt) !== "Орон сууц") continue;
+            if (matchesToot(rt.toot, uToot) && ortsMatch(rt.orts)) return true;
+          }
+        }
+      }
+
+      if (Array.isArray(contracts)) {
+        for (const c of contracts) {
+          const status = String(c?.tuluv || c?.status || "Идэвхтэй").trim();
+          if (status === "Цуцалсан" || status === "Идэвхгүй") continue;
+          if (editingClient && String(c.khariltsagchId || "") === String(editingClient._id || "")) continue;
+          if (negjiinTurul(c) !== "Орон сууц") continue;
+          if (matchesToot(c.toot, uToot) && ortsMatch(c.orts)) return true;
+        }
+      }
+
+      // Энэ модал дээр өөр мөрөнд аль хэдийн сонгосон тоот
+      return mainUnits.some(
+        (m: any, i: number) =>
+          i !== selfIdx &&
+          String(m.toot || "").trim() === uToot &&
+          ortsMatch(m.orts || "1"),
+      );
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [currentResidents, editingClient, contracts, mainUnits],
+  );
+
   /** Тоотыг эзэмшиж буй хүний нэр (өөр харилцагч/оршин суугч) — байхгүй бол null */
   const tootEzemshigch = React.useCallback(
     (tootVal: string, floorVal: string, propertyType: "Зогсоол" | "Агуулах"): string | null => {
@@ -1249,7 +1299,7 @@ export default function KhariltsagchModal({
               dragConstraints={constraintsRef}
               dragMomentum={false}
               onClick={(e) => e.stopPropagation()}
-              className="relative z-[12001] flex max-h-[92vh] w-full max-w-5xl flex-col overflow-hidden rounded-2xl p-0 shadow-2xl modal-surface modal-responsive"
+              className="relative z-[12001] flex max-h-[92vh] w-full max-w-5xl flex-col overflow-hidden rounded-2xl p-0 shadow-2xl modal-surface modal-responsive modal-wide"
             >
               {/* Толгой */}
               <div
@@ -1507,11 +1557,18 @@ export default function KhariltsagchModal({
                                 value: d,
                                 label: `${d} давхар`,
                               }));
+                              // Зөвхөн сул тоотыг харуулна (одоо сонгосон утгыг хадгална)
                               const tOptions = getTootOptions
-                                ? getTootOptions(mUnit.orts || "1", mUnit.davkhar || "", "Тоот").map((t) => ({
-                                    value: t,
-                                    label: `${t} тоот`,
-                                  }))
+                                ? getTootOptions(mUnit.orts || "1", mUnit.davkhar || "", "Тоот")
+                                    .filter(
+                                      (t) =>
+                                        String(t).trim() === String(mUnit.toot || "").trim() ||
+                                        !isMainTootOccupied(t, mUnit.orts || "1", mIdx),
+                                    )
+                                    .map((t) => ({
+                                      value: t,
+                                      label: `${t} тоот`,
+                                    }))
                                 : [];
                               return (
                                 <div key={`main-${mIdx}`} className="flex flex-wrap items-center gap-2 sm:flex-nowrap">
