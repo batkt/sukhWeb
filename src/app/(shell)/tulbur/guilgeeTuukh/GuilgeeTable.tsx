@@ -8,6 +8,7 @@ import { Eye, History, Banknote } from "lucide-react";
 import formatNumber from "../../../../../tools/function/formatNumber";
 import { getPaymentStatusLabel } from "@/lib/utils";
 import { pickMonthSlice } from "./guilgeeMonthMatrix";
+import { negjiinTurul } from "@/lib/negjiinTurul";
 
 const formatDate = (d?: string) =>
   d ? new Date(d).toLocaleDateString("mn-MN") : "-";
@@ -193,13 +194,28 @@ export default function GuilgeeTable({
       return { ct, resident, resId };
     };
 
-    /** Мөрийн оршин суугч + үлдэгдэл — үйлдлийн товч ба үлдэгдлийн нүд хуваалцана */
-    const murniiMedeelel = (record: any) => {
-      const { ct, resident, resId } = resolveResident(record);
-      const dugaar = String(
-        record?.gereeniiDugaar || ct?.gereeniiDugaar || "-",
+    /**
+     * Олон тоотой оршин суугчийн тухайн гэрээний тоот дээр «Гэрээнд харагдах
+     * нэр/утас» (gereeNer/gereeUtas) бичсэн бол түүнийг буцаана.
+     */
+    const tootiinTusgai = (record: any, ct: any, resident: any) => {
+      const toot = String(ct?.toot || record?.toot || "").trim();
+      if (!toot || !Array.isArray(resident?.toots)) return null;
+      const t = resident.toots.find(
+        (x: any) =>
+          String(x?.toot || "").trim() === toot &&
+          negjiinTurul(x) === "Орон сууц",
       );
-      const ner = resident
+      const ner = String(t?.gereeNer || "").trim();
+      const utas = String(t?.gereeUtas || "").trim();
+      return ner || utas ? { ner, utas } : null;
+    };
+
+    /** Мөрийн нэр — тоотын тусгай нэр > оршин суугчийн нэр > гэрээний нэр */
+    const murniiNer = (record: any, ct: any, resident: any) => {
+      const tusgai = tootiinTusgai(record, ct, resident);
+      if (tusgai?.ner) return tusgai.ner;
+      return resident
         ? [resident.ner]
           .map((v) => (v ? String(v).trim() : ""))
           .filter(Boolean)
@@ -208,6 +224,15 @@ export default function GuilgeeTable({
           .map((v) => (v ? String(v).trim() : ""))
           .filter(Boolean)
           .join(" ") || "-";
+    };
+
+    /** Мөрийн оршин суугч + үлдэгдэл — үйлдлийн товч ба үлдэгдлийн нүд хуваалцана */
+    const murniiMedeelel = (record: any) => {
+      const { ct, resident, resId } = resolveResident(record);
+      const dugaar = String(
+        record?.gereeniiDugaar || ct?.gereeniiDugaar || "-",
+      );
+      const ner = murniiNer(record, ct, resident);
       const residentToot =
         Array.isArray(resident?.toots) && resident.toots.length > 0
           ? resident.toots[0]?.toot
@@ -330,15 +355,7 @@ export default function GuilgeeTable({
             ...baseColumn,
             render: (_: any, record: any) => {
               const { ct, resident } = resolveResident(record);
-              const ner = resident
-                ? [resident.ner]
-                  .map((v) => (v ? String(v).trim() : ""))
-                  .filter(Boolean)
-                  .join(" ") || "-"
-                : [record.ner || ct?.ner]
-                  .map((v) => (v ? String(v).trim() : ""))
-                  .filter(Boolean)
-                  .join(" ") || "-";
+              const ner = murniiNer(record, ct, resident);
               return (
                 <span className="text-[color:var(--panel-text)] dark:text-white">{ner}</span>
               );
@@ -371,6 +388,9 @@ export default function GuilgeeTable({
             render: (_: any, record: any) => {
               const { ct, resident } = resolveResident(record);
               const utas = (() => {
+                // Тоотын гэрээнд тусгай утас сонгосон бол түүнийг
+                const tusgaiUtas = tootiinTusgai(record, ct, resident)?.utas;
+                if (tusgaiUtas) return tusgaiUtas;
                 if (resident?.utas) {
                   if (
                     Array.isArray(resident.utas) &&
