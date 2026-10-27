@@ -300,7 +300,7 @@ function MedegdelContent() {
     const bId = String(baiguullagiinId);
 
     const onNewMedegdel = (payload: any) => {
-      if (payload?.type === "medegdelNew") {
+      if (payload?.type === "medegdelNew" || payload?.type === "orshinSuugchDeleted") {
         if (activeTab === "tulult") {
           fetchTulultData();
         }

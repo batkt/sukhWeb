@@ -29,6 +29,8 @@ import {
   ArrowUpDown,
   Users,
   MessageSquare,
+  ShieldCheck,
+  Smartphone,
 } from "lucide-react";
 import uilchilgee from "@/lib/uilchilgee";
 import deleteMethod from "../../../../tools/function/deleteMethod";
@@ -140,6 +142,13 @@ export default function NemeltTokhirgoo({
    */
   const [gerBuliinGishuunEnabled, setGerBuliinGishuunEnabled] =
     useState<boolean>(true);
+
+  /**
+   * 1 эрхээр зөвхөн 1 төхөөрөмжөөс хандах эсэх (Single session policy).
+   * true  - Идэвхтэй (өөр төхөөрөмжөөс нэвтэрвэл өмнөх төхөөрөмж гарна).
+   * false - Унтраасан (хэдэн ч төхөөрөмжнөөс зэрэг хандах эрхтэй).
+   */
+  const [negSessionEsekh, setNegSessionEsekh] = useState<boolean>(true);
 
   // Цахилгааны тооцооны горим.
   // true  - тоолуурын заалт оруулж, систем кВт тарифаар бодно.
@@ -514,6 +523,10 @@ export default function NemeltTokhirgoo({
 
     setResidentGateOpenEnabled(!!find("orshinSuugchKhaalgaNeehEsekh", false));
     setGerBuliinGishuunEnabled(find("gerBuliinGishuunEsekh", true) !== false);
+    setNegSessionEsekh(
+      find("negSessionEsekh", true) !== false &&
+        !find("olonTokhooromjZuvshuurukh", false),
+    );
 
     // Тодорхойгүй бол хуучин зан төлөв — заалтаар бодно.
     setZaaltaarBodokh(find("zaaltaarTsakhilgaanBodokhEsekh", true) !== false);
@@ -1099,6 +1112,73 @@ export default function NemeltTokhirgoo({
     }
   };
 
+  /**
+   * 1 эрхээр зөвхөн 1 төхөөрөмжөөс хандах эсэхийг хадгалах.
+   * Унтраасан (false) үед хэдэн ч төхөөрөмжнөөс зэрэг хандах боломжтой.
+   */
+  const saveNegSessionSettings = async (utga: boolean) => {
+    if (!token || !ajiltan?.baiguullagiinId) {
+      aldaaGargay("Нэвтрэх шаардлагатай");
+      return;
+    }
+
+    const umnukh = negSessionEsekh;
+    setNegSessionEsekh(utga);
+    showSpinner();
+
+    try {
+      const resp = await uilchilgee(token).get(
+        `/baiguullaga/${ajiltan.baiguullagiinId}`,
+        {
+          headers: { "X-Org-Only": "1" },
+        },
+      );
+
+      const freshOrg = resp.data;
+      if (!freshOrg || !freshOrg._id) {
+        throw new Error("Байгууллагын мэдээлэл олдсонгүй");
+      }
+
+      const payload: any = JSON.parse(JSON.stringify(freshOrg));
+      const sessionData = {
+        negSessionEsekh: utga,
+        olonTokhooromjZuvshuurukh: !utga,
+      };
+
+      payload.tokhirgoo = {
+        ...(payload.tokhirgoo || {}),
+        ...sessionData,
+      };
+
+      if (payload.barilguud && Array.isArray(payload.barilguud)) {
+        payload.barilguud = payload.barilguud.map((b: any) => ({
+          ...b,
+          tokhirgoo: {
+            ...(b.tokhirgoo || {}),
+            ...sessionData,
+          },
+        }));
+      }
+
+      const result = await updateMethod("baiguullaga", token, payload);
+      if (!result?.data) throw new Error("Хадгалахад алдаа гарлаа");
+
+      const finalData = result.data.result || result.data;
+      await baiguullagaMutate(finalData, false);
+      await baiguullagaMutate();
+      amjilt(
+        utga
+          ? "Нэг эрхээр нэг л төхөөрөмжнөөс хандахаар тохирууллаа"
+          : "Нэг эрхээр олон төхөөрөмжнөөс хандах эрхийг нээлээ",
+      );
+    } catch (error: any) {
+      setNegSessionEsekh(umnukh);
+      aldaaGargay(error?.message || "Хадгалахад алдаа гарлаа");
+    } finally {
+      hideSpinner();
+    }
+  };
+
   const toUniqueSorted = (values: (string | number)[]) => {
     const nums = values
       .map((v) => Number(String(v).trim()))
@@ -1229,6 +1309,7 @@ export default function NemeltTokhirgoo({
     liftBulkInput: parseBulk(liftBulkInput || "").join(","),
     gerBuliinGishuunEnabled,
     messejYavuulakhEsekh,
+    negSessionEsekh,
   };
 
   useEffect(() => {
@@ -1306,6 +1387,10 @@ export default function NemeltTokhirgoo({
     {
       talbar: ["gerBuliinGishuunEnabled"],
       khadgal: () => saveGerBuliinGishuunSettings(gerBuliinGishuunEnabled),
+    },
+    {
+      talbar: ["negSessionEsekh"],
+      khadgal: () => saveNegSessionSettings(negSessionEsekh),
     },
   ];
 
@@ -1391,6 +1476,7 @@ export default function NemeltTokhirgoo({
       setKhGuestFreeMinutes(v("khGuestFreeMinutes"));
       setGerBuliinGishuunEnabled(v("gerBuliinGishuunEnabled"));
       setMessejYavuulakhEsekh(v("messejYavuulakhEsekh") !== false);
+      setNegSessionEsekh(v("negSessionEsekh") !== false);
     }
   };
 
@@ -1714,6 +1800,34 @@ export default function NemeltTokhirgoo({
               }
             />
           </SettingsCard>
+
+          {/* ── 4. Нэвтрэлт ба аюулгүй байдал ────────────────────────── */}
+          <SettingsCard
+            id="nemelt-security-box"
+            className="stg-card-wide"
+            icon={<ShieldCheck />}
+            title="Нэвтрэлт ба төхөөрөмж"
+            subtitle="Системд нэвтрэх сесс, олон төхөөрөмжийн хязгаарлалт"
+          >
+            <SettingsItem
+              id="nemelt-session-settings"
+              icon={<Smartphone />}
+              title="1 эрхээр зөвхөн 1 төхөөрөмжөөс хандах"
+              changed={uurchlugdsun("negSessionEsekh")}
+              desc={
+                negSessionEsekh
+                  ? "Идэвхтэй. Нэг эрхээр зөвхөн нэг төхөөрөмжөөс нэвтэрнэ (Өөр төхөөрөмжөөс нэвтрэх үед өмнөх нь автоматаар системээс гарна)."
+                  : "Унтраалттай. 1 эрхээр хэдэн ч төхөөрөмжнөөс зэрэг хандах эрхтэй (Өмнөх төхөөрөмжүүд системээс гарахгүй)."
+              }
+              control={
+                <Switch
+                  checked={negSessionEsekh}
+                  onChange={(e) => setNegSessionEsekh(e.currentTarget.checked)}
+                  label="1 эрхээр зөвхөн 1 төхөөрөмжөөс хандах"
+                />
+              }
+            />
+          </SettingsCard>
             </>
           ) : (
             <>
@@ -1949,6 +2063,7 @@ const TOKHIRGOONII_BULEG: Record<string, string[]> = {
     "khGuestFreeMinutes",
     "gerBuliinGishuunEnabled",
     "messejYavuulakhEsekh",
+    "negSessionEsekh",
   ],
 };
 

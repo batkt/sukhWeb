@@ -143,7 +143,8 @@ export function GereeProvider({ children }: { children: React.ReactNode }) {
       if (
         type === "orshinSuugch.created" ||
         type === "orshinSuugch.updated" ||
-        type === "orshinSuugch.deleted"
+        type === "orshinSuugch.deleted" ||
+        type === "orshinSuugchDeleted"
       ) {
         data.orshinSuugchJagsaaltMutate?.();
         data.gereeJagsaaltMutate?.();

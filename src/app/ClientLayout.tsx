@@ -251,6 +251,8 @@ function LayoutContent({ children }: { children: ReactNode }) {
             (key: any) => Array.isArray(key) && key[0] === "/orshinSuugch",
           );
           mutate((key: any) => Array.isArray(key) && key[0] === "/geree");
+          mutate((key: any) => Array.isArray(key) && key[0] === "/medegdel/unreadCount");
+          mutate((key: any) => Array.isArray(key) && key[0] === "/medegdel/unreadList");
         } catch (err) {
           // If predicate-based mutate is unavailable, swallow the error.
         }
@@ -263,6 +265,8 @@ function LayoutContent({ children }: { children: ReactNode }) {
             (key: any) => Array.isArray(key) && key[0] === "/orshinSuugch",
           );
           mutate((key: any) => Array.isArray(key) && key[0] === "/geree");
+          mutate((key: any) => Array.isArray(key) && key[0] === "/medegdel/unreadCount");
+          mutate((key: any) => Array.isArray(key) && key[0] === "/medegdel/unreadList");
         } catch (err) {
           // If predicate-based mutate is unavailable, swallow the error.
         }

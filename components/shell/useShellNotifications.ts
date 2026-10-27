@@ -150,7 +150,11 @@ export function useShellNotifications(listEnabled: boolean) {
   const openMedegdel = useCallback(
     async (item: MedegdelItem) => {
       await markRead(item);
-      router.push(`/medegdel/medegdel?tab=tulult&id=${item._id}`);
+      if (item.title?.includes("устгалаа") || item.message?.includes("устгалаа")) {
+        router.push("/geree/orshinSuugch");
+      } else {
+        router.push(`/medegdel/medegdel?tab=tulult&id=${item._id}`);
+      }
     },
     [markRead, router],
   );
@@ -158,16 +162,37 @@ export function useShellNotifications(listEnabled: boolean) {
   // Real-time toasts. Registered once per session now that the shell survives
   // navigation, instead of being re-registered on every route change.
   useEffect(() => {
-    if (!socket || !baiguullagiinId || !canSeeSanalKhuselt) return;
+    if (!socket || !baiguullagiinId) return;
     const event = "baiguullagiin" + baiguullagiinId;
 
     const handler = (payload: any) => {
       const type = payload?.type;
 
+      if (type === "orshinSuugchDeleted") {
+        const d = payload?.data ?? {};
+        const tootText = d.toot ? `${d.toot} тоот, ` : "";
+        const nameText = d.ner || d.utas || "Оршин суугч";
+        const desc = d.message || `${tootText}${nameText} апп-аас өөрийн бүртгэлээ устгалаа.`;
+        toast.warning("Оршин суугч бүртгэлээ устгалаа", {
+          description: desc,
+          duration: 8000,
+          action: {
+            label: "Оршин суугч",
+            onClick: () => router.push("/geree/orshinSuugch"),
+          },
+        });
+        revalidate("/orshinSuugch");
+        revalidate("/geree");
+        revalidate("/medegdel/unreadCount");
+        revalidate("/medegdel/unreadList");
+      }
+
       if (type === "medegdelNew") {
         const turul = (payload?.data?.turul ?? "").trim();
+        const title = (payload?.data?.title ?? "").trim();
         const isOutboundByMe = ["App", "Мессеж", "Mail"].includes(turul);
-        if (!isOutboundByMe) {
+        const isDeletionNotif = title.includes("устгалаа");
+        if (!isOutboundByMe && !isDeletionNotif) {
           toast("Таны шинэ мэдэгдэл ирлээ", {
             description: "Шинэ мэдэгдэл харахын тулд жагсаалтыг шалгана уу.",
             duration: 4000,
@@ -178,6 +203,7 @@ export function useShellNotifications(listEnabled: boolean) {
           });
         }
         revalidate("/medegdel/unreadCount");
+        revalidate("/medegdel/unreadList");
       }
 
       if (type === "medegdelUserReply") {
