@@ -401,6 +401,8 @@ export default function ResidentModal({
           bodokhKhonog: t.bodokhKhonog || 0,
           gereeNer: t.gereeNer || "",
           gereeUtas: t.gereeUtas || "",
+          // Гараж/агуулахыг харьяа тоот дор нь харуулна
+          linkedAptToot: t.linkedAptToot || "",
         }));
         const olsonNemeltUtas = (Array.isArray(found.nemeltUtas) ? found.nemeltUtas : [])
           .map((u: any) => String(u || "").trim())
