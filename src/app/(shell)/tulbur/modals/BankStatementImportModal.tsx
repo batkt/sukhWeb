@@ -810,6 +810,10 @@ export default function BankStatementImportModal({
       });
 
       if (resp.data?.success) {
+        if (resp.data?.stats?.errorCount > 0 && resp.data?.stats?.paidCount === 0) {
+          toast.error(resp.data?.errors?.[0]?.error || "Бүртгэхэд алдаа гарлаа");
+          return;
+        }
         toast.success(resp.data.message || "Гүйлгээнүүд амжилттай бүртгэгдлээ!");
         const registeredIds = new Set(targetBanks.map((b) => b.id));
         setBanks((prev) => prev.map((b) => (registeredIds.has(b.id) ? { ...b, status: "done" } : b)));
@@ -828,11 +832,12 @@ export default function BankStatementImportModal({
       }
     } catch (err: any) {
       console.error("Register error:", err);
-      setBanks((prev) => prev.map((b) => (b.status === "match" ? { ...b, status: "done" } : b)));
-      setHomes((prev) => prev.map((h) => (h.status === "match" ? { ...h, status: "done" } : h)));
-      setShowRegisterConfirm(false);
-      toast.success("Гүйлгээнүүд амжилттай бүртгэгдлээ");
-      onSuccess();
+      toast.error(
+        err?.response?.data?.aldaa ||
+        err?.response?.data?.message ||
+        err?.message ||
+        "Бүртгэхэд алдаа гарлаа"
+      );
     } finally {
       setSubmitting(false);
     }
