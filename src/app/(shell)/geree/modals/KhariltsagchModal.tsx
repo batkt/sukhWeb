@@ -999,11 +999,15 @@ export default function KhariltsagchModal({
     [barilgiinZardluud],
   );
 
-  // Сонголт хийгээгүй үед backend харилцагчийн зориулалттай БҮХ зардлыг
-  // тоотын төрлөөс үл хамааран бодно — анхны сонголт ч тэр.
+  // ШИНЭ харилцагчид зардал автоматаар холбогдохгүй — хэрэглэгч гараар
+  // сонгоно (анхны сонголт хоосон). Сонголт огт хийгдээгүй ХУУЧИН харилцагчийн
+  // хувьд backend бүх зардлыг бодож байгаа тул тэрийгээ харуулна.
   const anhniiSongolt = React.useMemo(
-    () => khariltsagchiinZardluud.map((z: any) => String(z._id)),
-    [khariltsagchiinZardluud],
+    () =>
+      editingClient?._id
+        ? khariltsagchiinZardluud.map((z: any) => String(z._id))
+        : [],
+    [khariltsagchiinZardluud, editingClient?._id],
   );
 
   const songosonZardluud: string[] = Array.isArray(newClient?.songosonZardluud)
