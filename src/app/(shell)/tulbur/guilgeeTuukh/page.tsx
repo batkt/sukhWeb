@@ -1697,6 +1697,15 @@ export default function DansniiKhuulga() {
       if (tuluvFilter === "overdue")
         return !isResidentPaid && isLinkedToCancelledGeree;
       if (isLinkedToCancelledGeree) return false;
+      // Харилцагчийн гэрээ үүссэн ч авлага/гүйлгээ огт байхгүй бол түүхэнд
+      // харуулахгүй — ашиглалтын зардлыг гараар холбож авлага үүсгэсний дараа л гарна.
+      if (
+        ezemshigchiinTurul(r) === "khariltsagch" &&
+        Number(r?._historyCount || 0) === 0 &&
+        Math.abs(balance) < 0.01 &&
+        paid === 0
+      )
+        return false;
       if (tuluvFilter === "paid") return isResidentPaid;
       if (tuluvFilter === "unpaid") return !isResidentPaid && !isPartiallyPaid;
       if (tuluvFilter === "partiallyPaid") return isPartiallyPaid;
