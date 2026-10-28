@@ -7,7 +7,7 @@
  * тооцоолол хийхгүй (өмнөх сартай харьцуулах өөрчлөлтөөс бусад) — тайлан бүр
  * өөрөө бодох нь ижил үзүүлэлтийг өөр өөр тоогоор гаргах шалтгаан болдог.
  *
- * Бүтэц: KPI → Төлбөрийн орлого (сараар) → Авлагын бүтэц / Топ 5 /
+ * Бүтэц: KPI → Төлбөрийн орлого (сараар; нэг сар шүүвэл өдрөөр) → Авлагын бүтэц / Топ 5 /
  * Төлөлтийн хувь (барилгаар).
  */
 
@@ -15,6 +15,8 @@ import React, { useMemo, useState } from "react";
 import Link from "next/link";
 import FilterDatePicker from "@/components/ui/FilterDatePicker";
 import useSWR from "swr";
+import dayjs from "dayjs";
+import formatNumber from "tools/function/formatNumber";
 import { Bar } from "react-chartjs-2";
 import {
   Chart as ChartJS,
@@ -87,8 +89,8 @@ const dunKhuraangui = (n: number) => {
 
 /** YYYY-MM → "10 сар" */
 const sarShoshgoAvya = (s: string) => `${Number(s.split("-")[1])} сар`;
-/** YYYY-MM → "2026.10" */
-const sarBuren = (s: string) => s.replace("-", ".");
+/** YYYY-MM → "2026.10", YYYY-MM-DD → "2026.10.05" */
+const sarBuren = (s: string) => s.replace(/-/g, ".");
 
 /* ─── Дэд компонентууд ───────────────────────────────────────────────── */
 
@@ -191,9 +193,17 @@ const MurBar: React.FC<{
   utga: string;
   ungu: string;
   icon?: React.ReactNode;
-}> = ({ ner, khuvi, utga, ungu, icon }) => (
+  /** Сонгогдсон мөрийг тодруулна (жишээ нь сонгосон барилга) */
+  tod?: boolean;
+}> = ({ ner, khuvi, utga, ungu, icon, tod }) => (
   <div className="grid grid-cols-[minmax(0,7.5rem)_1fr_auto] items-center gap-3 text-xs">
-    <span className="flex min-w-0 items-center gap-2 text-[color:var(--panel-text)] dark:text-white/90">
+    <span
+      className={`flex min-w-0 items-center gap-2 ${
+        tod
+          ? "font-semibold text-[color:var(--theme)]"
+          : "text-[color:var(--panel-text)] dark:text-white/90"
+      }`}
+    >
       {icon}
       <span className="truncate" title={ner}>
         {ner}
@@ -223,19 +233,16 @@ const AVLAGA_TABUUD: { key: AvlagaTab; ner: string }[] = [
 export default function BiTailanPage() {
   const { token, ajiltan, baiguullaga } = useAuth();
   const { selectedBuildingId } = useBuilding();
-  const [dateRange, setDateRange] = useState<[Date | null, Date | null]>([
-    null,
-    null,
-  ]);
+  /** Сараар шүүлт: "YYYY-MM". Хоосон бол сүүлийн 12 сар (сараар). */
+  const [sar, setSar] = useState<string>("");
   const [avlagaTab, setAvlagaTab] = useState<AvlagaTab>("angilal");
   /** Хэвлэхийн өмнө байрлалыг нэг хуудсанд багтахаар бэлтгэнэ. */
   const [khevlej, setKhevlej] = useState(false);
 
-  const ekhlekh = dateRange?.[0]
-    ? dateRange[0].toISOString().slice(0, 10)
-    : undefined;
-  const duusakh = dateRange?.[1]
-    ? dateRange[1].toISOString().slice(0, 10)
+  // Сонгосон сарын 1-нээс сүүлийн өдөр (28-31) хүртэл
+  const ekhlekh = sar ? `${sar}-01` : undefined;
+  const duusakh = sar
+    ? dayjs(`${sar}-01`).endOf("month").format("YYYY-MM-DD")
     : undefined;
 
   const { data, error, isLoading } = useSWR(
@@ -275,6 +282,11 @@ export default function BiTailanPage() {
   const kpi = data?.kpi;
   const saruud: string[] = data?.khugatsaa?.saruud || [];
   const orlogoMur: any[] = data?.orlogo?.saraar || [];
+  /** Нэг сар шүүсэн үед сервер өдрийн (1-31) мөр буцаана */
+  const udruur: any[] = data?.orlogo?.udruur || [];
+  const udruurEsekh = udruur.length > 0;
+  const grafikMur: any[] = udruurEsekh ? udruur : orlogoMur;
+  const grafikTulkhuur: string[] = udruurEsekh ? udruur.map((r) => r.udur) : saruud;
 
   /** Сүүлийн сарыг өмнөхтэй нь харьцуулсан өөрчлөлт (%) */
   const uurchlult = (talbar: "nekhemjilsen" | "tulsun") => {
@@ -288,19 +300,22 @@ export default function BiTailanPage() {
   /* ── Төлбөрийн орлогын график ── */
   const orlogoChart = useMemo(
     () => ({
-      labels: saruud.map(sarShoshgoAvya),
+      labels: udruurEsekh
+        ? grafikTulkhuur.map((d) => String(Number(d.slice(8, 10))))
+        : grafikTulkhuur.map(sarShoshgoAvya),
       datasets: [
         {
           type: "line" as const,
           label: "Төлөлтийн хувь",
-          data: orlogoMur.map((r) =>
-            r.nekhemjilsen > 0 ? Math.round((r.tulsun / r.nekhemjilsen) * 100) : 0,
+          data: grafikMur.map((r) =>
+            r.nekhemjilsen > 0 ? Math.round((r.tulsun / r.nekhemjilsen) * 100) : null,
           ),
+          spanGaps: true,
           borderColor: "#065f46",
           backgroundColor: "#065f46",
           yAxisID: "khuvi",
           tension: 0.4,
-          pointRadius: orlogoMur.length > 18 ? 0 : 3,
+          pointRadius: grafikMur.length > 18 ? 2 : 3,
           pointHitRadius: 12,
           borderWidth: 2,
           order: 0,
@@ -308,7 +323,7 @@ export default function BiTailanPage() {
         {
           type: "bar" as const,
           label: "Нэхэмжилсэн",
-          data: orlogoMur.map((r) => r.nekhemjilsen),
+          data: grafikMur.map((r) => r.nekhemjilsen),
           backgroundColor: UNGU.nogoonBuudgen,
           borderRadius: 4,
           maxBarThickness: 18,
@@ -317,7 +332,7 @@ export default function BiTailanPage() {
         {
           type: "bar" as const,
           label: "Төлсөн",
-          data: orlogoMur.map((r) => r.tulsun),
+          data: grafikMur.map((r) => r.tulsun),
           backgroundColor: UNGU.nogoon,
           borderRadius: 4,
           maxBarThickness: 18,
@@ -325,7 +340,7 @@ export default function BiTailanPage() {
         },
       ],
     }),
-    [saruud, orlogoMur],
+    [udruurEsekh, grafikTulkhuur, grafikMur],
   );
 
   const orlogoTokhirgoo = useMemo(
@@ -347,7 +362,9 @@ export default function BiTailanPage() {
             usePointStyle: true,
             callbacks: {
               title: (items: any[]) =>
-                saruud[items[0]?.dataIndex] ? sarBuren(saruud[items[0].dataIndex]) : "",
+                grafikTulkhuur[items[0]?.dataIndex]
+                  ? sarBuren(grafikTulkhuur[items[0].dataIndex])
+                  : "",
               label: (c: any) =>
                 c.dataset.yAxisID === "khuvi"
                   ? ` ${c.dataset.label}: ${c.raw}%`
@@ -381,7 +398,7 @@ export default function BiTailanPage() {
           },
         },
       }) as any,
-    [saruud],
+    [grafikTulkhuur],
   );
 
   /* ── Авлагын бүтэц ── */
@@ -407,11 +424,6 @@ export default function BiTailanPage() {
         { ner: "120+ хоног", dun: n.p120plus || 0 },
       ];
       if (mur.every((r) => !r.dun)) mur = [];
-    }
-    // Ангилал олон байвал эхний 5-ыг харуулж, үлдсэнийг «Бусад» болгоно
-    if (avlagaTab !== "nasjilt" && mur.length > 5) {
-      const busad = mur.slice(4).reduce((s, r) => s + r.dun, 0);
-      mur = [...mur.slice(0, 4), { ner: "Бусад", dun: busad }];
     }
     return mur;
   }, [data, avlagaTab, barilgaNer]);
@@ -540,9 +552,12 @@ export default function BiTailanPage() {
         <div className="flex w-full items-center gap-2 sm:w-auto">
           {isLoading && <Loader2 className="h-4 w-4 shrink-0 animate-spin text-theme" />}
           <FilterDatePicker
-            value={dateRange}
-            onChange={setDateRange}
-            className="w-full sm:w-[284px]"
+            single
+            picker="month"
+            placeholder="Сар сонгох"
+            value={sar ? dayjs(`${sar}-01`) : null}
+            onChange={(_utga, mur) => setSar(mur || "")}
+            className="w-full sm:w-[180px]"
           />
           <ExcelButton
             onClick={csvTatya}
@@ -605,9 +620,15 @@ export default function BiTailanPage() {
       </div>
 
       {/* Төлбөрийн орлого — бүтэн өргөн */}
-      <Karti garchig="Төлбөрийн орлого (сараар)">
+      <Karti
+        garchig={
+          udruurEsekh
+            ? `Төлбөрийн орлого (өдрөөр, ${sarBuren(grafikTulkhuur[0].slice(0, 7))})`
+            : "Төлбөрийн орлого (сараар)"
+        }
+      >
         <div className="h-[280px]">
-          {orlogoMur.length > 0 ? (
+          {grafikMur.length > 0 ? (
             <Bar data={orlogoChart as any} options={orlogoTokhirgoo} />
           ) : (
             <Khooson />
@@ -634,13 +655,13 @@ export default function BiTailanPage() {
             ))}
           </div>
           {avlagaMurnuud.length > 0 ? (
-            <div className="space-y-3.5">
+            <div className="max-h-[260px] space-y-3.5 overflow-y-auto pr-1">
               {avlagaMurnuud.map((r, i) => (
                 <MurBar
                   key={r.ner + i}
                   ner={r.ner}
                   khuvi={(r.dun / avlagaIkh) * 100}
-                  utga={dunKhuraangui(r.dun)}
+                  utga={formatNumber(r.dun, 2)}
                   ungu={
                     avlagaTab === "nasjilt"
                       ? [UNGU.nogoonTod, "#84cc16", UNGU.shar, "#f97316", UNGU.ulaan][i]
@@ -707,6 +728,7 @@ export default function BiTailanPage() {
                   khuvi={r.khuvi}
                   utga={`${Math.round(r.khuvi)}%`}
                   ungu={khuviinUngu(r.khuvi)}
+                  tod={!!selectedBuildingId && r.barilgiinId === String(selectedBuildingId)}
                 />
               ))}
             </div>
