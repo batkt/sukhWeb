@@ -1,20 +1,21 @@
 "use client";
 
 /**
- * BI Тайлан — бүх домэйны үзүүлэлтийг нэг дэлгэц дээр графикаар.
+ * BI Тайлан — гол санхүүгийн үзүүлэлтүүдийг нэг дэлгэцэнд.
  *
  * Өгөгдөл нь БҮГД `GET /tailan/bi` гэсэн НЭГ endpoint-оос ирнэ. Клиент тал
- * тооцоолол хийхгүй — тайлан бүр өөрөө бодох нь ижил үзүүлэлтийг өөр өөр
- * тоогоор гаргах шалтгаан болдог (үлдэгдэл гурван өөр аргаар бодогддог
- * байсан). Энд зөвхөн зурна.
+ * тооцоолол хийхгүй (өмнөх сартай харьцуулах өөрчлөлтөөс бусад) — тайлан бүр
+ * өөрөө бодох нь ижил үзүүлэлтийг өөр өөр тоогоор гаргах шалтгаан болдог.
  *
- * Загвар: минимал — хүрээ нимгэн, өнгө хязгаарлагдмал, сүүдэргүй, тор бүдэг.
+ * Бүтэц: KPI → Төлбөрийн орлого (сараар) → Авлагын бүтэц / Топ 5 /
+ * Төлөлтийн хувь (барилгаар).
  */
 
 import React, { useMemo, useState } from "react";
+import Link from "next/link";
 import FilterDatePicker from "@/components/ui/FilterDatePicker";
 import useSWR from "swr";
-import { Line, Bar, Doughnut } from "react-chartjs-2";
+import { Bar } from "react-chartjs-2";
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -22,22 +23,23 @@ import {
   PointElement,
   LineElement,
   BarElement,
-  ArcElement,
   Tooltip,
   Legend,
   Filler,
 } from "chart.js";
 import {
   Users,
-  FileText,
   Wallet,
-  TrendingUp,
+  CircleCheck,
+  Clock,
+  Building2,
   AlertTriangle,
-  Car,
-  ClipboardList,
-  DoorOpen,
   Loader2,
   Printer,
+  ChevronRight,
+  ArrowUp,
+  ArrowDown,
+  Receipt,
 } from "lucide-react";
 import ExcelButton from "@/components/ui/ExcelButton";
 import uilchilgee from "@/lib/uilchilgee";
@@ -50,29 +52,25 @@ ChartJS.register(
   PointElement,
   LineElement,
   BarElement,
-  ArcElement,
   Tooltip,
   Legend,
   Filler,
 );
 
-/* ─── Өнгөний хязгаарлагдмал багц (минимал) ──────────────────────────── */
+/* ─── Өнгө ───────────────────────────────────────────────────────────── */
 const UNGU = {
-  nogoon: "#10b981",
+  nogoon: "#059669",
+  nogoonTod: "#10b981",
+  nogoonBuudgen: "#a7f3d0",
   ulaan: "#ef4444",
   shar: "#f59e0b",
   tsenher: "#3b82f6",
   ochir: "#8b5cf6",
-  bar: "#64748b",
 };
-const UNGU_BAGTS = [
-  UNGU.nogoon,
-  UNGU.tsenher,
-  UNGU.shar,
-  UNGU.ochir,
-  UNGU.ulaan,
-  UNGU.bar,
-];
+
+/** Төлөлтийн хувиас хамаарах өнгө */
+const khuviinUngu = (k: number) =>
+  k >= 65 ? UNGU.nogoonTod : k >= 50 ? UNGU.shar : UNGU.ulaan;
 
 const tooFormat = (n: number) =>
   new Intl.NumberFormat("mn-MN").format(Math.round(Number(n) || 0));
@@ -83,174 +81,142 @@ const dunKhuraangui = (n: number) => {
   const v = Number(n) || 0;
   if (Math.abs(v) >= 1e9) return (v / 1e9).toFixed(1) + "Б";
   if (Math.abs(v) >= 1e6) return (v / 1e6).toFixed(1) + "М";
-  if (Math.abs(v) >= 1e3) return Math.round(v / 1e3) + "мянга";
+  if (Math.abs(v) >= 1e3) return Math.round(v / 1e3) + "мян";
   return tooFormat(v);
 };
 
-/** YYYY-MM → MM.YY */
-const sarFormat = (s: string) => {
-  const [y, m] = s.split("-");
-  return `${m}.${y?.slice(2) ?? ""}`;
-};
-
-/* ─── Графикийн ерөнхий тохиргоо ─────────────────────────────────────── */
-const suuriTokhirgoo = (baganatai = false) =>
-  ({
-    responsive: true,
-    maintainAspectRatio: false,
-    interaction: { mode: "index" as const, intersect: false },
-    plugins: {
-      legend: {
-        display: baganatai,
-        position: "bottom" as const,
-        labels: {
-          boxWidth: 8,
-          boxHeight: 8,
-          usePointStyle: true,
-          font: { size: 10 },
-          padding: 12,
-        },
-      },
-      tooltip: {
-        backgroundColor: "rgba(15,23,42,0.92)",
-        padding: 10,
-        cornerRadius: 8,
-        titleFont: { size: 11 },
-        bodyFont: { size: 11 },
-        usePointStyle: true,
-      },
-    },
-    scales: {
-      x: {
-        grid: { display: false },
-        border: { display: false },
-        ticks: { font: { size: 10 }, maxRotation: 0, autoSkip: true, maxTicksLimit: 8 },
-      },
-      y: {
-        beginAtZero: true,
-        grid: { color: "rgba(100,116,139,0.12)" },
-        border: { display: false },
-        ticks: {
-          font: { size: 10 },
-          maxTicksLimit: 5,
-          callback: (v: any) => dunKhuraangui(Number(v)),
-        },
-      },
-    },
-  }) as any;
-
-const buguiTokhirgoo = {
-  responsive: true,
-  maintainAspectRatio: false,
-  cutout: "62%",
-  plugins: {
-    legend: {
-      position: "right" as const,
-      labels: {
-        boxWidth: 8,
-        boxHeight: 8,
-        usePointStyle: true,
-        font: { size: 10 },
-        padding: 10,
-      },
-    },
-    tooltip: {
-      backgroundColor: "rgba(15,23,42,0.92)",
-      padding: 10,
-      cornerRadius: 8,
-      bodyFont: { size: 11 },
-    },
-  },
-} as any;
+/** YYYY-MM → "10 сар" */
+const sarShoshgoAvya = (s: string) => `${Number(s.split("-")[1])} сар`;
+/** YYYY-MM → "2026.10" */
+const sarBuren = (s: string) => s.replace("-", ".");
 
 /* ─── Дэд компонентууд ───────────────────────────────────────────────── */
 
-/**
- * KPI карт — turees-ийн Хяналтын самбар дээрх `SummaryCard`-ын хэлбэрээр:
- * өнгөт дүрсний хайрцаг, тухайн өнгөөр сүүдэрлэсэн дэвсгэр, хулгана
- * ойртоход бага зэрэг өргөгдөх хөдөлгөөн.
- */
-const Kpi: React.FC<{
-  nert: string;
-  utga: string;
-  icon: React.ReactNode;
-  ungu?: string;
-}> = ({ nert, utga, icon, ungu }) => {
-  const undsen = ungu || UNGU.bar;
+/** Өмнөх сартай харьцуулсан өөрчлөлтийн шошго */
+const Uurchlult: React.FC<{ khuvi: number | null; urvuu?: boolean }> = ({
+  khuvi,
+  urvuu,
+}) => {
+  if (khuvi === null || !isFinite(khuvi)) return null;
+  const usuv = khuvi >= 0;
+  // urvuu: өсөх нь муу (жишээ нь үлдэгдэл)
+  const sain = urvuu ? !usuv : usuv;
   return (
-    <div
-      className="group relative overflow-hidden rounded-xl border p-2.5 transition-all duration-300 ease-out hover:-translate-y-0.5 hover:shadow-md"
-      style={{
-        borderColor: `${undsen}33`,
-        backgroundColor: `${undsen}0f`,
-      }}
-    >
-      <div className="flex items-center gap-2.5">
-        <div
-          className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-white shadow-sm transition-transform duration-300 group-hover:rotate-6"
-          style={{ backgroundColor: undsen }}
-        >
-          {icon}
-        </div>
-        <div className="flex min-w-0 flex-col">
-          <span className="truncate text-[11px] font-medium text-[color:var(--muted-text)]">
-            {nert}
-          </span>
-          <span
-            className="truncate text-sm font-medium text-[color:var(--panel-text)] dark:text-white"
-            title={utga}
-          >
-            {utga}
-          </span>
-        </div>
-      </div>
+    <div className="mt-2 flex items-center gap-1.5 text-[11px]">
+      <span
+        className={`inline-flex items-center gap-0.5 rounded-md px-1.5 py-0.5 font-medium ${
+          sain
+            ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+            : "bg-red-500/10 text-red-600 dark:text-red-400"
+        }`}
+      >
+        {usuv ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />}
+        {Math.abs(khuvi).toFixed(0)}%
+      </span>
+      <span className="text-[color:var(--muted-text)]">Өмнөх сараас</span>
     </div>
   );
 };
 
-/**
- * Графикийн карт — turees-ийн `GlassCard`-ын хэлбэрээр: дүрсний хайрцагтай
- * тусдаа толгой мөр, доогуураа зураастай, том дугуйлсан булан.
- */
-const Karti: React.FC<{
-  garchig: string;
-  tailbar?: string;
-  icon?: React.ReactNode;
-  children: React.ReactNode;
-  undur?: number;
-  delgets?: string;
-}> = ({ garchig, tailbar, icon, children, undur = 220, delgets }) => (
-  <div
-    className={`group flex flex-col overflow-hidden rounded-[1.5rem] border border-[color:var(--surface-border)] bg-[color:var(--panel)]/90 shadow-sm transition-all duration-300 hover:shadow-md dark:border-white/10 ${
-      delgets || ""
-    }`}
-  >
-    <div className="flex items-center justify-between gap-2 border-b border-[color:var(--surface-border)] px-4 py-3 dark:border-white/5">
-      <div className="flex min-w-0 items-center gap-2">
-        {icon && (
-          <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[color:var(--surface-hover)] text-[color:var(--muted-text)]">
-            {icon}
-          </div>
-        )}
-        <span className="truncate text-[11px] font-medium text-[color:var(--muted-text)]">
-          {garchig}
-        </span>
-      </div>
-      {tailbar && (
-        <span className="shrink-0 text-[11px] text-[color:var(--muted-text)]">{tailbar}</span>
-      )}
+const Kpi: React.FC<{
+  nert: string;
+  utga: string;
+  icon: React.ReactNode;
+  ungu: string;
+  uurchlult?: React.ReactNode;
+}> = ({ nert, utga, icon, ungu, uurchlult }) => (
+  <div className="flex items-start gap-3 rounded-2xl border border-[color:var(--surface-border)] bg-[color:var(--panel)] p-4 shadow-sm transition-shadow hover:shadow-md dark:border-white/10">
+    <div
+      className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full"
+      style={{ backgroundColor: `${ungu}1a`, color: ungu }}
+    >
+      {icon}
     </div>
-    <div className="p-3 md:p-4" style={{ height: undur }}>
-      {children}
+    <div className="min-w-0 flex-1">
+      <p className="truncate text-xs text-[color:var(--muted-text)]">{nert}</p>
+      <p
+        className="mt-0.5 truncate text-xl font-semibold tracking-tight text-[color:var(--panel-text)] dark:text-white"
+        title={utga}
+      >
+        {utga}
+      </p>
+      {uurchlult}
     </div>
   </div>
 );
 
+const Karti: React.FC<{
+  garchig: string;
+  khol?: string;
+  baruun?: React.ReactNode;
+  children: React.ReactNode;
+  delgets?: string;
+}> = ({ garchig, khol, baruun, children, delgets }) => (
+  <div
+    className={`flex flex-col rounded-2xl border border-[color:var(--surface-border)] bg-[color:var(--panel)] p-4 shadow-sm dark:border-white/10 ${
+      delgets || ""
+    }`}
+  >
+    <div className="mb-3 flex items-center justify-between gap-2">
+      <h2 className="truncate text-sm font-semibold text-[color:var(--panel-text)] dark:text-white">
+        {garchig}
+      </h2>
+      <div className="flex shrink-0 items-center gap-2">
+        {baruun}
+        {khol && (
+          <Link
+            href={khol}
+            title="Дэлгэрэнгүй"
+            className="khevlekh-nuuh flex h-6 w-6 items-center justify-center rounded-md text-[color:var(--muted-text)] transition-colors hover:bg-[color:var(--surface-hover)] hover:text-[color:var(--panel-text)]"
+          >
+            <ChevronRight className="h-4 w-4" />
+          </Link>
+        )}
+      </div>
+    </div>
+    <div className="min-h-0 flex-1">{children}</div>
+  </div>
+);
+
 const Khooson = () => (
-  <div className="flex h-full items-center justify-center text-[11px] text-[color:var(--muted-text)]">
+  <div className="flex h-full min-h-[120px] items-center justify-center text-xs text-[color:var(--muted-text)]">
     Өгөгдөл байхгүй
   </div>
 );
+
+/** Нэр + хэвтээ мөр + утга */
+const MurBar: React.FC<{
+  ner: string;
+  khuvi: number;
+  utga: string;
+  ungu: string;
+  icon?: React.ReactNode;
+}> = ({ ner, khuvi, utga, ungu, icon }) => (
+  <div className="grid grid-cols-[minmax(0,7.5rem)_1fr_auto] items-center gap-3 text-xs">
+    <span className="flex min-w-0 items-center gap-2 text-[color:var(--panel-text)] dark:text-white/90">
+      {icon}
+      <span className="truncate" title={ner}>
+        {ner}
+      </span>
+    </span>
+    <div className="h-2 overflow-hidden rounded-full bg-[color:var(--surface-hover)] dark:bg-white/10">
+      <div
+        className="h-full rounded-full transition-[width] duration-500"
+        style={{ width: `${Math.max(2, Math.min(100, khuvi))}%`, backgroundColor: ungu }}
+      />
+    </div>
+    <span className="min-w-[3rem] text-right font-medium tabular-nums text-[color:var(--panel-text)] dark:text-white">
+      {utga}
+    </span>
+  </div>
+);
+
+type AvlagaTab = "angilal" | "barilga" | "nasjilt";
+const AVLAGA_TABUUD: { key: AvlagaTab; ner: string }[] = [
+  { key: "angilal", ner: "Ангиллаар" },
+  { key: "barilga", ner: "Барилгаар" },
+  { key: "nasjilt", ner: "Насжилтаар" },
+];
 
 /* ─── Хуудас ─────────────────────────────────────────────────────────── */
 
@@ -261,10 +227,8 @@ export default function BiTailanPage() {
     null,
     null,
   ]);
-  /**
-   * Хэвлэхийн өмнө графикуудын тогтмол өндрийг суллаж, бүх карт нэг хуудсанд
-   * багтахаар бэлтгэнэ. turees-ийн Хяналтын самбар дээрх зарчим.
-   */
+  const [avlagaTab, setAvlagaTab] = useState<AvlagaTab>("angilal");
+  /** Хэвлэхийн өмнө байрлалыг нэг хуудсанд багтахаар бэлтгэнэ. */
   const [khevlej, setKhevlej] = useState(false);
 
   const ekhlekh = dateRange?.[0]
@@ -308,208 +272,157 @@ export default function BiTailanPage() {
     return map;
   }, [baiguullaga]);
 
+  const kpi = data?.kpi;
   const saruud: string[] = data?.khugatsaa?.saruud || [];
-  const sarShoshgo = useMemo(() => saruud.map(sarFormat), [saruud]);
+  const orlogoMur: any[] = data?.orlogo?.saraar || [];
 
-  /* ── График өгөгдөл ── */
-  const orlogoChart = useMemo(() => {
-    const rows = data?.orlogo?.saraar || [];
-    return {
-      labels: sarShoshgo,
+  /** Сүүлийн сарыг өмнөхтэй нь харьцуулсан өөрчлөлт (%) */
+  const uurchlult = (talbar: "nekhemjilsen" | "tulsun") => {
+    if (orlogoMur.length < 2) return null;
+    const suuld = Number(orlogoMur[orlogoMur.length - 1]?.[talbar]) || 0;
+    const umnu = Number(orlogoMur[orlogoMur.length - 2]?.[talbar]) || 0;
+    if (umnu === 0) return null;
+    return ((suuld - umnu) / umnu) * 100;
+  };
+
+  /* ── Төлбөрийн орлогын график ── */
+  const orlogoChart = useMemo(
+    () => ({
+      labels: saruud.map(sarShoshgoAvya),
       datasets: [
+        {
+          type: "line" as const,
+          label: "Төлөлтийн хувь",
+          data: orlogoMur.map((r) =>
+            r.nekhemjilsen > 0 ? Math.round((r.tulsun / r.nekhemjilsen) * 100) : 0,
+          ),
+          borderColor: "#065f46",
+          backgroundColor: "#065f46",
+          yAxisID: "khuvi",
+          tension: 0.4,
+          pointRadius: orlogoMur.length > 18 ? 0 : 3,
+          pointHitRadius: 12,
+          borderWidth: 2,
+          order: 0,
+        },
         {
           type: "bar" as const,
           label: "Нэхэмжилсэн",
-          data: rows.map((r: any) => r.nekhemjilsen),
-          backgroundColor: "rgba(59,130,246,0.25)",
+          data: orlogoMur.map((r) => r.nekhemjilsen),
+          backgroundColor: UNGU.nogoonBuudgen,
           borderRadius: 4,
-          barThickness: 12,
-          order: 2,
+          maxBarThickness: 18,
+          order: 1,
         },
         {
-          type: "line" as const,
+          type: "bar" as const,
           label: "Төлсөн",
-          data: rows.map((r: any) => r.tulsun),
-          borderColor: UNGU.nogoon,
-          backgroundColor: "transparent",
-          fill: false,
-          tension: 0.4,
-          pointRadius: rows.length > 20 ? 0 : 3,
-          pointBackgroundColor: UNGU.nogoon,
-          pointHitRadius: 12,
-          borderWidth: 2,
+          data: orlogoMur.map((r) => r.tulsun),
+          backgroundColor: UNGU.nogoon,
+          borderRadius: 4,
+          maxBarThickness: 18,
           order: 1,
         },
       ],
-    };
-  }, [data, sarShoshgo]);
+    }),
+    [saruud, orlogoMur],
+  );
 
-  const nasjiltChart = useMemo(() => {
-    const n = data?.avlaga?.nasjilt;
-    if (!n) return null;
-    const utguud = [n.p0_30, n.p31_60, n.p61_90, n.p91_120, n.p120plus];
-    if (utguud.every((v) => !v)) return null;
-    return {
-      labels: ["0-30", "31-60", "61-90", "91-120", "120+"],
-      datasets: [
-        {
-          label: "Авлага",
-          data: utguud,
-          backgroundColor: [
-            UNGU.nogoon,
-            "#84cc16",
-            UNGU.shar,
-            "#f97316",
-            UNGU.ulaan,
-          ],
-          borderRadius: 6,
-          borderWidth: 0,
+  const orlogoTokhirgoo = useMemo(
+    () =>
+      ({
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: { mode: "index" as const, intersect: false },
+        plugins: {
+          legend: {
+            position: "top" as const,
+            align: "end" as const,
+            labels: { boxWidth: 8, boxHeight: 8, usePointStyle: true, font: { size: 11 } },
+          },
+          tooltip: {
+            backgroundColor: "rgba(15,23,42,0.92)",
+            padding: 10,
+            cornerRadius: 8,
+            usePointStyle: true,
+            callbacks: {
+              title: (items: any[]) =>
+                saruud[items[0]?.dataIndex] ? sarBuren(saruud[items[0].dataIndex]) : "",
+              label: (c: any) =>
+                c.dataset.yAxisID === "khuvi"
+                  ? ` ${c.dataset.label}: ${c.raw}%`
+                  : ` ${c.dataset.label}: ${dunFormat(c.raw)}`,
+            },
+          },
         },
-      ],
-    };
-  }, [data]);
-
-  const gereeTuluvChart = useMemo(() => {
-    const t = data?.geree?.tuluvuur || {};
-    const keys = Object.keys(t);
-    if (keys.length === 0) return null;
-    return {
-      labels: keys,
-      datasets: [
-        {
-          data: keys.map((k) => t[k]),
-          backgroundColor: UNGU_BAGTS,
-          borderWidth: 0,
+        scales: {
+          x: {
+            grid: { display: false },
+            border: { display: false },
+            ticks: { font: { size: 11 }, maxRotation: 0, autoSkip: true },
+          },
+          y: {
+            beginAtZero: true,
+            grid: { color: "rgba(100,116,139,0.12)" },
+            border: { display: false },
+            ticks: {
+              font: { size: 11 },
+              maxTicksLimit: 5,
+              callback: (v: any) => dunKhuraangui(Number(v)),
+            },
+          },
+          khuvi: {
+            position: "right" as const,
+            min: 0,
+            suggestedMax: 100,
+            grid: { display: false },
+            border: { display: false },
+            ticks: { font: { size: 11 }, maxTicksLimit: 5, callback: (v: any) => `${v}%` },
+          },
         },
-      ],
-    };
-  }, [data]);
+      }) as any,
+    [saruud],
+  );
 
-  const gereeBarilgaChart = useMemo(() => {
-    const b = data?.geree?.barilgaar || {};
-    const keys = Object.keys(b);
-    if (keys.length === 0) return null;
-    return {
-      labels: keys.map((k) => barilgaNer[k] || k),
-      datasets: [
-        {
-          label: "Гэрээ",
-          data: keys.map((k) => b[k]),
-          backgroundColor: UNGU.tsenher,
-          borderRadius: 6,
-          borderWidth: 0,
-        },
-      ],
-    };
-  }, [data, barilgaNer]);
+  /* ── Авлагын бүтэц ── */
+  const avlagaMurnuud = useMemo(() => {
+    let mur: { ner: string; dun: number }[] = [];
+    if (avlagaTab === "angilal") {
+      mur = (data?.avlaga?.angillaar || []).map((r: any) => ({
+        ner: r.ner,
+        dun: r.dun,
+      }));
+    } else if (avlagaTab === "barilga") {
+      mur = (data?.avlaga?.barilgaar || []).map((r: any) => ({
+        ner: barilgaNer[r.barilgiinId] || (r.barilgiinId === "-" ? "Тодорхойгүй" : r.barilgiinId),
+        dun: r.dun,
+      }));
+    } else {
+      const n = data?.avlaga?.nasjilt || {};
+      mur = [
+        { ner: "0-30 хоног", dun: n.p0_30 || 0 },
+        { ner: "31-60 хоног", dun: n.p31_60 || 0 },
+        { ner: "61-90 хоног", dun: n.p61_90 || 0 },
+        { ner: "91-120 хоног", dun: n.p91_120 || 0 },
+        { ner: "120+ хоног", dun: n.p120plus || 0 },
+      ];
+      if (mur.every((r) => !r.dun)) mur = [];
+    }
+    // Ангилал олон байвал эхний 5-ыг харуулж, үлдсэнийг «Бусад» болгоно
+    if (avlagaTab !== "nasjilt" && mur.length > 5) {
+      const busad = mur.slice(4).reduce((s, r) => s + r.dun, 0);
+      mur = [...mur.slice(0, 4), { ner: "Бусад", dun: busad }];
+    }
+    return mur;
+  }, [data, avlagaTab, barilgaNer]);
+  const avlagaIkh = Math.max(1, ...avlagaMurnuud.map((r) => r.dun));
 
-  const shineGereeChart = useMemo(() => {
-    const rows = data?.geree?.saraar || [];
-    if (rows.every((r: any) => !r.too)) return null;
-    return {
-      labels: sarShoshgo,
-      datasets: [
-        {
-          label: "Шинэ гэрээ",
-          data: rows.map((r: any) => r.too),
-          backgroundColor: UNGU.ochir,
-          borderRadius: 6,
-          borderWidth: 0,
-        },
-      ],
-    };
-  }, [data, sarShoshgo]);
-
-  const tulburKhelberChart = useMemo(() => {
-    const rows = data?.tulburiinKhelber || [];
-    if (rows.length === 0) return null;
-    return {
-      labels: rows.map((r: any) => r.turul),
-      datasets: [
-        {
-          data: rows.map((r: any) => r.dun),
-          backgroundColor: UNGU_BAGTS,
-          borderWidth: 0,
-        },
-      ],
-    };
-  }, [data]);
-
-  const zogsoolChart = useMemo(() => {
-    const rows = data?.zogsool?.saraar || [];
-    if (rows.every((r: any) => !r.too)) return null;
-    return {
-      labels: sarShoshgo,
-      datasets: [
-        {
-          label: "Зогсоолын хөдөлгөөн",
-          data: rows.map((r: any) => r.too),
-          borderColor: UNGU.shar,
-          backgroundColor: "rgba(245,158,11,0.12)",
-          fill: true,
-          tension: 0.35,
-          pointRadius: rows.length > 20 ? 0 : 3,
-          pointHitRadius: 12,
-          borderWidth: 2,
-        },
-      ],
-    };
-  }, [data, sarShoshgo]);
-
-  const zogsoolTurulChart = useMemo(() => {
-    const t = data?.zogsool?.turluur || {};
-    const keys = Object.keys(t);
-    if (keys.length === 0) return null;
-    return {
-      labels: keys,
-      datasets: [
-        { data: keys.map((k) => t[k]), backgroundColor: UNGU_BAGTS, borderWidth: 0 },
-      ],
-    };
-  }, [data]);
-
-  const khaalgaChart = useMemo(() => {
-    const rows = data?.khaalga?.saraar || [];
-    if (rows.every((r: any) => !r.too)) return null;
-    return {
-      labels: sarShoshgo,
-      datasets: [
-        {
-          label: "Хаалга нээлт",
-          data: rows.map((r: any) => r.too),
-          backgroundColor: UNGU.bar,
-          borderRadius: 6,
-          borderWidth: 0,
-        },
-      ],
-    };
-  }, [data, sarShoshgo]);
-
-  const asuulgaChart = useMemo(() => {
-    const rows = (data?.sanalAsuulga || []).slice(0, 8);
-    if (rows.length === 0) return null;
-    return {
-      labels: rows.map((r: any) =>
-        r.garchig?.length > 18 ? r.garchig.slice(0, 18) + "…" : r.garchig,
-      ),
-      datasets: [
-        {
-          label: "Хариулт",
-          data: rows.map((r: any) => r.khariultiinToo),
-          backgroundColor: UNGU.nogoon,
-          borderRadius: 6,
-          borderWidth: 0,
-        },
-      ],
-    };
-  }, [data]);
-
-  const kpi = data?.kpi;
+  const top5: any[] = (data?.avlaga?.khamgiinIkhUldegdel || []).slice(0, 5);
+  const tulultBarilgaar: any[] = data?.tulultBarilgaar || [];
 
   /**
    * Хэвлэх. Chart.js нь `resize`-д хариу үйлдэл үзүүлэхэд хэсэг хугацаа
-   * шаардагддаг тул төлвөө асаагаад нэг фрейм хүлээж байж `print()` дуудна,
-   * эс бөгөөс графикууд хуучин хэмжээгээрээ хэвлэгдэнэ.
+   * шаардагддаг тул төлвөө асаагаад хүлээж байж `print()` дуудна.
    */
   const khevleye = () => {
     setKhevlej(true);
@@ -525,17 +438,11 @@ export default function BiTailanPage() {
     return /[",\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
   };
 
-  /**
-   * Бүх үзүүлэлтийг нэг CSV болгон татна.
-   *
-   * turees-ийн самбар нь DOM дээрх <table>-уудыг гүйж цуглуулдаг. Энэ хуудас
-   * бараг бүхэлдээ график тул DOM-оос биш, графикуудыг тэжээж буй өгөгдлөөс
-   * шууд бичнэ — ингэснээр дэлгэцэнд харагдахгүй байгаа утга ч бүрэн орно.
-   */
+  /** Дэлгэц дээрх бүх үзүүлэлтийг нэг CSV болгон татна. */
   const csvTatya = () => {
     const murnuud: string[] = [];
     const khesegNemye = (garchig: string, mur: (string | number)[][]) => {
-      if (!mur.length) return;
+      if (mur.length <= 1) return;
       murnuud.push(garchig);
       mur.forEach((r) => murnuud.push(r.map(nudTseverlye).join(",")));
       murnuud.push("");
@@ -543,50 +450,54 @@ export default function BiTailanPage() {
 
     khesegNemye("KPI", [
       ["Үзүүлэлт", "Утга"],
-      ["Оршин суугч", kpi?.niitOrshinSuugch ?? 0],
-      ["Гэрээ", kpi?.niitGeree ?? 0],
-      ["Нэхэмжилсэн", kpi?.niitNekhemjilsen ?? 0],
-      ["Төлсөн", kpi?.niitTulsun ?? 0],
-      ["Цуглуулгын хувь", `${kpi?.tsugluulgiinKhuvi ?? 0}%`],
-      ["Авлага", kpi?.niitUldegdel ?? 0],
-      ["Зогсоолын орлого", kpi?.zogsoolOrlogo ?? 0],
+      ["Нийт нэхэмжилсэн", kpi?.niitNekhemjilsen ?? 0],
+      ["Төлсөн дүн", kpi?.niitTulsun ?? 0],
+      ["Үлдэгдэл дүн", kpi?.niitUldegdel ?? 0],
+      ["Төлөлтийн хувь", `${kpi?.tsugluulgiinKhuvi ?? 0}%`],
+      ["Нийт оршин суугч", kpi?.niitOrshinSuugch ?? 0],
+      ["Нийт харилцагч", kpi?.niitGeree ?? 0],
+    ]);
+    khesegNemye("Төлбөрийн орлого (сараар)", [
+      ["Сар", "Нэхэмжилсэн", "Төлсөн", "Төлөлтийн хувь"],
+      ...orlogoMur.map((r) => [
+        r.sar,
+        r.nekhemjilsen,
+        r.tulsun,
+        r.nekhemjilsen > 0 ? `${Math.round((r.tulsun / r.nekhemjilsen) * 100)}%` : "0%",
+      ]),
+    ]);
+    khesegNemye("Авлага ангиллаар", [
+      ["Ангилал", "Дүн"],
+      ...(data?.avlaga?.angillaar || []).map((r: any) => [r.ner, r.dun]),
+    ]);
+    khesegNemye("Авлага барилгаар", [
+      ["Барилга", "Үлдэгдэл"],
+      ...(data?.avlaga?.barilgaar || []).map((r: any) => [
+        barilgaNer[r.barilgiinId] || r.barilgiinId,
+        r.dun,
+      ]),
+    ]);
+    khesegNemye("Хамгийн их үлдэгдэлтэй", [
+      ["Нэр", "Тоот", "Гэрээ", "Үлдэгдэл"],
+      ...(data?.avlaga?.khamgiinIkhUldegdel || []).map((r: any) => [
+        r.ner || "-",
+        r.toot || "-",
+        r.gereeniiDugaar || "-",
+        r.uldegdel ?? 0,
+      ]),
+    ]);
+    khesegNemye("Төлөлтийн хувь (барилгаар)", [
+      ["Барилга", "Нэхэмжилсэн", "Төлсөн", "Хувь"],
+      ...tulultBarilgaar.map((r) => [
+        barilgaNer[r.barilgiinId] || r.barilgiinId,
+        r.nekhemjilsen,
+        r.tulsun,
+        `${r.khuvi}%`,
+      ]),
     ]);
 
-    /** Chart.js-ийн өгөгдлийг мөр болгон буулгана. */
-    const graphikNemye = (garchig: string, chart: any) => {
-      if (!chart?.labels?.length) return;
-      const toluv = ["Ангилал", ...chart.datasets.map((d: any) => d.label || "")];
-      const mur: (string | number)[][] = [toluv];
-      chart.labels.forEach((shoshgo: string, i: number) => {
-        mur.push([shoshgo, ...chart.datasets.map((d: any) => d.data?.[i] ?? 0)]);
-      });
-      khesegNemye(garchig, mur);
-    };
-
-    graphikNemye("Нэхэмжилсэн ба төлсөн", orlogoChart);
-    graphikNemye("Авлагын насжилт", nasjiltChart);
-    graphikNemye("Гэрээний төлөв", gereeTuluvChart);
-    graphikNemye("Гэрээ барилгаар", gereeBarilgaChart);
-    graphikNemye("Төлбөрийн хэлбэр", tulburKhelberChart);
-    graphikNemye("Шинэ гэрээ", shineGereeChart);
-    graphikNemye("Зогсоол", zogsoolChart);
-    graphikNemye("Зогсоолын төрөл", zogsoolTurulChart);
-    graphikNemye("Хаалга", khaalgaChart);
-    graphikNemye("Санал асуулга", asuulgaChart);
-
-    const ikhUldegdel = data?.avlaga?.khamgiinIkhUldegdel || [];
-    if (ikhUldegdel.length > 0) {
-      khesegNemye("Хамгийн их авлагатай", [
-        ["Тоот / Гэрээ", "Үлдэгдэл"],
-        ...ikhUldegdel.map((r: any) => [
-          r.toot || r.gereeniiDugaar || "-",
-          r.uldegdel ?? 0,
-        ]),
-      ]);
-    }
-
     // Excel нь UTF-8 BOM-гүй бол кирилл үсгийг эвдэж уншина.
-    const blob = new Blob(["\uFEFF" + murnuud.join("\n")], {
+    const blob = new Blob(["﻿" + murnuud.join("\n")], {
       type: "text/csv;charset=utf-8;",
     });
     const url = URL.createObjectURL(blob);
@@ -612,7 +523,7 @@ export default function BiTailanPage() {
         khevlej ? "khevlekh-gorim" : ""
       }`}
     >
-      {/* Хэвлэхэд: хөндлөн байрлал, шелл далдлах, нэг хуудсанд багтаах */}
+      {/* Хэвлэхэд: хөндлөн байрлал, шелл далдлах */}
       <style type="text/css" media="print">
         {`
           @page { size: landscape; margin: 6mm; }
@@ -624,22 +535,15 @@ export default function BiTailanPage() {
         `}
       </style>
 
-      {/* Толгой */}
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-xl font-medium text-[color:var(--panel-text)] dark:text-white">
-            BI Тайлан
-          </h1>
-          <p className="mt-0.5 text-xs text-[color:var(--muted-text)]">
-            {saruud.length > 0
-              ? `${sarFormat(saruud[0])} — ${sarFormat(saruud[saruud.length - 1])}`
-              : "Бүх үзүүлэлт нэг дэлгэцэнд"}
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          {isLoading && (
-            <Loader2 className="h-4 w-4 animate-spin text-theme" />
-          )}
+      {/* Толгой: огнооны шүүлт баруун талд */}
+      <div className="flex flex-wrap items-center justify-end gap-3">
+        <div className="flex w-full items-center gap-2 sm:w-auto">
+          {isLoading && <Loader2 className="h-4 w-4 shrink-0 animate-spin text-theme" />}
+          <FilterDatePicker
+            value={dateRange}
+            onChange={setDateRange}
+            className="w-full sm:w-[284px]"
+          />
           <ExcelButton
             onClick={csvTatya}
             title="Бүх үзүүлэлтийг CSV-ээр татах"
@@ -649,182 +553,161 @@ export default function BiTailanPage() {
           <button
             onClick={khevleye}
             title="Тайланг хэвлэх"
-            className="khevlekh-nuuh flex h-10 items-center gap-1.5 rounded-xl px-3 text-xs ring-1 ring-[color:var(--surface-border)] transition-colors hover:bg-[color:var(--surface-hover)] dark:ring-white/10 dark:hover:bg-white/5"
+            className="khevlekh-nuuh flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ring-1 ring-[color:var(--surface-border)] transition-colors hover:bg-[color:var(--surface-hover)] dark:ring-white/10 dark:hover:bg-white/5"
           >
             <Printer className="h-4 w-4" />
-            <span className="hidden sm:inline">Хэвлэх</span>
           </button>
         </div>
       </div>
 
       {/* KPI */}
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-4 xl:grid-cols-7">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
         <Kpi
-          nert="Оршин суугч"
-          utga={tooFormat(kpi?.niitOrshinSuugch || 0)}
-          icon={<Users className="h-4 w-4" />}
-          ungu={UNGU.tsenher}
-        />
-        <Kpi
-          nert="Гэрээ"
-          utga={tooFormat(kpi?.niitGeree || 0)}
-          icon={<FileText className="h-4 w-4" />}
-          ungu={UNGU.ochir}
-        />
-        <Kpi
-          nert="Нэхэмжилсэн"
+          nert="Нийт нэхэмжилсэн"
           utga={dunFormat(kpi?.niitNekhemjilsen || 0)}
-          icon={<Wallet className="h-4 w-4" />}
-        />
-        <Kpi
-          nert="Төлсөн"
-          utga={dunFormat(kpi?.niitTulsun || 0)}
-          icon={<TrendingUp className="h-4 w-4" />}
+          icon={<Wallet className="h-5 w-5" />}
           ungu={UNGU.nogoon}
+          uurchlult={<Uurchlult khuvi={uurchlult("nekhemjilsen")} />}
         />
         <Kpi
-          nert="Цуглуулга"
-          utga={`${kpi?.tsugluulgiinKhuvi ?? 0}%`}
-          icon={<TrendingUp className="h-4 w-4" />}
-          ungu={
-            (kpi?.tsugluulgiinKhuvi ?? 0) >= 80 ? UNGU.nogoon : UNGU.shar
+          nert="Төлсөн дүн"
+          utga={dunFormat(kpi?.niitTulsun || 0)}
+          icon={<CircleCheck className="h-5 w-5" />}
+          ungu={UNGU.nogoon}
+          uurchlult={<Uurchlult khuvi={uurchlult("tulsun")} />}
+        />
+        <Kpi
+          nert="Үлдэгдэл дүн"
+          utga={dunFormat(kpi?.niitUldegdel || 0)}
+          icon={<Clock className="h-5 w-5" />}
+          ungu={UNGU.shar}
+          uurchlult={
+            <p className="mt-2 text-[11px] text-[color:var(--muted-text)]">
+              {tooFormat(kpi?.uldegdelteiGeree || 0)} гэрээнд · төлөлт{" "}
+              <span className="font-medium text-[color:var(--panel-text)] dark:text-white">
+                {kpi?.tsugluulgiinKhuvi ?? 0}%
+              </span>
+            </p>
           }
         />
         <Kpi
-          nert="Авлага"
-          utga={dunFormat(kpi?.niitUldegdel || 0)}
-          icon={<AlertTriangle className="h-4 w-4" />}
-          ungu={UNGU.ulaan}
+          nert="Нийт оршин суугч"
+          utga={tooFormat(kpi?.niitOrshinSuugch || 0)}
+          icon={<Users className="h-5 w-5" />}
+          ungu={UNGU.tsenher}
         />
         <Kpi
-          nert="Зогсоолын орлого"
-          utga={dunFormat(kpi?.zogsoolOrlogo || 0)}
-          icon={<Car className="h-4 w-4" />}
-          ungu={UNGU.shar}
+          nert="Нийт харилцагч"
+          utga={tooFormat(kpi?.niitGeree || 0)}
+          icon={<Building2 className="h-5 w-5" />}
+          ungu={UNGU.ochir}
         />
       </div>
 
-      <div className="flex flex-wrap items-center gap-2">
-        <FilterDatePicker
-          value={dateRange}
-          onChange={setDateRange}
-          className="w-full sm:w-[284px]"
-        />
-      </div>
-
-      {/* Орлого — хамгийн чухал тул бүтэн өргөн */}
-      <Karti
-        garchig="Нэхэмжилсэн ба төлсөн"
-        icon={<Wallet className="h-4 w-4" />}
-        tailbar="сараар"
-        undur={260}
-        delgets="xl:col-span-2"
-      >
-        <Bar
-          data={orlogoChart as any}
-          options={{
-            ...suuriTokhirgoo(true),
-            plugins: {
-              ...suuriTokhirgoo(true).plugins,
-              // turees-ийн самбартай адил дээд баруун буланд
-              legend: {
-                display: true,
-                position: "top" as const,
-                align: "end" as const,
-                labels: {
-                  boxWidth: 6,
-                  usePointStyle: true,
-                  font: { size: 10 },
-                },
-              },
-            },
-          }}
-        />
+      {/* Төлбөрийн орлого — бүтэн өргөн */}
+      <Karti garchig="Төлбөрийн орлого (сараар)">
+        <div className="h-[280px]">
+          {orlogoMur.length > 0 ? (
+            <Bar data={orlogoChart as any} options={orlogoTokhirgoo} />
+          ) : (
+            <Khooson />
+          )}
+        </div>
       </Karti>
 
-      {/* Авлага, гэрээ */}
-      <div className="grid grid-cols-1 gap-3 lg:grid-cols-3">
-        <Karti garchig="Авлагын насжилт" tailbar="хоногоор" icon={<AlertTriangle className="h-4 w-4" />}>
-          {nasjiltChart ? (
-            <Bar data={nasjiltChart as any} options={suuriTokhirgoo()} />
+      {/* Авлагын бүтэц, Топ 5, Төлөлтийн хувь */}
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 xl:grid-cols-3">
+        <Karti garchig="Авлагын бүтэц" khol="/tailan/avlagiin-nasjilt">
+          <div className="mb-4 flex gap-4 border-b border-[color:var(--surface-border)] text-xs dark:border-white/10">
+            {AVLAGA_TABUUD.map((t) => (
+              <button
+                key={t.key}
+                onClick={() => setAvlagaTab(t.key)}
+                className={`-mb-px border-b-2 pb-2 transition-colors ${
+                  avlagaTab === t.key
+                    ? "border-[color:var(--theme)] font-medium text-[color:var(--theme)]"
+                    : "border-transparent text-[color:var(--muted-text)] hover:text-[color:var(--panel-text)]"
+                }`}
+              >
+                {t.ner}
+              </button>
+            ))}
+          </div>
+          {avlagaMurnuud.length > 0 ? (
+            <div className="space-y-3.5">
+              {avlagaMurnuud.map((r, i) => (
+                <MurBar
+                  key={r.ner + i}
+                  ner={r.ner}
+                  khuvi={(r.dun / avlagaIkh) * 100}
+                  utga={dunKhuraangui(r.dun)}
+                  ungu={
+                    avlagaTab === "nasjilt"
+                      ? [UNGU.nogoonTod, "#84cc16", UNGU.shar, "#f97316", UNGU.ulaan][i]
+                      : UNGU.nogoon
+                  }
+                  icon={
+                    <Receipt className="h-3.5 w-3.5 shrink-0 text-[color:var(--muted-text)]" />
+                  }
+                />
+              ))}
+            </div>
           ) : (
             <Khooson />
           )}
         </Karti>
-        <Karti garchig="Гэрээний төлөв" icon={<FileText className="h-4 w-4" />}>
-          {gereeTuluvChart ? (
-            <Doughnut data={gereeTuluvChart as any} options={buguiTokhirgoo} />
-          ) : (
-            <Khooson />
-          )}
-        </Karti>
-        <Karti garchig="Гэрээ барилгаар" icon={<FileText className="h-4 w-4" />}>
-          {gereeBarilgaChart ? (
-            <Bar
-              data={gereeBarilgaChart as any}
-              options={{
-                ...suuriTokhirgoo(),
-                scales: {
-                  ...suuriTokhirgoo().scales,
-                  y: {
-                    ...suuriTokhirgoo().scales.y,
-                    ticks: { font: { size: 10 }, maxTicksLimit: 5 },
-                  },
-                },
-              }}
-            />
-          ) : (
-            <Khooson />
-          )}
-        </Karti>
-      </div>
 
-      {/* Төлбөр, шинэ гэрээ */}
-      <div className="grid grid-cols-1 gap-3 lg:grid-cols-3">
-        <Karti garchig="Төлбөрийн хэлбэр" tailbar="дүнгээр" icon={<Wallet className="h-4 w-4" />}>
-          {tulburKhelberChart ? (
-            <Doughnut
-              data={tulburKhelberChart as any}
-              options={buguiTokhirgoo}
-            />
+        <Karti garchig="Топ 5 үлдэгдэлтэй харилцагч" khol="/tailan/avlagiin-nasjilt">
+          {top5.length > 0 ? (
+            <table className="w-full text-xs">
+              <thead>
+                <tr className="text-left text-[color:var(--muted-text)]">
+                  <th className="w-6 pb-2 font-normal">№</th>
+                  <th className="pb-2 font-normal">Нэр</th>
+                  <th className="pb-2 font-normal">Тоот</th>
+                  <th className="pb-2 text-right font-normal">Үлдэгдэл</th>
+                </tr>
+              </thead>
+              <tbody>
+                {top5.map((r, i) => (
+                  <tr
+                    key={r.gereeniiId || i}
+                    className="border-t border-[color:var(--surface-border)] dark:border-white/5"
+                  >
+                    <td className="py-2.5 text-[color:var(--muted-text)]">{i + 1}</td>
+                    <td className="max-w-[9rem] truncate py-2.5 text-[color:var(--panel-text)] dark:text-white/90">
+                      {r.ner || r.gereeniiDugaar || "-"}
+                    </td>
+                    <td className="py-2.5 text-[color:var(--muted-text)]">{r.toot || "-"}</td>
+                    <td className="py-2.5 text-right font-medium tabular-nums text-red-500">
+                      {tooFormat(r.uldegdel)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           ) : (
             <Khooson />
           )}
         </Karti>
-        <Karti garchig="Шинэ гэрээ" tailbar="сараар" icon={<TrendingUp className="h-4 w-4" />}>
-          {shineGereeChart ? (
-            <Bar
-              data={shineGereeChart as any}
-              options={{
-                ...suuriTokhirgoo(),
-                scales: {
-                  ...suuriTokhirgoo().scales,
-                  y: {
-                    ...suuriTokhirgoo().scales.y,
-                    ticks: { font: { size: 10 }, maxTicksLimit: 5 },
-                  },
-                },
-              }}
-            />
-          ) : (
-            <Khooson />
-          )}
-        </Karti>
-        <Karti garchig="Хамгийн их авлагатай" tailbar="тоот" icon={<AlertTriangle className="h-4 w-4" />}>
-          {(data?.avlaga?.khamgiinIkhUldegdel || []).length > 0 ? (
-            <div className="h-full space-y-1.5 overflow-y-auto pr-1">
-              {data.avlaga.khamgiinIkhUldegdel.map((r: any, i: number) => (
-                <div
-                  key={r.gereeniiId || i}
-                  className="flex items-center justify-between gap-2 text-[11px]"
-                >
-                  <span className="truncate text-[color:var(--muted-text)]">
-                    {i + 1}. {r.toot || r.gereeniiDugaar || "-"}
-                  </span>
-                  <span className="shrink-0 font-medium text-danger">
-                    {dunFormat(r.uldegdel)}
-                  </span>
-                </div>
+
+        <Karti
+          garchig="Төлөлтийн хувь (барилгаар)"
+          delgets="lg:col-span-2 xl:col-span-1"
+        >
+          {tulultBarilgaar.length > 0 ? (
+            <div className="max-h-[260px] space-y-3.5 overflow-y-auto pr-1">
+              {tulultBarilgaar.map((r) => (
+                <MurBar
+                  key={r.barilgiinId}
+                  ner={
+                    barilgaNer[r.barilgiinId] ||
+                    (r.barilgiinId === "-" ? "Тодорхойгүй" : r.barilgiinId)
+                  }
+                  khuvi={r.khuvi}
+                  utga={`${Math.round(r.khuvi)}%`}
+                  ungu={khuviinUngu(r.khuvi)}
+                />
               ))}
             </div>
           ) : (
@@ -833,144 +716,6 @@ export default function BiTailanPage() {
         </Karti>
       </div>
 
-      {/* Зогсоол, хаалга, асуулга */}
-      <div className="grid grid-cols-1 gap-3 lg:grid-cols-3">
-        <Karti
-          garchig="Зогсоолын хөдөлгөөн"
-          icon={<Car className="h-4 w-4" />}
-          tailbar={`${tooFormat(kpi?.zogsoolSession || 0)} session`}
-        >
-          {zogsoolChart ? (
-            <Line
-              data={zogsoolChart as any}
-              options={{
-                ...suuriTokhirgoo(),
-                scales: {
-                  ...suuriTokhirgoo().scales,
-                  y: {
-                    ...suuriTokhirgoo().scales.y,
-                    ticks: { font: { size: 10 }, maxTicksLimit: 5 },
-                  },
-                },
-              }}
-            />
-          ) : (
-            <Khooson />
-          )}
-        </Karti>
-        <Karti garchig="Зогсоолын төлбөр" tailbar="төрлөөр" icon={<Car className="h-4 w-4" />}>
-          {zogsoolTurulChart ? (
-            <Doughnut
-              data={zogsoolTurulChart as any}
-              options={buguiTokhirgoo}
-            />
-          ) : (
-            <Khooson />
-          )}
-        </Karti>
-        <Karti
-          garchig="Хаалга нээлт"
-          icon={<DoorOpen className="h-4 w-4" />}
-          tailbar={`${tooFormat(kpi?.khaalgaNeelt || 0)} удаа`}
-        >
-          {khaalgaChart ? (
-            <Bar
-              data={khaalgaChart as any}
-              options={{
-                ...suuriTokhirgoo(),
-                scales: {
-                  ...suuriTokhirgoo().scales,
-                  y: {
-                    ...suuriTokhirgoo().scales.y,
-                    ticks: { font: { size: 10 }, maxTicksLimit: 5 },
-                  },
-                },
-              }}
-            />
-          ) : (
-            <Khooson />
-          )}
-        </Karti>
-      </div>
-
-      {/* Санал асуулга, мэдэгдэл */}
-      <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
-        <Karti
-          garchig="Санал асуулгын хариулт"
-          icon={<ClipboardList className="h-4 w-4" />}
-          tailbar={`${tooFormat(kpi?.asuulgiinToo || 0)} асуулга`}
-        >
-          {asuulgaChart ? (
-            <Bar
-              data={asuulgaChart as any}
-              options={{
-                ...suuriTokhirgoo(),
-                indexAxis: "y" as const,
-                scales: {
-                  x: {
-                    beginAtZero: true,
-                    grid: { color: "rgba(100,116,139,0.12)" },
-                    border: { display: false },
-                    ticks: { font: { size: 10 }, maxTicksLimit: 5 },
-                  },
-                  y: {
-                    grid: { display: false },
-                    border: { display: false },
-                    ticks: { font: { size: 10 } },
-                  },
-                },
-              }}
-            />
-          ) : (
-            <Khooson />
-          )}
-        </Karti>
-        <Karti garchig="Мэдэгдэл ба санал хүсэлт" tailbar="төрлөөр" icon={<ClipboardList className="h-4 w-4" />}>
-          {(data?.medegdel || []).length > 0 ? (
-            <div className="h-full space-y-2 overflow-y-auto pr-1">
-              {data.medegdel.map((r: any) => (
-                <div key={r.turul}>
-                  <div className="mb-1 flex items-baseline justify-between gap-2 text-[11px]">
-                    <span className="truncate text-[color:var(--muted-text)]">
-                      {r.turul}
-                    </span>
-                    <span className="shrink-0 text-[color:var(--muted-text)]">
-                      {tooFormat(r.too)}
-                      {r.unshaagui > 0 && (
-                        <span className="ml-1 text-warning">
-                          ({tooFormat(r.unshaagui)} уншаагүй)
-                        </span>
-                      )}
-                    </span>
-                  </div>
-                  <div className="h-1.5 overflow-hidden rounded-full bg-[color:var(--surface-hover)] dark:bg-white/10">
-                    <div
-                      className="h-full rounded-full"
-                      style={{
-                        width: `${Math.min(100, (r.too / Math.max(1, Math.max(...data.medegdel.map((x: any) => x.too)))) * 100)}%`,
-                        backgroundColor: UNGU.tsenher,
-                      }}
-                    />
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <Khooson />
-          )}
-        </Karti>
-      </div>
-
-      {/* Зөрчилтэй машин — жижиг тэмдэглэл */}
-      {(data?.zogsool?.zurchilteiToo ?? 0) > 0 && (
-        <p className="pb-4 text-center text-[11px] text-[color:var(--muted-text)]">
-          Зогсоол дээр зөрчилтэй тэмдэглэгдсэн{" "}
-          <span className="font-medium text-warning">
-            {tooFormat(data.zogsool.zurchilteiToo)}
-          </span>{" "}
-          хөдөлгөөн байна
-        </p>
-      )}
     </div>
   );
 }
