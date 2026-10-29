@@ -148,6 +148,10 @@ export const TALBARIIN_NER: Record<string, string> = {
   sariinTulbur: "Сарын төлбөр",
   niitTulukhDun: "Нийт төлөх дүн",
   khariult: "Хариулт",
+  hasCustomName: "Өөрчилсөн нэртэй эсэх",
+  customName: "Өөрчилсөн нэр",
+  taniltsuulgaKharakhEsekh: "Танилцуулга харах эсэх",
+  tanilsuulgaKharakhEsekh: "Танилцуулга харах эсэх",
   garchig: "Гарчиг",
   aguulga: "Агуулга",
 };
@@ -202,6 +206,8 @@ export interface DedUurchlult {
   label: string;
   umnukh: string | null;
   shine: string | null;
+  /** Жагсаалтын аль мөрийнх вэ (Орон сууц · 103 · 1-р орц) */
+  kontekst?: string;
 }
 
 /** Mongo-гийн {$oid}, {$date}, {$numberDecimal} мэт боодлыг энгийн утга болгоно */
@@ -393,7 +399,7 @@ export function massiviinUurchlult(umnukhRaw: unknown, shineRaw: unknown): Massi
     (dedUurchlultuud(m, s2) || [])
       // Автомат талбар хоосорсон бол засвар биш
       .filter((d) => !(AUTO_TALBAR.has(d.zam) && d.shine === null))
-      .forEach((d) => uurchlugdsun.push({ ...d, label: `${murTovch(s2)} · ${d.label}` }));
+      .forEach((d) => uurchlugdsun.push({ ...d, kontekst: murTovch(s2) }));
   });
   return { nemsen, khassan, uurchlugdsun };
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
-import { ArrowRight, ChevronDown, FilePen, Search, Trash2, X } from "lucide-react";
+import { ArrowRight, ChevronDown, Search, X } from "lucide-react";
 import { ModalPortal } from "../../../../../components/shell/ModalPortal";
 import useModalHotkeys from "@/lib/useModalHotkeys";
 import { auditAngilalNer } from "@/lib/auditTurluud";
@@ -26,14 +26,22 @@ interface Props {
   onClose: () => void;
 }
 
-const Utga = ({ utga, className = "" }: { utga: string | null; className?: string }) =>
-  utga === null ? (
-    <span className="italic text-[color:var(--muted-text)]">(хоосон)</span>
-  ) : (
-    <span className={`whitespace-pre-wrap [overflow-wrap:anywhere] ${className}`}>{utga}</span>
-  );
+/** Засварын хүснэгтийн нэг мөр: Талбар | Өмнөх утга → Шинэ утга */
+interface ZasvarMur {
+  key: string;
+  talbar: string;
+  /** Талбарын доор саарлаар: аль жагсаалт/мөрийнх вэ */
+  kontekst?: string;
+  umnukh: string | null;
+  shine: string | null;
+}
 
-const Ustsan = () => <span className="italic text-[color:var(--muted-text)]">(устгагдсан)</span>;
+const Utga = ({ utga }: { utga: string | null }) =>
+  utga === null ? (
+    <span className="italic opacity-60">(хоосон)</span>
+  ) : (
+    <span className="whitespace-pre-wrap [overflow-wrap:anywhere]">{utga}</span>
+  );
 
 export default function TuukhModal({ mur, turul, idNer = {}, onClose }: Props) {
   // Утга: огноо/төлөв хөрвүүлсэн мөр; ID бол ажилтны нэр эсвэл товч ID
@@ -47,22 +55,61 @@ export default function TuukhModal({ mur, turul, idNer = {}, onClose }: Props) {
 
   const zassan = turul === "zassan";
   const [khailt, setKhailt] = useState("");
-  useEffect(() => setKhailt(""), [mur]);
+  const [busadNeelttei, setBusadNeelttei] = useState(false);
+  useEffect(() => {
+    setKhailt("");
+    setBusadNeelttei(false);
+  }, [mur]);
 
-  // Устгасан баримтыг засварын цонхтой ИЖИЛ хэлбэрээр: талбар бүр «өмнө → (устсан)»
-  const uurchlultuud = useMemo(() => {
-    if (!mur) return [];
-    if (zassan) {
-      const q = khailt.trim().toLowerCase();
-      if (!q) return mur.uurchlultuud;
-      return mur.uurchlultuud.filter((c) =>
-        [c.label, utgaFormat(c.umnukh) || "", utgaFormat(c.shine) || ""]
-          .join(" ")
-          .toLowerCase()
-          .includes(q),
-      );
-    }
-    if (!mur.deletedData) return [];
+  // Засвар: бүх өөрчлөлтийг (жагсаалт, объект дотор ч) нэг хавтгай хүснэгт болгоно
+  const zasvarMuruud = useMemo<ZasvarMur[]>(() => {
+    if (!mur || !zassan) return [];
+    const out: ZasvarMur[] = [];
+    mur.uurchlultuud.forEach((c, i) => {
+      const massiv = massiviinUurchlult(c.umnukh, c.shine);
+      if (massiv) {
+        massiv.nemsen.forEach((t, j) =>
+          out.push({ key: `${i}n${j}`, talbar: c.label, kontekst: "Нэмсэн", umnukh: null, shine: t }),
+        );
+        massiv.khassan.forEach((t, j) =>
+          out.push({ key: `${i}k${j}`, talbar: c.label, kontekst: "Хассан", umnukh: t, shine: null }),
+        );
+        massiv.uurchlugdsun.forEach((d, j) =>
+          out.push({
+            key: `${i}u${j}`,
+            talbar: d.label,
+            kontekst: [c.label, d.kontekst].filter(Boolean).join(" · "),
+            umnukh: kharuul(d.umnukh),
+            shine: kharuul(d.shine),
+          }),
+        );
+        return;
+      }
+      const ded = dedUurchlultuud(c.umnukh, c.shine);
+      if (ded) {
+        ded.forEach((d, j) =>
+          out.push({
+            key: `${i}d${j}`,
+            talbar: d.label,
+            kontekst: c.label,
+            umnukh: kharuul(d.umnukh),
+            shine: kharuul(d.shine),
+          }),
+        );
+        return;
+      }
+      out.push({ key: `${i}`, talbar: c.label, umnukh: kharuul(c.umnukh), shine: kharuul(c.shine) });
+    });
+    const q = khailt.trim().toLowerCase();
+    if (!q) return out;
+    return out.filter((m) =>
+      [m.talbar, m.kontekst, m.umnukh, m.shine].join(" ").toLowerCase().includes(q),
+    );
+  }, [mur, zassan, khailt, idNer]);
+
+  // Устгасан баримтын агшин зураг: энгийн талбарууд, гол нь эхэнд
+  const ustgasanTalbaruud = useMemo(() => {
+    if (!mur || zassan || !mur.deletedData) return [];
     const erembe = (t: string) => {
       const i = GOL_TALBAR.indexOf(t);
       return i < 0 ? 999 : i;
@@ -70,263 +117,210 @@ export default function TuukhModal({ mur, turul, idNer = {}, onClose }: Props) {
     return Object.entries(mur.deletedData)
       .filter(([k]) => !k.startsWith("_") && !USTGASAN_NUUKH_TALBAR.has(k) && !/Id$/.test(k))
       .filter(([, v]) => utgaFormat(v) !== null)
-      .map(([k, v]) => ({ talbar: k, label: talbariinNer(k), umnukh: v, shine: null as unknown }))
-      // Зөвхөн энгийн (гол) талбарууд — нийлмэл объект/массивыг харуулахгүй
-      .filter((c) => dedUurchlultuud(c.umnukh, null) === null)
+      .map(([k, v]) => ({ talbar: k, label: talbariinNer(k), utga: v }))
+      .filter((c) => dedUurchlultuud(c.utga, null) === null)
       .sort((x, y) => erembe(x.talbar) - erembe(y.talbar));
-  }, [mur, zassan, khailt]);
+  }, [mur, zassan]);
 
-  // Устгасан: гол талбарууд шууд, бусад нь «Бусад мэдээлэл» дотор нуугдана.
-  const [busadNeelttei, setBusadNeelttei] = useState(false);
-  const golMur = zassan ? [] : uurchlultuud.filter((c) => GOL_TALBAR.includes(c.talbar));
-  const busadMur = zassan ? [] : uurchlultuud.filter((c) => !GOL_TALBAR.includes(c.talbar));
+  if (!mur) return null;
 
-  const TalbarJagsaalt = ({ jagsaalt }: { jagsaalt: typeof uurchlultuud }) => (
+  const dedGarchig = [mur.ner, mur.dugaar].filter((x, i, a) => x && a.indexOf(x) === i).join(" · ");
+  const golMur = ustgasanTalbaruud.filter((c) => GOL_TALBAR.includes(c.talbar));
+  const busadMur = ustgasanTalbaruud.filter((c) => !GOL_TALBAR.includes(c.talbar));
+
+  const TalbarJagsaalt = ({ jagsaalt }: { jagsaalt: typeof ustgasanTalbaruud }) => (
     <dl className="divide-y divide-[color:var(--ctl-border)]">
       {jagsaalt.map((c, i) => (
         <div
           key={`${c.talbar}-${i}`}
-          className="grid grid-cols-[minmax(0,140px)_minmax(0,1fr)] gap-3 px-4 py-2.5 text-[13px]"
+          className="grid grid-cols-[minmax(0,160px)_minmax(0,1fr)] gap-3 px-4 py-2.5 text-[13px]"
         >
           <dt className="text-[color:var(--muted-text)]">{c.label}</dt>
           <dd className="min-w-0 text-[color:var(--panel-text)]">
-            <Utga utga={kharuul(c.umnukh)} />
+            <Utga utga={kharuul(c.utga)} />
           </dd>
         </div>
       ))}
     </dl>
   );
 
-  if (!mur) return null;
-  const garchig = mur.ner || mur.dugaar || "-";
+  const niitZasvar = zassan && khailt.trim() === "" ? zasvarMuruud.length : null;
 
   return (
     <ModalPortal>
       <div className="fixed inset-0 z-[9999] flex items-center justify-center px-4 py-6">
         <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
         <div
-          className="relative flex max-h-[88vh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl border border-[color:var(--ctl-border)] bg-[color:var(--surface-bg)] shadow-2xl"
+          className="relative flex max-h-[88vh] w-full max-w-3xl flex-col overflow-hidden rounded-2xl border border-[color:var(--ctl-border)] bg-[color:var(--surface-bg)] shadow-2xl"
           onClick={(e) => e.stopPropagation()}
         >
-          {/* Толгой */}
-          <div className="flex items-start gap-3 border-b border-[color:var(--ctl-border)] px-5 py-4">
-            <div
-              className={`grid h-10 w-10 shrink-0 place-items-center rounded-full ${
-                zassan ? "bg-theme/10 text-brand" : "bg-danger/10 text-danger"
-              }`}
-            >
-              {zassan ? <FilePen className="h-5 w-5" /> : <Trash2 className="h-5 w-5" />}
-            </div>
-            <div className="min-w-0 flex-1">
-              <div className="text-[12px] text-[color:var(--muted-text)]">
-                {auditAngilalNer(mur.turul)}
-              </div>
-              <div className="mt-0.5 flex min-w-0 items-baseline gap-2">
-                <span className="truncate text-[15px] font-medium text-[color:var(--panel-text)]">
-                  {garchig}
-                </span>
-                {mur.ner && mur.dugaar && (
-                  <span className="shrink-0 text-[12px] text-[color:var(--muted-text)]">
-                    {mur.dugaar}
-                  </span>
-                )}
-              </div>
-              <div className="mt-1.5 flex flex-wrap items-center gap-1.5 text-[12px] text-[color:var(--muted-text)]">
-                <span
-                  className={`rounded-md px-2 py-0.5 ${
-                    zassan ? "bg-theme/10 text-brand" : "bg-danger/10 text-danger"
-                  }`}
-                >
-                  {zassan ? "Зассан" : "Устгасан"}: {mur.ajiltniiNer}
-                </span>
-                <span className="rounded-md bg-[color:var(--surface-hover)] px-2 py-0.5 tabular-nums">
-                  {ognooKharuulakh(mur.uildelOgnoo, true)}
-                </span>
-                {mur.bichlegiinOgnoo && (
-                  <span className="rounded-md bg-[color:var(--surface-hover)] px-2 py-0.5 tabular-nums">
-                    Бүртгэсэн: {ognooKharuulakh(mur.bichlegiinOgnoo)}
-                  </span>
-                )}
-              </div>
+          {/* Гарчиг */}
+          <div className="flex items-center justify-between gap-4 border-b border-[color:var(--ctl-border)] px-6 py-4">
+            <div className="text-[15px] font-semibold text-[color:var(--panel-text)]">
+              Дэлгэрэнгүй Мэдээлэл
             </div>
             <button
               type="button"
               onClick={onClose}
               aria-label="Хаах"
-              className="rounded-lg p-1.5 text-[color:var(--muted-text)] transition-colors hover:bg-[color:var(--surface-hover)] hover:text-[color:var(--panel-text)]"
+              className="-mr-2 rounded-lg p-1.5 text-[color:var(--muted-text)] transition-colors hover:bg-[color:var(--surface-hover)] hover:text-[color:var(--panel-text)]"
             >
               <X className="h-4 w-4" />
             </button>
           </div>
 
-          <div className="flex-1 space-y-2 overflow-y-auto px-5 py-4 custom-scrollbar">
-            {zassan && mur.uurchlultuud.length > 0 && (
-              <div className="flex items-center gap-2 pb-1">
-                <span className="shrink-0 text-[12px] text-[color:var(--muted-text)]">
-                  {khailt.trim()
-                    ? `${uurchlultuud.length} / ${mur.uurchlultuud.length} өөрчлөлт`
-                    : `${mur.uurchlultuud.length} өөрчлөлт`}
+          {/* Мэдээлэл: зүүн — юуг, баруун — хэн, хэзээ */}
+          <div className="flex flex-wrap items-start justify-between gap-x-6 gap-y-2 border-b border-[color:var(--ctl-border)] px-6 py-3 text-[13px]">
+            <div className="min-w-0 space-y-1">
+              <div className="flex min-w-0 gap-1.5">
+                <span className="shrink-0 font-semibold text-[color:var(--muted-text)]">Төрөл:</span>
+                <span className="truncate text-[color:var(--panel-text)]">{auditAngilalNer(mur.turul)}</span>
+              </div>
+              <div className="flex min-w-0 gap-1.5">
+                <span className="shrink-0 font-semibold text-[color:var(--muted-text)]">Нэр:</span>
+                <span className="truncate text-brand" title={dedGarchig}>
+                  {dedGarchig || "-"}
                 </span>
-                {mur.uurchlultuud.length > 3 && (
-                  <div className="relative ml-auto w-full max-w-[220px]">
-                    <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[color:var(--muted-text)]" />
-                    <input
-                      value={khailt}
-                      onChange={(e) => setKhailt(e.target.value)}
-                      placeholder="Талбар, утга хайх..."
-                      className="h-8 w-full rounded-xl border border-[color:var(--ctl-border)] bg-[color:var(--surface-hover)] pl-8 pr-3 text-[12px] text-[color:var(--panel-text)] outline-none placeholder:text-[color:var(--muted-text)] focus:border-theme"
-                    />
-                  </div>
-                )}
               </div>
-            )}
-            {!zassan && mur.shaltgaan && (
-              <div className="rounded-xl border border-warning/30 bg-warning/10 px-3.5 py-2.5 text-[13px]">
-                <div className="text-[12px] text-warning">Устгасан шалтгаан</div>
-                <div className="mt-0.5 text-[color:var(--panel-text)] [overflow-wrap:anywhere]">
-                  {mur.shaltgaan}
-                </div>
+            </div>
+            <div className="space-y-1 sm:text-right">
+              <div className="flex gap-1.5 sm:justify-end">
+                <span className="shrink-0 font-semibold text-[color:var(--muted-text)]">
+                  {zassan ? "Зассан" : "Устгасан"} ажилтан:
+                </span>
+                <span className="text-[color:var(--panel-text)]">{mur.ajiltniiNer}</span>
               </div>
-            )}
-
-            {!zassan ? (
-              uurchlultuud.length === 0 ? (
-                <div className="py-10 text-center text-[13px] text-[color:var(--muted-text)]">
-                  Устгасан баримтын мэдээлэл алга
-                </div>
-              ) : (
-                <>
-                  {golMur.length > 0 && (
-                    <div className="overflow-hidden rounded-xl border border-[color:var(--ctl-border)]">
-                      <TalbarJagsaalt jagsaalt={golMur} />
-                    </div>
-                  )}
-                  {busadMur.length > 0 && (
-                    <div className="overflow-hidden rounded-xl border border-[color:var(--ctl-border)]">
-                      <button
-                        type="button"
-                        onClick={() => setBusadNeelttei((v) => !v)}
-                        aria-expanded={busadNeelttei}
-                        className="flex w-full items-center justify-between px-4 py-2.5 text-[13px] text-[color:var(--muted-text)] transition-colors hover:bg-[color:var(--surface-hover)]"
-                      >
-                        <span>Бусад мэдээлэл ({busadMur.length})</span>
-                        <ChevronDown
-                          className={`h-4 w-4 transition-transform ${busadNeelttei ? "rotate-180" : ""}`}
-                        />
-                      </button>
-                      {busadNeelttei && (
-                        <div className="border-t border-[color:var(--ctl-border)]">
-                          <TalbarJagsaalt jagsaalt={busadMur} />
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </>
-              )
-            ) : uurchlultuud.length === 0 ? (
-                <div className="py-10 text-center text-[13px] text-[color:var(--muted-text)]">
-                  {khailt.trim() ? "Хайлтад тохирох өөрчлөлт алга" : "Мэдэгдэхүйц өөрчлөлт алга"}
-                </div>
-              ) : (
-                uurchlultuud.map((c, i) => {
-                  // Тоотууд г.м. жагсаалт: зөвхөн нэмсэн / хассан / өөрчилсөн
-                  const massiv = massiviinUurchlult(c.umnukh, c.shine);
-                  if (massiv) {
-                    const khooson =
-                      massiv.nemsen.length + massiv.khassan.length + massiv.uurchlugdsun.length === 0;
-                    if (khooson) return null;
-                    return (
-                      <div
-                        key={`${c.talbar}-${i}`}
-                        className="min-w-0 space-y-1.5 rounded-xl border border-[color:var(--ctl-border)] px-3.5 py-3"
-                      >
-                        <div className="mb-1 text-[13px] font-medium text-[color:var(--panel-text)]">{c.label}</div>
-                        {massiv.nemsen.map((t, j) => (
-                          <div key={`n${j}`} className="rounded-lg bg-success/10 px-3 py-2 text-[13px] text-success">
-                            <span className="font-medium">Нэмсэн:</span> {t}
-                          </div>
-                        ))}
-                        {massiv.khassan.map((t, j) => (
-                          <div key={`k${j}`} className="rounded-lg bg-danger/10 px-3 py-2 text-[13px] text-danger">
-                            <span className="font-medium">Хассан:</span> {t}
-                          </div>
-                        ))}
-                        {massiv.uurchlugdsun.map((d) => (
-                          <div
-                            key={d.zam + d.label}
-                            className="grid grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)_minmax(0,1fr)] gap-2 rounded-lg bg-[color:var(--surface-hover)] px-3 py-2 text-[12px]"
-                          >
-                            <span className="text-[color:var(--muted-text)] [overflow-wrap:anywhere]">{d.label}</span>
-                            <span className="text-danger"><Utga utga={kharuul(d.umnukh)} /></span>
-                            <span className="text-success"><Utga utga={kharuul(d.shine)} /></span>
-                          </div>
-                        ))}
-                      </div>
-                    );
-                  }
-                  const ded = dedUurchlultuud(c.umnukh, c.shine);
-                  // Утга нь ижил (зөвхөн бүтэц) — өөрчлөгдсөн талбар биш
-                  if (ded && ded.length === 0) return null;
-                  return (
-                    <div
-                      key={`${c.talbar}-${i}`}
-                      className="min-w-0 rounded-xl border border-[color:var(--ctl-border)] px-3.5 py-3"
-                    >
-                      <div className="mb-2 text-[13px] font-medium text-[color:var(--panel-text)]">
-                        {c.label}
-                      </div>
-                      {ded ? (
-                        // Объект/массив: зөвхөн өөрчлөгдсөн дэд талбарууд
-                        (
-                          <div className="overflow-hidden rounded-lg border border-[color:var(--ctl-border)]">
-                            <div className="grid grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)_minmax(0,1fr)] bg-[color:var(--surface-hover)] px-3 py-1.5 text-[11px] text-[color:var(--muted-text)]">
-                              <span>Талбар</span>
-                              <span>Өмнө</span>
-                              <span>Одоо</span>
-                            </div>
-                            {ded.map((d) => (
-                              <div
-                                key={d.zam}
-                                className="grid grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)_minmax(0,1fr)] gap-2 border-t border-[color:var(--ctl-border)] px-3 py-1.5 text-[12px]"
-                              >
-                                <span className="text-[color:var(--muted-text)] [overflow-wrap:anywhere]">{d.label}</span>
-                                <span className="text-danger">
-                                  <Utga utga={kharuul(d.umnukh)} />
-                                </span>
-                                <span className="text-success">
-                                  {zassan ? <Utga utga={kharuul(d.shine)} /> : <Ustsan />}
-                                </span>
-                              </div>
-                            ))}
-                          </div>
-                        )
-                      ) : (
-                        <div className="grid grid-cols-1 items-stretch gap-2 sm:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)]">
-                          <div className="min-w-0 rounded-lg bg-danger/10 px-3 py-2 text-[13px] text-danger">
-                            <Utga utga={kharuul(c.umnukh)} />
-                          </div>
-                          <ArrowRight className="hidden h-4 w-4 self-center text-[color:var(--muted-text)] sm:block" />
-                          <div
-                            className={`min-w-0 rounded-lg px-3 py-2 text-[13px] ${
-                              zassan ? "bg-success/10 text-success" : "bg-[color:var(--surface-hover)]"
-                            }`}
-                          >
-                            {zassan ? <Utga utga={kharuul(c.shine)} /> : <Ustsan />}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  );
-                })
-              )}
-
+              <div className="flex gap-1.5 sm:justify-end">
+                <span className="shrink-0 font-semibold text-[color:var(--muted-text)]">
+                  {zassan ? "Зассан" : "Устгасан"} огноо:
+                </span>
+                <span className="tabular-nums text-[color:var(--panel-text)]">
+                  {ognooKharuulakh(mur.uildelOgnoo, true)}
+                </span>
+              </div>
+            </div>
           </div>
 
-          <div className="flex justify-end border-t border-[color:var(--ctl-border)] px-5 py-3">
+          <div className="flex-1 space-y-4 overflow-y-auto px-6 py-5 custom-scrollbar">
+            {zassan ? (
+              <>
+                {mur.uurchlultuud.length > 3 && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-[12px] text-[color:var(--muted-text)]">
+                      {niitZasvar !== null ? `${niitZasvar} өөрчлөлт` : `${zasvarMuruud.length} илэрц`}
+                    </span>
+                    <div className="relative ml-auto w-full max-w-[220px]">
+                      <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[color:var(--muted-text)]" />
+                      <input
+                        value={khailt}
+                        onChange={(e) => setKhailt(e.target.value)}
+                        placeholder="Талбар, утга хайх..."
+                        className="h-8 w-full rounded-xl border border-[color:var(--ctl-border)] bg-[color:var(--surface-hover)] pl-8 pr-3 text-[12px] text-[color:var(--panel-text)] outline-none placeholder:text-[color:var(--muted-text)] focus:border-theme"
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {zasvarMuruud.length === 0 ? (
+                  <div className="py-10 text-center text-[13px] text-[color:var(--muted-text)]">
+                    {khailt.trim() ? "Хайлтад тохирох өөрчлөлт алга" : "Мэдэгдэхүйц өөрчлөлт алга"}
+                  </div>
+                ) : (
+                  <div className="overflow-hidden rounded-xl border border-[color:var(--ctl-border)]">
+                    <div className="grid grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)_20px_minmax(0,1fr)] gap-3 bg-[color:var(--surface-hover)] px-4 py-2.5 text-[12px] text-[color:var(--muted-text)]">
+                      <span>Талбар</span>
+                      <span>Өмнөх утга</span>
+                      <span />
+                      <span>Шинэ утга</span>
+                    </div>
+                    {zasvarMuruud.map((m) => (
+                      <div
+                        key={m.key}
+                        className="grid grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)_20px_minmax(0,1fr)] items-center gap-3 border-t border-[color:var(--ctl-border)] px-4 py-2 text-[13px]"
+                      >
+                        <div className="min-w-0">
+                          <div className="font-medium text-[color:var(--panel-text)] [overflow-wrap:anywhere]">
+                            {m.talbar}
+                          </div>
+                          {m.kontekst && (
+                            <div className="mt-0.5 text-[11px] text-[color:var(--muted-text)] [overflow-wrap:anywhere]">
+                              {m.kontekst}
+                            </div>
+                          )}
+                        </div>
+                        <div className="min-w-0 rounded-md bg-danger/10 px-2.5 py-1.5 text-danger">
+                          <Utga utga={m.umnukh} />
+                        </div>
+                        <ArrowRight className="h-4 w-4 justify-self-center text-[color:var(--muted-text)]" />
+                        <div className="min-w-0 rounded-md bg-success/10 px-2.5 py-1.5 text-success">
+                          <Utga utga={m.shine} />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {mur.shaltgaan && (
+                  <div>
+                    <div className="mb-1.5 text-[13px] text-[color:var(--muted-text)]">Тайлбар</div>
+                    <div className="rounded-xl bg-[color:var(--surface-hover)] px-4 py-3 text-[13px] text-[color:var(--panel-text)] [overflow-wrap:anywhere]">
+                      {mur.shaltgaan}
+                    </div>
+                  </div>
+                )}
+              </>
+            ) : (
+              <>
+                {mur.shaltgaan && (
+                  <div className="rounded-xl border border-warning/30 bg-warning/10 px-3.5 py-2.5 text-[13px]">
+                    <div className="text-[12px] text-warning">Устгасан шалтгаан</div>
+                    <div className="mt-0.5 text-[color:var(--panel-text)] [overflow-wrap:anywhere]">
+                      {mur.shaltgaan}
+                    </div>
+                  </div>
+                )}
+                {ustgasanTalbaruud.length === 0 ? (
+                  <div className="py-10 text-center text-[13px] text-[color:var(--muted-text)]">
+                    Устгасан баримтын мэдээлэл алга
+                  </div>
+                ) : (
+                  <>
+                    {golMur.length > 0 && (
+                      <div className="overflow-hidden rounded-xl border border-[color:var(--ctl-border)]">
+                        <TalbarJagsaalt jagsaalt={golMur} />
+                      </div>
+                    )}
+                    {busadMur.length > 0 && (
+                      <div className="overflow-hidden rounded-xl border border-[color:var(--ctl-border)]">
+                        <button
+                          type="button"
+                          onClick={() => setBusadNeelttei((v) => !v)}
+                          aria-expanded={busadNeelttei}
+                          className="flex w-full items-center justify-between px-4 py-2.5 text-[13px] text-[color:var(--muted-text)] transition-colors hover:bg-[color:var(--surface-hover)]"
+                        >
+                          <span>Бусад мэдээлэл ({busadMur.length})</span>
+                          <ChevronDown
+                            className={`h-4 w-4 transition-transform ${busadNeelttei ? "rotate-180" : ""}`}
+                          />
+                        </button>
+                        {busadNeelttei && (
+                          <div className="border-t border-[color:var(--ctl-border)]">
+                            <TalbarJagsaalt jagsaalt={busadMur} />
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </>
+                )}
+              </>
+            )}
+          </div>
+
+          <div className="flex justify-end border-t border-[color:var(--ctl-border)] px-6 py-3">
             <button
               type="button"
               onClick={onClose}
-              className="btn-minimal inline-flex h-9 items-center !px-4 text-[13px]"
+              className="btn-minimal inline-flex h-9 items-center !px-5 text-[13px]"
             >
               Хаах
             </button>
