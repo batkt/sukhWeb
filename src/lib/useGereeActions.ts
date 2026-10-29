@@ -2642,6 +2642,7 @@ export function useGereeActions(
               tsahilgaaniiZaalt: t.tsahilgaaniiZaalt || 0,
               khonogoorBodokhEsekh: t.khonogoorBodokhEsekh || false,
               bodokhKhonog: t.bodokhKhonog || 0,
+              avlagaUusekhUdur: t.avlagaUusekhUdur || null,
               burtguulsenOgnoo: t.burtguulsenOgnoo ? String(t.burtguulsenOgnoo).slice(0, 10) : "",
               avlagaUusekhOgnoo: t.avlagaUusekhOgnoo ? String(t.avlagaUusekhOgnoo).slice(0, 10) : "",
             }))
