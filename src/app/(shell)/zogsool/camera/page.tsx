@@ -336,6 +336,51 @@ export default function Camera() {
   const [dateRange, setDateRange] = useState<
     [string | null, string | null] | undefined
   >(() => { const today = moment().format("YYYY-MM-DD"); return [today, today]; });
+  const isCustomDateRef = useRef(false);
+  const lastDateRef = useRef(moment().format("YYYY-MM-DD"));
+
+  // 24/7 кассын дэлгэц: 00:00 цаг өнгөрөхөд дараагийн өдөр рүү автоматаар шилжүүлэх
+  useEffect(() => {
+    const checkDateTransition = () => {
+      const today = moment().format("YYYY-MM-DD");
+      if (today !== lastDateRef.current) {
+        const prevDay = lastDateRef.current;
+        lastDateRef.current = today;
+
+        setDateRange((currentRange) => {
+          // Хэрэв хэрэглэгч өмнөх өдрийг (тухайн үеийн өнөөдөр) харж байсан бол,
+          // эсвэл гараар түүхэн өөр өдөр сонгоогүй бол автоматаар шинэ өдөр рүү шилжүүлнэ
+          const isViewingPrevDay =
+            !currentRange ||
+            (currentRange[0] === prevDay && currentRange[1] === prevDay);
+
+          if (!isCustomDateRef.current || isViewingPrevDay) {
+            isCustomDateRef.current = false;
+            return [today, today];
+          }
+          return currentRange;
+        });
+      }
+    };
+
+    // 10 секунд тутамд огноо солигдсон эсэхийг шалгана
+    const interval = setInterval(checkDateTransition, 10000);
+
+    // Дэлгэц унтсан/таб идэвхгүй байж байгаад сэрэх үед шууд шалгах
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        checkDateTransition();
+      }
+    };
+    window.addEventListener("focus", checkDateTransition);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener("focus", checkDateTransition);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, []);
 
   const { start: rangeStart, end: rangeEnd } = useMemo(() => {
     const today = moment().format("YYYY-MM-DD");
@@ -2463,6 +2508,12 @@ export default function Camera() {
               <FilterDatePicker
                 value={dateRange}
                 onChange={(_: any, dateStrings: [string, string]) => {
+                  const today = moment().format("YYYY-MM-DD");
+                  const isToday =
+                    Array.isArray(dateStrings) &&
+                    dateStrings[0] === today &&
+                    dateStrings[1] === today;
+                  isCustomDateRef.current = !isToday;
                   setDateRange(dateStrings);
                   setPage(1);
                 }}
