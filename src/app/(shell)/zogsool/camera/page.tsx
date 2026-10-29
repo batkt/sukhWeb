@@ -159,7 +159,8 @@ function khungulultTurulEsekh(turul: any): boolean {
   );
 }
 
-function tulburuudiigTsugluulya(transaction: any): any[] {
+function tulburuudiigTsugluulya(rawTransaction: any): any[] {
+  const transaction = rawTransaction?._doc ? { ...rawTransaction._doc, ...rawTransaction } : rawTransaction;
   const payHistory: any[] = (transaction?.tuukh || []).flatMap((th: any) => {
     const raw = th?.tulbur;
     if (Array.isArray(raw)) return raw;
@@ -176,7 +177,8 @@ function tulburuudiigTsugluulya(transaction: any): any[] {
  * тооцогддог байсан; багана бүр тусдаа render-тэй болсон тул нийтлэг
  * функц болгов.
  */
-function murNiiluulye(transaction: any) {
+function murNiiluulye(rawTransaction: any) {
+  const transaction = rawTransaction?._doc ? { ...rawTransaction._doc, ...rawTransaction } : rawTransaction;
   const mur = transaction?.tuukh?.[0];
   const tsag = mur?.tsagiinTuukh?.[0];
   const orsonTsag = tsag?.orsonTsag;
@@ -890,11 +892,13 @@ export default function Camera() {
 
     // Merge list and liveUpdates
     const allTxMap = new Map<string, Uilchluulegch>();
-    list.forEach((item, index) => {
+    list.forEach((rawItem, index) => {
+      const item = rawItem?._doc ? { ...rawItem._doc, ...rawItem } : rawItem;
       const key = item._id || `list_${index}_${item.mashiniiDugaar || "unknown"}`;
       allTxMap.set(key, item);
     });
-    Object.values(liveUpdates).forEach((update: any) => {
+    Object.values(liveUpdates).forEach((rawUpdate: any) => {
+      const update = rawUpdate?._doc ? { ...rawUpdate._doc, ...rawUpdate } : rawUpdate;
       const key = update._id || update.mashiniiDugaar;
       if (key) allTxMap.set(key, update);
     });
@@ -1372,7 +1376,8 @@ export default function Camera() {
     });
 
     // First pass of liveUpdates to identify more real IDs
-    Object.values(liveUpdates).forEach((update: any) => {
+    Object.values(liveUpdates).forEach((rawUpdate: any) => {
+      const update = rawUpdate?._doc ? { ...rawUpdate._doc, ...rawUpdate } : rawUpdate;
       if (update._id && update._id !== update.mashiniiDugaar) {
         platesWithRealId.add(update.mashiniiDugaar);
       }
@@ -1384,7 +1389,8 @@ export default function Camera() {
     const isTodayInRange = !rangeStart || !rangeEnd || (rangeStart <= today && today <= rangeEnd);
 
     if (isTodayInRange || !!searchTerm?.trim()) {
-      Object.values(liveUpdates).forEach((update: any) => {
+      Object.values(liveUpdates).forEach((rawUpdate: any) => {
+      const update = rawUpdate?._doc ? { ...rawUpdate._doc, ...rawUpdate } : rawUpdate;
         // If synthetic (id == plate) and we have a real record for this plate, skip the synthetic one
         if (
           update._id === update.mashiniiDugaar &&

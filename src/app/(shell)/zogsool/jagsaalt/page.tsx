@@ -193,9 +193,10 @@ interface Vehicle {
  * Өмнө нь энэ шүүлт нүд бүрт давхардаж бичигдсэн байв.
  */
 function tulburTuukhAvya(
-  transaction: any,
+  rawTransaction: any,
   turul: "tulult" | "khungulult",
 ): any[] {
+  const transaction = rawTransaction?._doc ? { ...rawTransaction._doc, ...rawTransaction } : rawTransaction;
   const payHistory: any[] = (transaction?.tuukh || []).flatMap((th: any) => {
     const raw = th?.tulbur;
     if (Array.isArray(raw)) return raw;
@@ -215,7 +216,8 @@ function tulburTuukhAvya(
 }
 
 /** Мөрийн төлвийг нэг дор бодно (өмнө нь <tr> дотор тооцогддог байв). */
-function murNiiluulye(transaction: any) {
+function murNiiluulye(rawTransaction: any) {
+  const transaction = rawTransaction?._doc ? { ...rawTransaction._doc, ...rawTransaction } : rawTransaction;
   const mur = transaction?.tuukh?.[0];
   const tsag = mur?.tsagiinTuukh?.[0];
   const orsonTsag = tsag?.orsonTsag;
@@ -290,7 +292,8 @@ function murNiiluulye(transaction: any) {
 }
 
 /** Машины төрлийг тодорхойлох helper */
-function getVehicleType(transaction: any): string {
+function getVehicleType(rawTransaction: any): string {
+  const transaction = rawTransaction?._doc ? { ...rawTransaction._doc, ...rawTransaction } : rawTransaction;
   const mur = transaction?.tuukh?.[0];
   const typeValue =
     transaction?.turul ||
@@ -521,7 +524,8 @@ export default function Jagsaalt() {
   const vehicles: Vehicle[] = useMemo(() => {
     const list = vehiclesData?.jagsaalt || [];
     // Normalize: ensure turul is populated at root level from mashin object
-    return list.map((v: any) => {
+    return list.map((raw: any) => {
+      const v = raw?._doc ? { ...raw._doc, ...raw } : raw;
       const mashin = v.mashin;
       const hasResidentData = mashin?.ezenToot || mashin?.orshinSuugchiinId || mashin?.ezemshigchiinNer;
       const mashinTurul = mashin?.turul;
