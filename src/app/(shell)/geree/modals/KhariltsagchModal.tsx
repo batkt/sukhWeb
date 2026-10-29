@@ -8,7 +8,11 @@ import TusgaiZagvar from "../../../../../components/selectZagvar/tusgaiZagvar";
 import { openErrorOverlay } from "@/components/ui/ErrorOverlay";
 import { ConfirmCloseDialog } from "@/components/ui/ConfirmCloseDialog";
 import Button from "@/components/ui/Button";
-import AvlagaUusekhOgnoo, { ognooKhevshuulekh } from "./AvlagaUusekhOgnoo";
+import AvlagaUusekhOgnoo, {
+  avlagiinKhonogTootsoolokh,
+  ognooKhevshuulekh,
+  unuudur,
+} from "./AvlagaUusekhOgnoo";
 import {
   Plus,
   Minus,
@@ -563,13 +567,12 @@ export default function KhariltsagchModal({
       return n;
     });
   };
-  const patchMainUnit = (index: number, patch: Record<string, any>) => {
-    setMainUnits((prev) => {
-      const n = [...prev];
-      n[index] = { ...n[index], ...patch };
-      return n;
-    });
-  };
+  // Харилцагчийн «Авлага үүсэх огноо» — бүх тоотод нэг адил. Хэрэглэгч энэ
+  // удаад өөрчилсөн үед л эхний сарын хоногийг шинээр тооцно; эс бөгөөс
+  // нэгэнт нэхэмжлэгдсэн харилцагчийг дахин хадгалахад хоногоор бодох нь
+  // дахин асчихна.
+  const [avlagaOgnoo, setAvlagaOgnoo] = React.useState("");
+  const [avlagaOgnooSolison, setAvlagaOgnooSolison] = React.useState(false);
 
   // Garage helpers
   const addGarage = () => {
@@ -676,6 +679,8 @@ export default function KhariltsagchModal({
       const allStorages = units.filter((u: any) => negjiinTurul(u) === "Агуулах");
 
       setMainUnits(allMains.map((m: any) => ({ ...m, orts: m.orts || "1", turul: m.turul || "Тоот" })));
+      setAvlagaOgnoo(ognooKhevshuulekh(allMains[0]?.avlagaUusekhOgnoo));
+      setAvlagaOgnooSolison(false);
       setGarages(allGarages.map((g: any) => ({ ...g })));
       setStorages(allStorages.map((s: any) => ({ ...s })));
 
@@ -729,10 +734,22 @@ export default function KhariltsagchModal({
         ...kholboos(m),
         ekhniiUldegdel: Number(m.ekhniiUldegdel || 0),
         tsahilgaaniiZaalt: Number(m.tsahilgaaniiZaalt || 0),
-        khonogoorBodokhEsekh: !!m.khonogoorBodokhEsekh,
-        bodokhKhonog: Number(m.bodokhKhonog || 0),
-        burtguulsenOgnoo: m.khonogoorBodokhEsekh ? ognooKhevshuulekh(m.burtguulsenOgnoo) : "",
-        avlagaUusekhOgnoo: m.khonogoorBodokhEsekh ? ognooKhevshuulekh(m.avlagaUusekhOgnoo) : "",
+        ...(avlagaOgnooSolison
+          ? (() => {
+              const khonog = avlagiinKhonogTootsoolokh(unuudur(), avlagaOgnoo);
+              return {
+                khonogoorBodokhEsekh: khonog > 0,
+                bodokhKhonog: khonog,
+                burtguulsenOgnoo: avlagaOgnoo ? unuudur() : "",
+                avlagaUusekhOgnoo: avlagaOgnoo,
+              };
+            })()
+          : {
+              khonogoorBodokhEsekh: !!m.khonogoorBodokhEsekh,
+              bodokhKhonog: Number(m.bodokhKhonog || 0),
+              burtguulsenOgnoo: ognooKhevshuulekh(m.burtguulsenOgnoo),
+              avlagaUusekhOgnoo: ognooKhevshuulekh(m.avlagaUusekhOgnoo),
+            }),
       });
     });
     garages.forEach((g: any) => {
@@ -767,7 +784,7 @@ export default function KhariltsagchModal({
         bodokhKhonog: primary.bodokhKhonog || 0,
       };
     });
-  }, [mainUnits, garages, storages, show]);
+  }, [mainUnits, garages, storages, show, avlagaOgnoo, avlagaOgnooSolison]);
 
   const additionalFloors = React.useMemo(() => {
     const filtered = davkharOptions.filter((d) => /^B\d+$/i.test(d));
@@ -1587,8 +1604,7 @@ export default function KhariltsagchModal({
                                     }))
                                 : [];
                               return (
-                                <div key={`main-${mIdx}`}>
-                                <div className="flex flex-wrap items-center gap-2 sm:flex-nowrap">
+                                <div key={`main-${mIdx}`} className="flex flex-wrap items-center gap-2 sm:flex-nowrap">
                                   <div className="tusgai-wrapper flex min-w-[90px] flex-1 items-center">
                                     <TusgaiZagvar
                                       value={mUnit.orts || "1"}
@@ -1626,13 +1642,6 @@ export default function KhariltsagchModal({
                                   >
                                     <X className="h-4 w-4" />
                                   </button>
-                                </div>
-                                <AvlagaUusekhOgnoo
-                                  unit={mUnit}
-                                  enabled={!!selectedBarilga?.tokhirgoo?.bodokhArgaEnabled}
-                                  onChange={(patch) => patchMainUnit(mIdx, patch)}
-                                  popupContainer={() => residentRef.current || document.body}
-                                />
                                 </div>
                               );
                             })}
@@ -1844,6 +1853,15 @@ export default function KhariltsagchModal({
                         <span className="flex-1">Ашиглалтын зардал бүртгэх</span>
                         <ChevronRight className="h-4 w-4 text-[color:var(--muted-text)]" />
                       </button>
+
+                      <AvlagaUusekhOgnoo
+                        value={avlagaOgnoo}
+                        onChange={(val) => {
+                          setAvlagaOgnoo(val);
+                          setAvlagaOgnooSolison(true);
+                        }}
+                        popupContainer={() => residentRef.current || document.body}
+                      />
 
                       <div className="flex items-center justify-between pt-1">
                         <h4 className="text-sm font-semibold text-[color:var(--panel-text)]">

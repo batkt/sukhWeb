@@ -2,10 +2,14 @@
 
 import React from "react";
 import dayjs from "dayjs";
+import { CalendarClock } from "lucide-react";
 import StandardDatePicker from "@/components/ui/StandardDatePicker";
 
+/** Өнөөдрийн огноо "YYYY-MM-DD" — бүртгүүлсэн өдөр гэж тооцно. */
+export const unuudur = () => dayjs().format("YYYY-MM-DD");
+
 /**
- * Бүртгүүлсэн огноо → авлага үүсэх огноо хоорондох хоног.
+ * Бүртгүүлсэн өдрөөс авлага үүсэх огноо хүртэлх хоног.
  * Жнь: 27-нд бүртгүүлж, 30-нд авлага үүсэх бол 3 хоног.
  */
 export function avlagiinKhonogTootsoolokh(
@@ -24,117 +28,43 @@ export const ognooKhevshuulekh = (v: any): string =>
   v ? String(v).slice(0, 10) : "";
 
 type Props = {
-  unit: any;
-  /** Тоотын мөрийн талбаруудыг нэг дор шинэчилнэ. */
-  onChange: (patch: Record<string, any>) => void;
-  /** Барилгын тохиргоонд хоногоор бодох нээлттэй эсэх. */
-  enabled: boolean;
+  value: string;
+  onChange: (val: string) => void;
   popupContainer?: () => HTMLElement;
 };
 
 /**
- * Тоот бүр дээрх «Авлага үүсэх огноо». Хоёр огноог оруулахад эхний сарын
- * бодох хоногийг (`bodokhKhonog`) автоматаар тооцно — эхний нэхэмжлэх
- * тэр хоногоор бодогдоно.
+ * Харилцагчийн «Авлага үүсэх огноо». Өнөөдрөөс (бүртгүүлсэн өдөр) энэ
+ * огноо хүртэлх хоногоор эхний сарын авлага бодогдоно.
  */
-export default function AvlagaUusekhOgnoo({
-  unit,
-  onChange,
-  enabled,
-  popupContainer,
-}: Props) {
-  const idevkhtei = !!unit?.khonogoorBodokhEsekh;
-  const burtguulsen = ognooKhevshuulekh(unit?.burtguulsenOgnoo);
-  const avlaga = ognooKhevshuulekh(unit?.avlagaUusekhOgnoo);
-  const khonog = avlagiinKhonogTootsoolokh(burtguulsen, avlaga);
-  const buruu = !!burtguulsen && !!avlaga && khonog <= 0;
-
-  const ognooSolikh = (field: "burtguulsenOgnoo" | "avlagaUusekhOgnoo", val: string) => {
-    const daraa = {
-      burtguulsenOgnoo: burtguulsen,
-      avlagaUusekhOgnoo: avlaga,
-      [field]: val || "",
-    };
-    onChange({
-      [field]: val || "",
-      bodokhKhonog: avlagiinKhonogTootsoolokh(
-        daraa.burtguulsenOgnoo,
-        daraa.avlagaUusekhOgnoo,
-      ),
-    });
-  };
-
-  const toggle = (checked: boolean) => {
-    if (checked) {
-      onChange({
-        khonogoorBodokhEsekh: true,
-        burtguulsenOgnoo: burtguulsen || dayjs().format("YYYY-MM-DD"),
-      });
-    } else {
-      onChange({
-        khonogoorBodokhEsekh: false,
-        bodokhKhonog: 0,
-        burtguulsenOgnoo: "",
-        avlagaUusekhOgnoo: "",
-      });
-    }
-  };
+export default function AvlagaUusekhOgnoo({ value, onChange, popupContainer }: Props) {
+  const khonog = avlagiinKhonogTootsoolokh(unuudur(), value);
 
   return (
-    <div className="flex flex-wrap items-center gap-3 pt-1">
-      <label
-        className={`relative inline-flex items-center ${enabled ? "cursor-pointer" : "cursor-not-allowed opacity-50"} scale-75`}
-        title={enabled ? undefined : "Барилгын тохиргоонд хоногоор бодохыг идэвхжүүлнэ үү"}
-      >
-        <input
-          type="checkbox"
-          checked={idevkhtei}
-          disabled={!enabled}
-          onChange={(e) => toggle(e.target.checked)}
-          className="sr-only peer"
-        />
-        <div className="w-11 h-6 bg-[color:var(--panel)] peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-theme rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-[color:var(--surface-bg)] after:border-[color:var(--surface-border)] after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-theme"></div>
-      </label>
-      <span className="text-[11px] font-medium text-[color:var(--muted-text)]">
-        Авлага үүсэх огноо
-      </span>
-      {idevkhtei && (
-        <div className="flex flex-wrap items-center gap-2 animate-in fade-in slide-in-from-left-2 duration-200">
-          <div className="flex items-center gap-1">
-            <span className="text-[11px] text-[color:var(--muted-text)]">Бүртгүүлсэн</span>
-            <div className="h-7 w-[130px]">
-              <StandardDatePicker
-                value={burtguulsen || null}
-                onChange={(_d, s) => ognooSolikh("burtguulsenOgnoo", s)}
-                placeholder="Огноо"
-                getPopupContainer={popupContainer}
-                popupStyle={{ zIndex: 13010 }}
-              />
-            </div>
-          </div>
-          <div className="flex items-center gap-1">
-            <span className="text-[11px] text-[color:var(--muted-text)]">Авлага үүсэх</span>
-            <div className="h-7 w-[130px]">
-              <StandardDatePicker
-                value={avlaga || null}
-                onChange={(_d, s) => ognooSolikh("avlagaUusekhOgnoo", s)}
-                placeholder="Огноо"
-                className={buruu ? "border-danger" : ""}
-                getPopupContainer={popupContainer}
-                popupStyle={{ zIndex: 13010 }}
-              />
-            </div>
-          </div>
-          <span
-            className={`text-[11px] font-medium ${buruu ? "text-danger" : "text-[color:var(--panel-text)]"}`}
-          >
-            {buruu
-              ? "Авлага үүсэх огноо бүртгүүлсэн огнооноос хойш байх ёстой"
-              : khonog > 0
-                ? `Эхний сар: ${khonog} хоногоор бодно`
-                : ""}
-          </span>
+    <div className="rounded-xl border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] px-4 py-3">
+      <div className="flex items-center gap-3">
+        <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-theme/10 text-brand">
+          <CalendarClock className="h-5 w-5" />
+        </span>
+        <span className="flex-1 text-sm font-medium text-[color:var(--panel-text)]">
+          Авлага үүсэх огноо
+        </span>
+        <div className="h-9 w-[150px]">
+          <StandardDatePicker
+            value={value || null}
+            onChange={(_d, s) => onChange(s || "")}
+            placeholder="Огноо"
+            allowClear
+            disabledDate={(d) => !!d && d.isBefore(dayjs(), "day")}
+            getPopupContainer={popupContainer}
+            popupStyle={{ zIndex: 13010 }}
+          />
         </div>
+      </div>
+      {khonog > 0 && (
+        <p className="mt-2 text-xs text-[color:var(--muted-text)]">
+          Эхний сарын авлага <span className="font-semibold text-[color:var(--panel-text)]">{khonog} хоногоор</span> бодогдоно.
+        </p>
       )}
     </div>
   );
