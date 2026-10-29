@@ -3,42 +3,58 @@
 import React from "react";
 import dayjs from "dayjs";
 import { CalendarClock } from "lucide-react";
-import StandardDatePicker from "@/components/ui/StandardDatePicker";
+import TusgaiZagvar from "../../../../../components/selectZagvar/tusgaiZagvar";
 
 /** Өнөөдрийн огноо "YYYY-MM-DD" — бүртгүүлсэн өдөр гэж тооцно. */
 export const unuudur = () => dayjs().format("YYYY-MM-DD");
-
-/**
- * Бүртгүүлсэн өдрөөс авлага үүсэх огноо хүртэлх хоног.
- * Жнь: 27-нд бүртгүүлж, 30-нд авлага үүсэх бол 3 хоног.
- */
-export function avlagiinKhonogTootsoolokh(
-  burtguulsenOgnoo?: string | null,
-  avlagaUusekhOgnoo?: string | null,
-): number {
-  if (!burtguulsenOgnoo || !avlagaUusekhOgnoo) return 0;
-  const ekh = dayjs(String(burtguulsenOgnoo).slice(0, 10));
-  const tugsgul = dayjs(String(avlagaUusekhOgnoo).slice(0, 10));
-  if (!ekh.isValid() || !tugsgul.isValid()) return 0;
-  return Math.max(0, tugsgul.diff(ekh, "day"));
-}
 
 /** Баазаас ирсэн ISO огноог "YYYY-MM-DD" болгоно. */
 export const ognooKhevshuulekh = (v: any): string =>
   v ? String(v).slice(0, 10) : "";
 
+/**
+ * Сар бүрийн авлага үүсэх өдрөөр (1–31) өнөөдрөөс хойшхи анхны авлагын
+ * огноог олно. Тухайн өдөр сардаа байхгүй бол (жнь 31) сарын сүүлийн өдөр.
+ * Өнөөдөр яг тэр өдөр бол null — хоногоор бодох шаардлагагүй.
+ */
+export function avlagiinOgnooOlokh(udur: number, ekhlel = dayjs()): dayjs.Dayjs | null {
+  if (!udur || udur < 1 || udur > 31) return null;
+  const unuu = ekhlel.startOf("day");
+  const saraar = (m: dayjs.Dayjs) => m.date(Math.min(udur, m.daysInMonth()));
+  let ognoo = saraar(unuu.startOf("month"));
+  if (ognoo.isSame(unuu, "day")) return null;
+  if (ognoo.isBefore(unuu, "day")) ognoo = saraar(unuu.add(1, "month").startOf("month"));
+  return ognoo;
+}
+
+/** Өнөөдрөөс авлага үүсэх өдөр хүртэлх хоног. Жнь: 27-нд бүртгүүлж, 30 сонговол 3. */
+export function avlagiinKhonogTootsoolokh(udur: number): number {
+  const ognoo = avlagiinOgnooOlokh(udur);
+  return ognoo ? ognoo.diff(dayjs().startOf("day"), "day") : 0;
+}
+
+const udruud = [
+  { value: "", label: "Сонгоогүй" },
+  ...Array.from({ length: 31 }, (_, i) => ({
+    value: String(i + 1),
+    label: `${i + 1}`,
+  })),
+];
+
 type Props = {
+  /** Сар бүрийн өдөр "1"–"31", хоосон бол сонгоогүй. */
   value: string;
   onChange: (val: string) => void;
-  popupContainer?: () => HTMLElement;
 };
 
 /**
- * Харилцагчийн «Авлага үүсэх огноо». Өнөөдрөөс (бүртгүүлсэн өдөр) энэ
- * огноо хүртэлх хоногоор эхний сарын авлага бодогдоно.
+ * Харилцагчийн «Авлага үүсгэх огноо сар бүрийн / өдөр». Өнөөдрөөс (бүртгүүлсэн
+ * өдөр) тэр өдөр хүртэлх хоногоор эхний сарын авлага бодогдоно.
  */
-export default function AvlagaUusekhOgnoo({ value, onChange, popupContainer }: Props) {
-  const khonog = avlagiinKhonogTootsoolokh(unuudur(), value);
+export default function AvlagaUusekhOgnoo({ value, onChange }: Props) {
+  const udur = Number(value) || 0;
+  const khonog = avlagiinKhonogTootsoolokh(udur);
+  const ognoo = avlagiinOgnooOlokh(udur);
 
   return (
     <div className="rounded-xl border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] px-4 py-3">
@@ -47,23 +63,25 @@ export default function AvlagaUusekhOgnoo({ value, onChange, popupContainer }: P
           <CalendarClock className="h-5 w-5" />
         </span>
         <span className="flex-1 text-sm font-medium text-[color:var(--panel-text)]">
-          Авлага үүсэх огноо
+          Авлага үүсгэх огноо
+          <span className="block text-xs font-normal text-[color:var(--muted-text)]">
+            Сар бүрийн / өдөр
+          </span>
         </span>
-        <div className="h-9 w-[150px]">
-          <StandardDatePicker
-            value={value || null}
-            onChange={(_d, s) => onChange(s || "")}
-            placeholder="Огноо"
-            allowClear
-            disabledDate={(d) => !!d && d.isBefore(dayjs(), "day")}
-            getPopupContainer={popupContainer}
-            popupStyle={{ zIndex: 13010 }}
+        <div className="tusgai-wrapper h-9 w-[120px]">
+          <TusgaiZagvar
+            value={value || ""}
+            onChange={onChange}
+            options={udruud}
+            className="h-full w-full"
+            placeholder="Өдөр"
           />
         </div>
       </div>
-      {khonog > 0 && (
+      {khonog > 0 && ognoo && (
         <p className="mt-2 text-xs text-[color:var(--muted-text)]">
-          Эхний сарын авлага <span className="font-semibold text-[color:var(--panel-text)]">{khonog} хоногоор</span> бодогдоно.
+          Эхний авлага {ognoo.format("YYYY-MM-DD")}-нд үүснэ —{" "}
+          <span className="font-semibold text-[color:var(--panel-text)]">{khonog} хоногоор</span> бодогдоно.
         </p>
       )}
     </div>

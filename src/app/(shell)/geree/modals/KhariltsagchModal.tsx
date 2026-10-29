@@ -10,6 +10,7 @@ import { ConfirmCloseDialog } from "@/components/ui/ConfirmCloseDialog";
 import Button from "@/components/ui/Button";
 import AvlagaUusekhOgnoo, {
   avlagiinKhonogTootsoolokh,
+  avlagiinOgnooOlokh,
   ognooKhevshuulekh,
   unuudur,
 } from "./AvlagaUusekhOgnoo";
@@ -502,6 +503,7 @@ export default function KhariltsagchModal({
                   tsahilgaaniiZaalt: t.tsahilgaaniiZaalt || 0,
                   khonogoorBodokhEsekh: t.khonogoorBodokhEsekh || false,
                   bodokhKhonog: t.bodokhKhonog || 0,
+                  avlagaUusekhUdur: t.avlagaUusekhUdur || null,
                   burtguulsenOgnoo: ognooKhevshuulekh(t.burtguulsenOgnoo),
                   avlagaUusekhOgnoo: ognooKhevshuulekh(t.avlagaUusekhOgnoo),
                 }))
@@ -679,7 +681,9 @@ export default function KhariltsagchModal({
       const allStorages = units.filter((u: any) => negjiinTurul(u) === "Агуулах");
 
       setMainUnits(allMains.map((m: any) => ({ ...m, orts: m.orts || "1", turul: m.turul || "Тоот" })));
-      setAvlagaOgnoo(ognooKhevshuulekh(allMains[0]?.avlagaUusekhOgnoo));
+      setAvlagaOgnoo(
+        allMains[0]?.avlagaUusekhUdur ? String(allMains[0].avlagaUusekhUdur) : "",
+      );
       setAvlagaOgnooSolison(false);
       setGarages(allGarages.map((g: any) => ({ ...g })));
       setStorages(allStorages.map((s: any) => ({ ...s })));
@@ -736,17 +740,21 @@ export default function KhariltsagchModal({
         tsahilgaaniiZaalt: Number(m.tsahilgaaniiZaalt || 0),
         ...(avlagaOgnooSolison
           ? (() => {
-              const khonog = avlagiinKhonogTootsoolokh(unuudur(), avlagaOgnoo);
+              const udur = Number(avlagaOgnoo) || 0;
+              const khonog = avlagiinKhonogTootsoolokh(udur);
+              const ognoo = avlagiinOgnooOlokh(udur);
               return {
                 khonogoorBodokhEsekh: khonog > 0,
                 bodokhKhonog: khonog,
-                burtguulsenOgnoo: avlagaOgnoo ? unuudur() : "",
-                avlagaUusekhOgnoo: avlagaOgnoo,
+                avlagaUusekhUdur: udur || null,
+                burtguulsenOgnoo: udur ? unuudur() : "",
+                avlagaUusekhOgnoo: ognoo ? ognoo.format("YYYY-MM-DD") : "",
               };
             })()
           : {
               khonogoorBodokhEsekh: !!m.khonogoorBodokhEsekh,
               bodokhKhonog: Number(m.bodokhKhonog || 0),
+              avlagaUusekhUdur: Number(m.avlagaUusekhUdur) || null,
               burtguulsenOgnoo: ognooKhevshuulekh(m.burtguulsenOgnoo),
               avlagaUusekhOgnoo: ognooKhevshuulekh(m.avlagaUusekhOgnoo),
             }),
@@ -1860,7 +1868,6 @@ export default function KhariltsagchModal({
                           setAvlagaOgnoo(val);
                           setAvlagaOgnooSolison(true);
                         }}
-                        popupContainer={() => residentRef.current || document.body}
                       />
 
                       <div className="flex items-center justify-between pt-1">
