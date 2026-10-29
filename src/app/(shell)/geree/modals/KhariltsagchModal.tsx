@@ -8,6 +8,7 @@ import TusgaiZagvar from "../../../../../components/selectZagvar/tusgaiZagvar";
 import { openErrorOverlay } from "@/components/ui/ErrorOverlay";
 import { ConfirmCloseDialog } from "@/components/ui/ConfirmCloseDialog";
 import Button from "@/components/ui/Button";
+import AvlagaUusekhOgnoo, { ognooKhevshuulekh } from "./AvlagaUusekhOgnoo";
 import {
   Plus,
   Minus,
@@ -497,6 +498,8 @@ export default function KhariltsagchModal({
                   tsahilgaaniiZaalt: t.tsahilgaaniiZaalt || 0,
                   khonogoorBodokhEsekh: t.khonogoorBodokhEsekh || false,
                   bodokhKhonog: t.bodokhKhonog || 0,
+                  burtguulsenOgnoo: ognooKhevshuulekh(t.burtguulsenOgnoo),
+                  avlagaUusekhOgnoo: ognooKhevshuulekh(t.avlagaUusekhOgnoo),
                 }))
               : p.units,
         }));
@@ -557,6 +560,13 @@ export default function KhariltsagchModal({
     setMainUnits((prev) => {
       const n = [...prev];
       n[index] = { ...n[index], [field]: value };
+      return n;
+    });
+  };
+  const patchMainUnit = (index: number, patch: Record<string, any>) => {
+    setMainUnits((prev) => {
+      const n = [...prev];
+      n[index] = { ...n[index], ...patch };
       return n;
     });
   };
@@ -721,6 +731,8 @@ export default function KhariltsagchModal({
         tsahilgaaniiZaalt: Number(m.tsahilgaaniiZaalt || 0),
         khonogoorBodokhEsekh: !!m.khonogoorBodokhEsekh,
         bodokhKhonog: Number(m.bodokhKhonog || 0),
+        burtguulsenOgnoo: m.khonogoorBodokhEsekh ? ognooKhevshuulekh(m.burtguulsenOgnoo) : "",
+        avlagaUusekhOgnoo: m.khonogoorBodokhEsekh ? ognooKhevshuulekh(m.avlagaUusekhOgnoo) : "",
       });
     });
     garages.forEach((g: any) => {
@@ -1575,7 +1587,8 @@ export default function KhariltsagchModal({
                                     }))
                                 : [];
                               return (
-                                <div key={`main-${mIdx}`} className="flex flex-wrap items-center gap-2 sm:flex-nowrap">
+                                <div key={`main-${mIdx}`}>
+                                <div className="flex flex-wrap items-center gap-2 sm:flex-nowrap">
                                   <div className="tusgai-wrapper flex min-w-[90px] flex-1 items-center">
                                     <TusgaiZagvar
                                       value={mUnit.orts || "1"}
@@ -1613,6 +1626,13 @@ export default function KhariltsagchModal({
                                   >
                                     <X className="h-4 w-4" />
                                   </button>
+                                </div>
+                                <AvlagaUusekhOgnoo
+                                  unit={mUnit}
+                                  enabled={!!selectedBarilga?.tokhirgoo?.bodokhArgaEnabled}
+                                  onChange={(patch) => patchMainUnit(mIdx, patch)}
+                                  popupContainer={() => residentRef.current || document.body}
+                                />
                                 </div>
                               );
                             })}
