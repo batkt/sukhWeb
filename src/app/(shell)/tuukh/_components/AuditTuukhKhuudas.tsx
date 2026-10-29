@@ -11,11 +11,18 @@ import FilterSelect from "@/components/ui/FilterSelect";
 import PermissionGuard from "@/components/PermissionGuard";
 import uilchilgee from "@/lib/uilchilgee";
 import { useAuth } from "@/lib/useAuth";
-import { auditAngilalNer, auditServerModel, useAuditTurluud } from "@/lib/auditTurluud";
+import {
+  ZASSAN_KHASAKH_MODEL,
+  auditAngilalNer,
+  auditServerModel,
+  useAuditTurluud,
+} from "@/lib/auditTurluud";
 import TuukhModal from "./TuukhModal";
 import {
   type AuditMur,
   type TuukhTurul,
+  ZASVAR_ANGILAL_NER,
+  angilalaarSalgakh,
   murKhailtTekst,
   murKhevjuulekh,
   ognooKharuulakh,
@@ -105,7 +112,15 @@ function AuditTuukhAgguulga({ turul }: { turul: TuukhTurul }) {
 
   const { data, isLoading } = useSWR(
     token && orgId
-      ? [tokhirgoo.url, token, orgId, dateRange[0] || "", dateRange[1] || "", model, ajiltniiId]
+      ? [
+          tokhirgoo.url,
+          token,
+          orgId,
+          dateRange[0] || "",
+          dateRange[1] || "",
+          turul === "ustgasan" ? model : "",
+          ajiltniiId,
+        ]
       : null,
     async ([url, tkn, id, ekh, duus, m, aj]) => {
       const params: Record<string, unknown> = {
@@ -113,7 +128,11 @@ function AuditTuukhAgguulga({ turul }: { turul: TuukhTurul }) {
         khuudasniiDugaar: 1,
         khuudasniiKhemjee: 10000,
       };
-      if (m) params.modelName = auditServerModel(m);
+      // Нэг сонголтод хэд хэдэн model байж болно («ebarimt,ebarimtShine») —
+      // тэр үед бүгдийг авч клиент дээр шүүнэ
+      // Зассан түүхийн төрөл нь өөрчлөлтөөр тодорхойлогддог тул клиент дээр
+      if (turul === "ustgasan" && m && !m.includes(","))
+        params.modelName = auditServerModel(m);
       if (aj) params.ajiltniiId = aj;
       if (ekh && duus) {
         params.ekhlekhOgnoo = `${ekh} 00:00:00`;
@@ -125,14 +144,15 @@ function AuditTuukhAgguulga({ turul }: { turul: TuukhTurul }) {
     { revalidateOnFocus: false },
   );
 
-  const murnuud = useMemo(() => {
+  // Төрлөөр шүүхээс ӨМНӨХ мөрүүд (шүүлтүүрийн тоог эндээс бодно)
+  const buhMur = useMemo(() => {
     const raw: any[] = Array.isArray(data?.data)
       ? data.data
       : Array.isArray(data?.jagsaalt)
         ? data.jagsaalt
         : [];
     const seen = new Set<string>();
-    return raw
+    const tseverlesen = raw
       .filter(Boolean)
       .map(murKhevjuulekh)
       .filter((m) => {
@@ -140,35 +160,57 @@ function AuditTuukhAgguulga({ turul }: { turul: TuukhTurul }) {
           if (seen.has(m._id)) return false;
           seen.add(m._id);
         }
-        // Server талын шүүлт алдвал ч гэсэн клиент дээр давхар шүүнэ
-        if (model && m.turul.toLowerCase() !== model.toLowerCase()) return false;
         if (ajiltniiId && m.ajiltniiId && m.ajiltniiId !== ajiltniiId) return false;
-        // Зөвхөн огнооны талбар (updatedAt г.м.) өөрчлөгдсөн засвар — дуу чимээ
-        if (turul === "zassan" && m.niitUurchlult > 0 && m.uurchlultuud.length === 0)
-          return false;
+        if (turul === "zassan") {
+          // Мэдэгдэл, и-баримт г.м. нь засвар биш
+          if (ZASSAN_KHASAKH_MODEL.has(m.turul)) return false;
+          // Зөвхөн огнооны талбар (updatedAt г.м.) өөрчлөгдсөн засвар — дуу чимээ
+          if (m.niitUurchlult > 0 && m.uurchlultuud.length === 0) return false;
+        }
         return true;
       });
-  }, [data, model, ajiltniiId, turul]);
+    // Зассан: нэг засварыг өөрчлөлтийн төрөл бүрээр мөр болгоно
+    return turul === "zassan" ? tseverlesen.flatMap(angilalaarSalgakh) : tseverlesen;
+  }, [data, ajiltniiId, turul]);
+
+  const murnuud = useMemo(() => {
+    if (!model) return buhMur;
+    if (turul === "zassan") return buhMur.filter((m) => m.angilal === model);
+    // Устгасан: серверийн шүүлт алдвал ч клиент дээр давхар шүүнэ
+    return buhMur.filter((m) =>
+      model.split(",").some((x) => x.toLowerCase() === m.turul.toLowerCase()),
+    );
+  }, [buhMur, model, turul]);
 
   const shuugdsen = useMemo(() => {
     const q = khailt.trim().toLowerCase();
     if (!q) return murnuud;
-    return murnuud.filter((m) => murKhailtTekst(m, auditAngilalNer(m.turul)).includes(q));
+    return murnuud.filter((m) =>
+      murKhailtTekst(m, `${m.angilalNer} ${auditAngilalNer(m.turul)}`).includes(q),
+    );
   }, [murnuud, khailt]);
 
-  const turulOptions = useMemo(
-    () =>
-      angilaluud.map((a) => ({
-        value: a.value,
-        label: a.label,
-        // Байгууллага/Тохиргоо нэг model тул серверийн тоо нь салгагдаагүй
-        tailbar:
-          a.too > 0 && a.value !== "baiguullaga" && a.value !== "tokhirgoo"
-            ? String(a.too)
-            : undefined,
-      })),
-    [angilaluud],
-  );
+  const turulOptions = useMemo(() => {
+    if (turul === "zassan") {
+      // Тогтмол жагсаалт, энэ дарааллаар — тоо нь сонгосон хугацааных
+      const too = new Map<string, number>();
+      buhMur.forEach((m) => too.set(m.angilal, (too.get(m.angilal) || 0) + 1));
+      return Object.entries(ZASVAR_ANGILAL_NER).map(([value, label]) => ({
+        value,
+        label,
+        tailbar: too.get(value) ? String(too.get(value)) : undefined,
+      }));
+    }
+    return angilaluud.map((a) => ({
+      value: a.value,
+      label: a.label,
+      // Байгууллага/Тохиргоо нэг model тул серверийн тоо нь салгагдаагүй
+      tailbar:
+        a.too > 0 && a.value !== "baiguullaga" && a.value !== "tokhirgoo"
+          ? String(a.too)
+          : undefined,
+    }));
+  }, [angilaluud, buhMur, turul]);
 
   const columns: ColumnsType<AuditMur> = useMemo(() => {
     const uildel: ColumnsType<AuditMur> = [
@@ -262,8 +304,28 @@ function AuditTuukhAgguulga({ turul }: { turul: TuukhTurul }) {
             title: "Төрөл",
             width: 150,
             align: "center",
-            sorter: (a, b) => textEremb(auditAngilalNer(a.turul), auditAngilalNer(b.turul)),
-            render: (_: unknown, r) => auditAngilalNer(r.turul),
+            sorter: (a, b) => textEremb(a.angilalNer, b.angilalNer),
+            render: (_: unknown, r) => {
+              // Зассан: төрлийн доор яг аль талбар өөрчлөгдсөн (Утас, Нууц үг…)
+              const talbaruud = Array.from(new Set(r.uurchlultuud.map((c) => c.label)));
+              const tovch =
+                talbaruud.length > 3
+                  ? `${talbaruud.slice(0, 3).join(", ")} +${talbaruud.length - 3}`
+                  : talbaruud.join(", ");
+              return (
+                <div className="flex min-w-0 flex-col items-center leading-tight">
+                  <span>{r.angilalNer}</span>
+                  {turul === "zassan" && tovch && (
+                    <span
+                      className="max-w-full truncate text-[11px] text-[color:var(--muted-text)]"
+                      title={talbaruud.join(", ")}
+                    >
+                      {tovch}
+                    </span>
+                  )}
+                </div>
+              );
+            },
           },
           {
             key: "ner",

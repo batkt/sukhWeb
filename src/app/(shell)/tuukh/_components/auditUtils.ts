@@ -1,4 +1,5 @@
 import dayjs from "dayjs";
+import { TOKHIRGOO_MODEL_NER, auditTurulNer } from "@/lib/auditTurluud";
 
 /** Гурван түүхийн хуудас нэг бүрдлийг ашиглана — ялгаа нь энэ төрөл. */
 export type TuukhTurul = "zassan" | "ustgasan";
@@ -32,7 +33,89 @@ export interface AuditMur {
   shaltgaan: string;
   /** Устгасан баримтын агшин зураг */
   deletedData: Record<string, unknown> | null;
+  /** «Зассан түүх»-ийн төрөл (юу өөрчлөгдсөнөөр): burtgel, umch, … */
+  angilal: string;
+  /** Төрлийн харагдах нэр: «Бүртгэл», «Өмч бүртгэл» … */
+  angilalNer: string;
 }
+
+/* ------------------------- засварын төрөл ------------------------- */
+
+/**
+ * «Зассан түүх»-ийн төрлүүд — юу өөрчлөгдсөнөөр нь ангилна. Дараалал нь
+ * шүүлтүүрийн дараалал; «Тохиргоо» нь сүүлд, бусад бүх засварыг багтаана.
+ */
+export const ZASVAR_ANGILAL_NER: Record<string, string> = {
+  burtgel: "Бүртгэл",
+  umch: "Өмч бүртгэл",
+  nekhemjlekh: "Нэхэмжлэх",
+  khungulult: "Хөнгөлөлт",
+  jagsaalt: "Жагсаалт",
+  mashin: "Машин бүртгэл",
+  tokhirgoo: "Тохиргоо",
+};
+
+const ANGILAL_MODEL: Record<string, string[]> = {
+  khungulult: ["khungulult", "khungulultiinTuukh"],
+  nekhemjlekh: [
+    "nekhemjlekh", "nekhemjlekhiinTuukh", "guilgeeAvlaguud", "guilgee", "bankniiGuilgee",
+    "zaaltUnshlalt",
+  ],
+  jagsaalt: ["uilchluulegch", "blockMashin"],
+  mashin: ["mashin", "orshinSuugchMashin", "khariltsagchMashin", "uneguiMashin"],
+  umch: ["tootBurtgel", "talbai"],
+  burtgel: ["orshinSuugch", "khariltsagch", "ajiltan", "geree"],
+};
+
+const ANGILAL_TALBAR: Record<string, string[]> = {
+  khungulult: ["khungulult", "khungulultuud"],
+  nekhemjlekh: ["zardluud", "ekhniiUldegdel", "ehniiUldegdel"],
+  mashin: ["mashin", "mashinuud", "mashiniiDugaar"],
+  umch: ["toots", "units", "toot", "davkhar", "orts", "talbai"],
+};
+
+/** Нэг өөрчлөлтийн төрөл: эхлээд талбараар, дараа нь model-оор */
+function uurchlultiinAngilal(model: string, talbar: string): string | null {
+  const ekh = talbar.split(".")[0];
+  for (const [a, talbaruud] of Object.entries(ANGILAL_TALBAR)) {
+    if (talbaruud.includes(ekh)) return a;
+  }
+  for (const [a, modeluud] of Object.entries(ANGILAL_MODEL)) {
+    if (modeluud.includes(model)) return a;
+  }
+  return null;
+}
+
+/** Model-оор л тодорхойлогдох төрөл; аль ч бүлэгт ороогүй бол «Тохиргоо» */
+function modeliinAngilal(model: string): string {
+  for (const [a, modeluud] of Object.entries(ANGILAL_MODEL)) {
+    if (modeluud.includes(model)) return a;
+  }
+  return "tokhirgoo";
+}
+
+/**
+ * Нэг засварыг төрөл бүрээр мөр болгон салгана: оршин суугчийн утас солиод
+ * гараж нэмсэн бол «Бүртгэл», «Өмч бүртгэл» гэсэн хоёр мөр.
+ */
+export function angilalaarSalgakh(m: AuditMur): AuditMur[] {
+  const tokhiruulakh = (a: string) => ({ angilal: a, angilalNer: ZASVAR_ANGILAL_NER[a] });
+  if (m.uurchlultuud.length === 0) return [{ ...m, ...tokhiruulakh(modeliinAngilal(m.turul)) }];
+  const buleg = new Map<string, AuditUurchlult[]>();
+  m.uurchlultuud.forEach((c) => {
+    const a = uurchlultiinAngilal(m.turul, c.talbar) || modeliinAngilal(m.turul);
+    buleg.set(a, [...(buleg.get(a) || []), c]);
+  });
+  return Array.from(buleg.entries()).map(([a, jagsaalt]) => ({
+    ...m,
+    _id: buleg.size > 1 ? `${m._id}:${a}` : m._id,
+    uurchlultuud: jagsaalt,
+    ...tokhiruulakh(a),
+  }));
+}
+
+/** Нууц үгийн талбар — hash-ийг хэзээ ч харуулахгүй */
+const NUUTS_TALBAR = new Set(["nuutsUg", "password", "nuutsKod", "pinKod"]);
 
 /* ------------------------------ талбарууд ------------------------------ */
 
@@ -148,6 +231,29 @@ export const TALBARIIN_NER: Record<string, string> = {
   sariinTulbur: "Сарын төлбөр",
   niitTulukhDun: "Нийт төлөх дүн",
   khariult: "Хариулт",
+  // Банкны гүйлгээ
+  kholbosonAjiltniiNer: "Холбосон ажилтан",
+  kholbosonDun: "Холбосон дүн",
+  oruulsanAjiltniiNer: "Оруулсан ажилтан",
+  magadlaltaiGereenuud: "Магадлалтай гэрээнүүд",
+  description: "Гүйлгээний утга",
+  amount: "Дүн",
+  tranAmount: "Гүйлгээний дүн",
+  accName: "Дансны нэр",
+  accNum: "Дансны дугаар",
+  dansniiDugaar: "Дансны дугаар",
+  relatedAccount: "Харьцсан данс",
+  tranDate: "Гүйлгээний огноо",
+  postDate: "Гүйлгээний огноо",
+  tranPostedDate: "Гүйлгээний огноо",
+  ebarimtAvsanEsekh: "И-баримт авсан эсэх",
+  income: "Орлого",
+  outcome: "Зарлага",
+  balance: "Үлдэгдэл",
+  nuutsUg: "Нууц үг",
+  password: "Нууц үг",
+  nuutsKod: "Нууц код",
+  pinKod: "ПИН код",
   hasCustomName: "Өөрчилсөн нэртэй эсэх",
   customName: "Өөрчилсөн нэр",
   taniltsuulgaKharakhEsekh: "Танилцуулга харах эсэх",
@@ -156,8 +262,15 @@ export const TALBARIIN_NER: Record<string, string> = {
   aguulga: "Агуулга",
 };
 
-/** Засварын жагсаалтад харуулахгүй техникийн талбарууд (жижиг үсгээр) */
-const NUUKH_TALBAR = new Set(["createdat", "updatedat", "__v", "_id"]);
+/**
+ * Засварын жагсаалтад харуулахгүй талбарууд (жижиг үсгээр): техникийн, мөн
+ * «харсан/уншсан» мэт нээхэд автоматаар солигддог төлөв — хүний засвар биш.
+ */
+const NUUKH_TALBAR = new Set([
+  "createdat", "updatedat", "__v", "_id",
+  "kharsanesekh", "unshsanesekh", "kharsan", "unshsan", "kharsanognoo", "unshsanognoo",
+  "kharsanajiltnuud", "unshsanajiltnuud", "isread", "readat", "seen", "seenat",
+]);
 
 /** Устгасан агшин зурагт харуулахгүй талбарууд */
 export const USTGASAN_NUUKH_TALBAR = new Set([
@@ -222,6 +335,16 @@ function mongoUtga(v: unknown): unknown {
   return x;
 }
 
+/**
+ * Хоёр харуулах утга ижил эсэх. Хоосон ↔ 0 ↔ «Үгүй» нь систем анхны утга
+ * тавьсан төдий (хүн хоосон утгад 0 гэж бичдэггүй) тул өөрчлөлт биш.
+ */
+function adilUtga(a: string | null, b: string | null): boolean {
+  const khevjuul = (u: string | null) =>
+    u === null || /^-?0+(\.0+)?$/.test(u.trim()) || u === "Үгүй" ? null : u;
+  return khevjuul(a) === khevjuul(b);
+}
+
 /** Объект/массивыг «a.b.0.c» зам → энгийн утга болгон задлана */
 function khavtgailakh(v: unknown, zam = "", out: Record<string, unknown> = {}, gun = 0) {
   v = mongoUtga(v);
@@ -283,7 +406,7 @@ export function dedUurchlultuud(umnukhRaw: unknown, shineRaw: unknown): DedUurch
       umnukh: utgaFormat(a[zam]),
       shine: utgaFormat(b[zam]),
     }))
-    .filter((d) => d.umnukh !== d.shine);
+    .filter((d) => !adilUtga(d.umnukh, d.shine));
 }
 
 /* -------------------------- массивын өөрчлөлт -------------------------- */
@@ -298,10 +421,16 @@ export interface MassiviinUurchlult {
 }
 
 /** Мөр бүрийг хүнд ойлгомжтой нэг мөр болгох (Орон сууц 201 · 2-р орц · 2 давхар) */
+/** «Тоот» бол «Орон сууц»-ын хуучин нэр — нэг утга гэж үзнэ */
+const tootTurul = (v: unknown) => {
+  const s = v == null ? "" : String(v).trim();
+  return s === "Тоот" ? "Орон сууц" : s;
+};
+
 function murTovch(m: Record<string, unknown>): string {
   const u = (k: string) => utgaFormat(m[k]);
   const khesguud = [
-    u("turul"),
+    tootTurul(m.turul) || null,
     u("toot") || u("dugaar") || u("mashiniiDugaar") || u("ner"),
     u("orts") ? `${u("orts")}-р орц` : null,
     u("davkhar") ? `${u("davkhar")} давхар` : null,
@@ -312,7 +441,7 @@ function murTovch(m: Record<string, unknown>): string {
 
 /** Мөрийг таних түлхүүр — дарааллаас биш, утгаар нь тааруулна */
 function murTulkhuur(m: Record<string, unknown>, i: number): string {
-  const id = [m.turul, m.toot ?? m.dugaar ?? m.mashiniiDugaar ?? m.ner, m.barilgiinId]
+  const id = [tootTurul(m.turul), m.toot ?? m.dugaar ?? m.mashiniiDugaar ?? m.ner, m.barilgiinId]
     .map((x) => (x == null ? "" : String(x).trim()))
     .join("|");
   return id.replace(/\|/g, "") ? id : `#${i}`;
@@ -399,7 +528,13 @@ export function massiviinUurchlult(umnukhRaw: unknown, shineRaw: unknown): Massi
     (dedUurchlultuud(m, s2) || [])
       // Автомат талбар хоосорсон бол засвар биш
       .filter((d) => !(AUTO_TALBAR.has(d.zam) && d.shine === null))
-      .forEach((d) => uurchlugdsun.push({ ...d, kontekst: murTovch(s2) }));
+      // «Тоот» ↔ «Орон сууц» — нэр солигдсон төдий, засвар биш
+      .filter((d) => !(d.zam === "turul" && tootTurul(d.umnukh) === tootTurul(d.shine)))
+      .forEach((d) => {
+        // Танигдах талбаргүй мөр бол «Мөр» гэж бичихгүй
+        const tovch = murTovch(s2);
+        uurchlugdsun.push({ ...d, kontekst: tovch === "Мөр" ? undefined : tovch });
+      });
   });
   return { nemsen, khassan, uurchlugdsun };
 }
@@ -565,13 +700,34 @@ function nerUurchlultaas(r: AnyRec): string {
   return "";
 }
 
+/** Харилцагчийн тоотуудын жагсаалт ба түүний «гол тоот» хуулбар талбарууд */
+const TOOT_JAGSAALT = new Set(["toots", "units"]);
+const TOOT_KHUULBAR = new Set(["toot", "davkhar", "orts", "bairniiNer", "talbai"]);
+
+/** «…Id», «…Ids», «…Idnuud» нэртэй талбар */
+const idNerTalbarEsekh = (talbar: string) =>
+  /(^id$|Id$|Ids$|Idnuud$|ID$)/.test(suuliinKheseg(talbar));
+
+/** Хоёр утга хоёулаа хоосон эсвэл зөвхөн ObjectId(-ууд) бол */
+function zuvkhunIdEsekh(a: unknown, b: unknown): boolean {
+  const idOnly = (v: unknown) => {
+    const u = utgaFormat(v);
+    return u === null || u.split(/[,\n]\s*/).every((x) => objectIdEsekh(x.replace(/^\d+\.\s*/, "")));
+  };
+  return idOnly(a) && idOnly(b);
+}
+
 function uurchlultuudAvya(r: AnyRec): { jagsaalt: AuditUurchlult[]; niit: number } {
   const raw: AnyRec[] = Array.isArray(r.uurchlult)
     ? r.uurchlult
     : Array.isArray(r.changes)
       ? r.changes
       : [];
+  // Тоотуудын жагсаалт өөрчлөгдсөн бол харилцагчийн toot/davkhar/orts нь
+  // зөвхөн «сүүлийн тоот»-ын хуулбар — «Гараж 11 → 106» мэт буруу ойлгогдоно
+  const tootJagsaaltTai = raw.some((c) => TOOT_JAGSAALT.has(str(c.talbar || c.field)));
   const jagsaalt = raw
+    .filter((c) => !(tootJagsaaltTai && TOOT_KHUULBAR.has(str(c.talbar || c.field))))
     .map((c) => {
       const talbar = str(c.talbar || c.field) || "-";
       return {
@@ -582,7 +738,10 @@ function uurchlultuudAvya(r: AnyRec): { jagsaalt: AuditUurchlult[]; niit: number
       };
     })
     .filter((c) => !nuukhTalbarEsekh(c.talbar))
-    .filter((c) => utgaFormat(c.umnukh) !== utgaFormat(c.shine))
+    // Зөвхөн ID хадгалдаг талбар (kholbosonGereeniiId г.м.) — хүнд утгагүй,
+    // харгалзах нэрийн талбар нь (kholbosonAjiltniiNer) тусдаа харагдана
+    .filter((c) => !idNerTalbarEsekh(c.talbar) && !zuvkhunIdEsekh(c.umnukh, c.shine))
+    .filter((c) => !adilUtga(utgaFormat(c.umnukh), utgaFormat(c.shine)))
     // Объектын зөвхөн ID/огноо/дараалал өөрчлөгдсөн бол утгагүй. Мөн бүхэлдээ
     // нэмэгдсэн/хасагдсан том объект (Түүх, Урьсан машин г.м.) нь засвар биш
     // бүтцийн агшин зураг — зөвхөн утга нь зассан мөрүүдийг үлдээнэ.
@@ -600,7 +759,13 @@ function uurchlultuudAvya(r: AnyRec): { jagsaalt: AuditUurchlult[]; niit: number
     .sort((x, y) => {
       const d = golTalbarEremb(x.talbar) - golTalbarEremb(y.talbar);
       return d !== 0 ? d : x.label.localeCompare(y.label, "mn");
-    });
+    })
+    // Нууц үг: hash-ийг харуулахгүй, зөвхөн «солигдсон» гэж
+    .map((c) =>
+      NUUTS_TALBAR.has(suuliinKheseg(c.talbar))
+        ? { ...c, umnukh: "••••••", shine: "Солигдсон" }
+        : c,
+    );
   return { jagsaalt, niit: raw.length };
 }
 
@@ -675,8 +840,12 @@ export function murKhevjuulekh(r: AnyRec): AuditMur {
     (r.deletedData || r.deletedDocument || null) as Record<string, unknown> | null;
   const { jagsaalt, niit } = uurchlultuudAvya(r);
   const dugaar = str(r.classDugaar);
-  const ner = str(r.classNer) || nerDataaas(deletedData) || nerUurchlultaas(r);
   const turul = str(r.classType || r.modelName || r.className);
+  const ner =
+    TOKHIRGOO_MODEL_NER[turul] ||
+    str(r.classNer) ||
+    nerDataaas(deletedData) ||
+    nerUurchlultaas(r);
   return {
     _id: str(r._id),
     turul: tokhirgooZasvarEsekh(turul, jagsaalt) ? "tokhirgoo" : turul,
@@ -692,6 +861,10 @@ export function murKhevjuulekh(r: AnyRec): AuditMur {
     niitUurchlult: niit,
     shaltgaan: str(r.reason || r.shaltgaan),
     deletedData,
+    // Анхдагч: model-ийн нэрээр (Устгасан түүх). Зассан түүх нь
+    // angilalaarSalgakh-аар өөрчлөлтийн төрлөөр дахин ангилна.
+    angilal: `model:${turul}`,
+    angilalNer: auditTurulNer(turul),
   };
 }
 

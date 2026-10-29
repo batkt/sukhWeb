@@ -4,7 +4,6 @@ import React, { useEffect, useMemo, useState } from "react";
 import { ArrowRight, ChevronDown, Search, X } from "lucide-react";
 import { ModalPortal } from "../../../../../components/shell/ModalPortal";
 import useModalHotkeys from "@/lib/useModalHotkeys";
-import { auditAngilalNer } from "@/lib/auditTurluud";
 import {
   type AuditMur,
   GOL_TALBAR,
@@ -69,10 +68,10 @@ export default function TuukhModal({ mur, turul, idNer = {}, onClose }: Props) {
       const massiv = massiviinUurchlult(c.umnukh, c.shine);
       if (massiv) {
         massiv.nemsen.forEach((t, j) =>
-          out.push({ key: `${i}n${j}`, talbar: c.label, kontekst: "Нэмсэн", umnukh: null, shine: t }),
+          out.push({ key: `${i}n${j}`, talbar: c.label, kontekst: "Нэмсэн", umnukh: null, shine: kharuul(t) }),
         );
         massiv.khassan.forEach((t, j) =>
-          out.push({ key: `${i}k${j}`, talbar: c.label, kontekst: "Хассан", umnukh: t, shine: null }),
+          out.push({ key: `${i}k${j}`, talbar: c.label, kontekst: "Хассан", umnukh: kharuul(t), shine: null }),
         );
         massiv.uurchlugdsun.forEach((d, j) =>
           out.push({
@@ -100,9 +99,12 @@ export default function TuukhModal({ mur, turul, idNer = {}, onClose }: Props) {
       }
       out.push({ key: `${i}`, talbar: c.label, umnukh: kharuul(c.umnukh), shine: kharuul(c.shine) });
     });
+    // Нэр нь олдоогүй ID-г (ID …97eebf) хэрэглэгчид харуулахгүй
+    const idUtga = (u: string | null) => u !== null && u.startsWith("ID …");
+    const tsever = out.filter((m) => !idUtga(m.umnukh) && !idUtga(m.shine));
     const q = khailt.trim().toLowerCase();
-    if (!q) return out;
-    return out.filter((m) =>
+    if (!q) return tsever;
+    return tsever.filter((m) =>
       [m.talbar, m.kontekst, m.umnukh, m.shine].join(" ").toLowerCase().includes(q),
     );
   }, [mur, zassan, khailt, idNer]);
@@ -174,7 +176,7 @@ export default function TuukhModal({ mur, turul, idNer = {}, onClose }: Props) {
             <div className="min-w-0 space-y-1">
               <div className="flex min-w-0 gap-1.5">
                 <span className="shrink-0 font-semibold text-[color:var(--muted-text)]">Төрөл:</span>
-                <span className="truncate text-[color:var(--panel-text)]">{auditAngilalNer(mur.turul)}</span>
+                <span className="truncate text-[color:var(--panel-text)]">{mur.angilalNer}</span>
               </div>
               <div className="flex min-w-0 gap-1.5">
                 <span className="shrink-0 font-semibold text-[color:var(--muted-text)]">Нэр:</span>
