@@ -121,6 +121,7 @@ export default function ResidentRegistrationModal({
   const [searching, setSearching] = useState(false);
   const [step, setStep] = useState(editData ? 2 : 1);
   const [searchStatus, setSearchStatus] = useState<"idle" | "found" | "notFound">("idle");
+  const [foundOwnerId, setFoundOwnerId] = useState<string | null>(null);
 
   const { baiguullaga } = useAuth();
 
@@ -419,6 +420,7 @@ export default function ResidentRegistrationModal({
 
       if (found) {
         setSearchStatus("found");
+        setFoundOwnerId(found._id ? String(found._id) : null);
         if (isCust) {
           setFormData((prev) => ({
             ...prev,
@@ -469,7 +471,12 @@ export default function ResidentRegistrationModal({
         if (!keepStep) setStep(2);
       } else {
         setSearchStatus("notFound");
+        setFoundOwnerId(null);
         setFormData((prev) => ({ ...prev, phone: phoneToSearch }));
+        if (formData.orshinSuugchTurul === "Оршин суугч") {
+          toast.error("Бүртгэлгүй оршин суугч байна.");
+          return;
+        }
         toast("Бүртгэлгүй тул мэдээллийг шинээр оруулна уу.", {
           icon: "ℹ️",
         });
@@ -547,9 +554,15 @@ export default function ResidentRegistrationModal({
       const plateToUse = formData.plate.trim().toUpperCase() || "БҮРТГЭЛГҮЙ";
 
       const effectiveOwnerId =
+        foundOwnerId ||
         editData?.ezemshigchiinId ||
         editData?.orshinSuugchiinId ||
         (isClient ? editData?._id : undefined);
+
+      if (formData.orshinSuugchTurul === "Оршин суугч" && !effectiveOwnerId && searchStatus !== "found") {
+        toast.error("Бүртгэлгүй оршин суугч байна.");
+        return;
+      }
 
       const payload = {
         baiguullagiinId,
@@ -731,6 +744,8 @@ export default function ResidentRegistrationModal({
                     onChange={(v) => {
                       const val = v.replace(/\D/g, "");
                       if (val.length > 8) return;
+                      setSearchStatus("idle");
+                      setFoundOwnerId(null);
                       setFormData((prev) => ({ ...prev, phone: val }));
                     }}
                     placeholder="88888888"
@@ -749,6 +764,11 @@ export default function ResidentRegistrationModal({
                       ) : null
                     }
                   />
+                  {searchStatus === "notFound" && formData.orshinSuugchTurul === "Оршин суугч" && (
+                    <p className="text-xs text-red-500 font-medium mt-1.5 flex items-center gap-1">
+                      <span>⚠️</span> Бүртгэлгүй оршин суугч байна.
+                    </p>
+                  )}
                 </div>
 
                 <div className="flex flex-col gap-2 pt-1">
@@ -774,7 +794,13 @@ export default function ResidentRegistrationModal({
 
                   <button
                     type="button"
-                    onClick={() => setStep(2)}
+                    onClick={() => {
+                      if (formData.orshinSuugchTurul === "Оршин суугч") {
+                        toast.error("Бүртгэлгүй оршин суугч байна. Эхлээд бүртгэлтэй оршин суугчийн утсаар хайна уу.");
+                        return;
+                      }
+                      setStep(2);
+                    }}
                     className="py-1 text-xs text-[color:var(--muted-text)] hover:text-[color:var(--panel-text)] transition-colors text-center cursor-pointer"
                   >
                     Хайлтгүйгээр шууд гараар бөглөх →
