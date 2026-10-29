@@ -3,7 +3,7 @@
 import React, { useMemo, useState } from "react";
 import dayjs from "dayjs";
 import useSWR from "swr";
-import { Eye } from "lucide-react";
+import { Eye, Search } from "lucide-react";
 import Table, { type ColumnsType } from "@/components/ui/table";
 import FilterDatePicker from "@/components/ui/FilterDatePicker";
 import FilterSelect from "@/components/ui/FilterSelect";
@@ -15,8 +15,11 @@ import TuukhModal from "./TuukhModal";
 import {
   type AuditMur,
   type TuukhTurul,
+  murKhailtTekst,
   murKhevjuulekh,
+  objectIdEsekh,
   ognooKharuulakh,
+  utgaFormat,
 } from "./auditUtils";
 
 /** Хуудас бүрийн ялгаатай хэсэг — бусад нь бүгд нэг */
@@ -56,6 +59,8 @@ function AuditTuukhAgguulga({ turul }: { turul: TuukhTurul }) {
   ]);
   const [ajiltniiId, setAjiltniiId] = useState("");
   const [model, setModel] = useState("");
+  const [khailt, setKhailt] = useState("");
+  const [talbar, setTalbar] = useState("");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(50);
   const [songogdson, setSongogdson] = useState<AuditMur | null>(null);
@@ -145,6 +150,28 @@ function AuditTuukhAgguulga({ turul }: { turul: TuukhTurul }) {
       });
   }, [data, model, ajiltniiId, turul]);
 
+  // Өөрчлөгдсөн талбаруудын жагсаалт (шүүлтүүрт) — тоотой, нэрээр эрэмбэлсэн
+  const talbarOptions = useMemo(() => {
+    const too = new Map<string, number>();
+    murnuud.forEach((m) =>
+      new Set(m.uurchlultuud.map((c) => c.label)).forEach((l) =>
+        too.set(l, (too.get(l) || 0) + 1),
+      ),
+    );
+    return Array.from(too.entries())
+      .sort((a, b) => textEremb(a[0], b[0]))
+      .map(([l, n]) => ({ value: l, label: l, tailbar: String(n) }));
+  }, [murnuud]);
+
+  const shuugdsen = useMemo(() => {
+    const q = khailt.trim().toLowerCase();
+    return murnuud.filter((m) => {
+      if (talbar && !m.uurchlultuud.some((c) => c.label === talbar)) return false;
+      if (q && !murKhailtTekst(m).includes(q)) return false;
+      return true;
+    });
+  }, [murnuud, khailt, talbar]);
+
   const turulOptions = useMemo(
     () =>
       angilaluud.map((a) => ({
@@ -175,6 +202,7 @@ function AuditTuukhAgguulga({ turul }: { turul: TuukhTurul }) {
         title: "Огноо",
         width: 150,
         align: "center",
+        defaultSortOrder: "descend",
         sorter: (a, b) => ognooEremb(a.uildelOgnoo, b.uildelOgnoo),
         render: (_: unknown, r) => (
           <span className="tabular-nums">{ognooKharuulakh(r.uildelOgnoo, true)}</span>
@@ -194,6 +222,51 @@ function AuditTuukhAgguulga({ turul }: { turul: TuukhTurul }) {
           ) : (
             <span className="text-[color:var(--muted-text)]">-</span>
           ),
+      });
+    }
+
+    if (turul === "zassan") {
+      // Юу өөрчлөгдсөнийг цонх нээлгүйгээр харуулна: «Нэр: Бат → Болд»
+      uildel.push({
+        key: "uurchlult",
+        title: "Өөрчлөгдсөн мэдээлэл",
+        width: 340,
+        sorter: (a, b) => a.uurchlultuud.length - b.uurchlultuud.length,
+        render: (_: unknown, r) => {
+          if (r.uurchlultuud.length === 0)
+            return <span className="text-[color:var(--muted-text)]">-</span>;
+          const kharuulakh = r.uurchlultuud.slice(0, 2);
+          const uldsen = r.uurchlultuud.length - kharuulakh.length;
+          const tovch = (v: unknown) => {
+            const u = utgaFormat(v);
+            if (u === null) return "(хоосон)";
+            if (objectIdEsekh(u)) return ajiltanIdNer[u] || "ID";
+            const neg = u.split("\n")[0];
+            return neg.length > 28 ? `${neg.slice(0, 28)}…` : neg;
+          };
+          return (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                setSongogdson(r);
+              }}
+              className="flex w-full min-w-0 flex-col gap-0.5 rounded-lg px-1 py-0.5 text-left text-[12px] transition-colors hover:bg-theme/5"
+            >
+              {kharuulakh.map((c, i) => (
+                <span key={`${c.talbar}-${i}`} className="flex min-w-0 items-baseline gap-1">
+                  <span className="shrink-0 text-[color:var(--muted-text)]">{c.label}:</span>
+                  <span className="truncate">
+                    <span className="text-danger">{tovch(c.umnukh)}</span>
+                    <span className="mx-1 text-[color:var(--muted-text)]">→</span>
+                    <span className="text-success">{tovch(c.shine)}</span>
+                  </span>
+                </span>
+              ))}
+              {uldsen > 0 && <span className="text-brand">+{uldsen} өөрчлөлт</span>}
+            </button>
+          );
+        },
       });
     }
 
@@ -284,7 +357,7 @@ function AuditTuukhAgguulga({ turul }: { turul: TuukhTurul }) {
         children: uildel,
       },
     ];
-  }, [turul, tokhirgoo]);
+  }, [turul, tokhirgoo, ajiltanIdNer]);
 
   const shineerEkhlekh = () => setPage(1);
 
@@ -308,6 +381,32 @@ function AuditTuukhAgguulga({ turul }: { turul: TuukhTurul }) {
           className="w-full sm:w-[284px]"
         />
         <div className="ml-auto flex flex-wrap items-center justify-end gap-2">
+          <div className="relative w-[200px] shrink-0">
+            <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[color:var(--muted-text)]" />
+            <input
+              value={khailt}
+              onChange={(e) => {
+                setKhailt(e.target.value);
+                shineerEkhlekh();
+              }}
+              placeholder="Хайх..."
+              className="h-9 w-full rounded-2xl border border-[color:var(--ctl-border)] bg-[color:var(--surface-hover)] pl-9 pr-3 text-[12px] text-[color:var(--panel-text)] outline-none placeholder:text-[color:var(--muted-text)] focus:border-theme"
+            />
+          </div>
+          {turul === "zassan" && (
+            <FilterSelect
+              label="Талбар"
+              value={talbar}
+              onChange={(v) => {
+                setTalbar(v);
+                shineerEkhlekh();
+              }}
+              options={talbarOptions}
+              searchable
+              searchPlaceholder="Талбар хайх..."
+              className="w-[100px] shrink-0"
+            />
+          )}
           <FilterSelect
             label="Ажилтан"
             value={ajiltniiId}
@@ -337,7 +436,7 @@ function AuditTuukhAgguulga({ turul }: { turul: TuukhTurul }) {
 
       <Table<AuditMur>
         columns={columns}
-        dataSource={murnuud}
+        dataSource={shuugdsen}
         rowKey={(r, i) => r._id || i}
         loading={isLoading}
         scroll={{ x: "max-content" }}

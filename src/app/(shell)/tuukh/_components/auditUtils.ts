@@ -204,9 +204,22 @@ export interface DedUurchlult {
   shine: string | null;
 }
 
+/** Mongo-гийн {$oid}, {$date}, {$numberDecimal} мэт боодлыг энгийн утга болгоно */
+function mongoUtga(v: unknown): unknown {
+  if (!v || typeof v !== "object" || Array.isArray(v)) return v;
+  const keys = Object.keys(v as Record<string, unknown>);
+  if (keys.length !== 1 || !keys[0].startsWith("$")) return v;
+  const x = (v as Record<string, unknown>)[keys[0]];
+  if (x && typeof x === "object" && "$numberLong" in (x as Record<string, unknown>)) {
+    return (x as Record<string, unknown>).$numberLong;
+  }
+  return x;
+}
+
 /** Объект/массивыг «a.b.0.c» зам → энгийн утга болгон задлана */
 function khavtgailakh(v: unknown, zam = "", out: Record<string, unknown> = {}, gun = 0) {
-  if (gun > 4) {
+  v = mongoUtga(v);
+  if (gun > 6) {
     out[zam] = v;
     return out;
   }
@@ -347,7 +360,8 @@ export function massiviinUurchlult(umnukhRaw: unknown, shineRaw: unknown): Massi
 
 const ISO_OGNOO = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/;
 
-function jsonZadlakh(v: unknown): unknown {
+function jsonZadlakh(raw: unknown): unknown {
+  const v = mongoUtga(raw);
   if (typeof v !== "string") return v;
   const s = v.trim();
   // Backend зарим утгыг JSON мөр болгож хадгалдаг: "\"2026-09-24T07:08:10Z\""
@@ -368,18 +382,24 @@ function jsonZadlakh(v: unknown): unknown {
   return v;
 }
 
-/** JSON харуулахдаа техникийн талбаруудыг хасна */
-function tseverlekh(v: unknown): unknown {
-  if (Array.isArray(v)) return v.map(tseverlekh);
-  if (v && typeof v === "object") {
-    const out: Record<string, unknown> = {};
-    Object.entries(v as Record<string, unknown>).forEach(([k, val]) => {
-      if (NUUKH_TALBAR.has(k.toLowerCase())) return;
-      out[k] = tseverlekh(val);
-    });
-    return out;
-  }
-  return v;
+/** Объектыг JSON биш «Шошго: утга» мөрүүд болгоно */
+function objectTovch(obj: Record<string, unknown>, tusgaarlagch = "\n"): string | null {
+  const murnuud = Object.entries(khavtgailakh(obj))
+    .map(([zam, u]) => {
+      const t = utgaFormat(u);
+      return t === null ? null : `${zamiinNer(zam) || "Утга"}: ${t}`;
+    })
+    .filter(Boolean);
+  return murnuud.length ? murnuud.join(tusgaarlagch) : null;
+}
+
+/** Массивын нэг мөрийг товч тайлбар болгоно (Тоот 201 · 2-р орц …) */
+function elementTovch(x: unknown): string | null {
+  const v = mongoUtga(x);
+  if (!v || typeof v !== "object") return utgaFormat(v);
+  if (Array.isArray(v)) return utgaFormat(v);
+  const tovch = murTovch(v as Record<string, unknown>);
+  return tovch !== "Мөр" ? tovch : objectTovch(v as Record<string, unknown>, " · ");
 }
 
 const khoosonEsekh = (v: unknown) =>
@@ -416,7 +436,7 @@ export const objectIdEsekh = (v: unknown) => typeof v === "string" && /^[a-f0-9]
 
 /**
  * Утгыг харуулах мөр болгоно. `null` бол «хоосон».
- * ISO огноо → YYYY-MM-DD HH:mm, массив/объект → нягт JSON.
+ * ISO огноо → YYYY-MM-DD HH:mm, массив/объект → «Шошго: утга» мөрүүд (JSON биш).
  */
 export function utgaFormat(raw: unknown): string | null {
   const v = jsonZadlakh(raw);
@@ -435,12 +455,12 @@ export function utgaFormat(raw: unknown): string | null {
     if (v.every((x) => typeof x !== "object" || x === null)) {
       return v.map((x) => utgaFormat(x) ?? "-").join(", ");
     }
-    return v.map((x) => JSON.stringify(tseverlekh(x))).join("\n");
+    const murnuud = v.map(elementTovch).filter((t): t is string => t !== null);
+    if (murnuud.length === 0) return null;
+    return murnuud.length === 1 ? murnuud[0] : murnuud.map((t, i) => `${i + 1}. ${t}`).join("\n");
   }
   if (v && typeof v === "object") {
-    const obj = v as Record<string, unknown>;
-    if (Object.keys(obj).length === 0) return null;
-    return JSON.stringify(tseverlekh(obj));
+    return objectTovch(v as Record<string, unknown>);
   }
   return String(v);
 }
@@ -523,8 +543,34 @@ function uurchlultuudAvya(r: AnyRec): { jagsaalt: AuditUurchlult[]; niit: number
       if (ded === null) return true;
       if (ded.length === 0) return false;
       return utgaFormat(c.umnukh) !== null && utgaFormat(c.shine) !== null;
+    })
+    // Гол талбарууд эхэнд, бусад нь нэрээр
+    .sort((x, y) => {
+      const d = golTalbarEremb(x.talbar) - golTalbarEremb(y.talbar);
+      return d !== 0 ? d : x.label.localeCompare(y.label, "mn");
     });
   return { jagsaalt, niit: raw.length };
+}
+
+/** Гол талбарууд — жагсаалтад эхэнд, энэ дарааллаар */
+export const GOL_TALBAR = [
+  "ner", "ovog", "utas", "mail", "register", "toot", "davkhar", "orts",
+  "mashiniiDugaar", "gereeniiDugaar", "nekhemjlekhiinDugaar", "dugaar",
+  "turul", "tuluv", "dun", "tulukhDun", "tulsunDun", "uldegdel", "ognoo", "tailbar",
+];
+
+const golTalbarEremb = (talbar: string) => {
+  const i = GOL_TALBAR.indexOf(suuliinKheseg(talbar));
+  return i < 0 ? 999 : i;
+};
+
+/** Мөрийг хайхад ашиглах текст: нэр, ажилтан, талбарын нэр, утгууд */
+export function murKhailtTekst(m: AuditMur): string {
+  const khesguud = [m.ner, m.dugaar, m.ajiltniiNer, m.shaltgaan];
+  m.uurchlultuud.forEach((c) => {
+    khesguud.push(c.label, utgaFormat(c.umnukh) || "", utgaFormat(c.shine) || "");
+  });
+  return khesguud.join(" ").toLowerCase();
 }
 
 const jsonUnshikh = (v: unknown): unknown => {

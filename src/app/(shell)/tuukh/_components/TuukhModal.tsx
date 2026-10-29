@@ -1,12 +1,13 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
-import { ArrowRight, ChevronDown, FilePen, Trash2, X } from "lucide-react";
+import React, { useEffect, useMemo, useState } from "react";
+import { ArrowRight, ChevronDown, FilePen, Search, Trash2, X } from "lucide-react";
 import { ModalPortal } from "../../../../../components/shell/ModalPortal";
 import useModalHotkeys from "@/lib/useModalHotkeys";
 import { auditAngilalNer } from "@/lib/auditTurluud";
 import {
   type AuditMur,
+  GOL_TALBAR,
   USTGASAN_NUUKH_TALBAR,
   dedUurchlultuud,
   massiviinUurchlult,
@@ -34,13 +35,6 @@ const Utga = ({ utga, className = "" }: { utga: string | null; className?: strin
 
 const Ustsan = () => <span className="italic text-[color:var(--muted-text)]">(устгагдсан)</span>;
 
-/** Устгасан баримтын гол талбарууд — эхэнд, энэ дарааллаар */
-const GOL_TALBAR = [
-  "ner", "ovog", "utas", "mail", "register", "toot", "davkhar", "orts",
-  "mashiniiDugaar", "gereeniiDugaar", "nekhemjlekhiinDugaar", "dugaar",
-  "turul", "tuluv", "dun", "tulukhDun", "tulsunDun", "uldegdel", "ognoo", "tailbar",
-];
-
 export default function TuukhModal({ mur, turul, idNer = {}, onClose }: Props) {
   // Утга: огноо/төлөв хөрвүүлсэн мөр; ID бол ажилтны нэр эсвэл товч ID
   const kharuul = (v: unknown): string | null => {
@@ -52,11 +46,22 @@ export default function TuukhModal({ mur, turul, idNer = {}, onClose }: Props) {
   useModalHotkeys({ isOpen: !!mur, onClose });
 
   const zassan = turul === "zassan";
+  const [khailt, setKhailt] = useState("");
+  useEffect(() => setKhailt(""), [mur]);
 
   // Устгасан баримтыг засварын цонхтой ИЖИЛ хэлбэрээр: талбар бүр «өмнө → (устсан)»
   const uurchlultuud = useMemo(() => {
     if (!mur) return [];
-    if (zassan) return mur.uurchlultuud;
+    if (zassan) {
+      const q = khailt.trim().toLowerCase();
+      if (!q) return mur.uurchlultuud;
+      return mur.uurchlultuud.filter((c) =>
+        [c.label, utgaFormat(c.umnukh) || "", utgaFormat(c.shine) || ""]
+          .join(" ")
+          .toLowerCase()
+          .includes(q),
+      );
+    }
     if (!mur.deletedData) return [];
     const erembe = (t: string) => {
       const i = GOL_TALBAR.indexOf(t);
@@ -69,7 +74,7 @@ export default function TuukhModal({ mur, turul, idNer = {}, onClose }: Props) {
       // Зөвхөн энгийн (гол) талбарууд — нийлмэл объект/массивыг харуулахгүй
       .filter((c) => dedUurchlultuud(c.umnukh, null) === null)
       .sort((x, y) => erembe(x.talbar) - erembe(y.talbar));
-  }, [mur, zassan]);
+  }, [mur, zassan, khailt]);
 
   // Устгасан: гол талбарууд шууд, бусад нь «Бусад мэдээлэл» дотор нуугдана.
   const [busadNeelttei, setBusadNeelttei] = useState(false);
@@ -155,6 +160,26 @@ export default function TuukhModal({ mur, turul, idNer = {}, onClose }: Props) {
           </div>
 
           <div className="flex-1 space-y-2 overflow-y-auto px-5 py-4 custom-scrollbar">
+            {zassan && mur.uurchlultuud.length > 0 && (
+              <div className="flex items-center gap-2 pb-1">
+                <span className="shrink-0 text-[12px] text-[color:var(--muted-text)]">
+                  {khailt.trim()
+                    ? `${uurchlultuud.length} / ${mur.uurchlultuud.length} өөрчлөлт`
+                    : `${mur.uurchlultuud.length} өөрчлөлт`}
+                </span>
+                {mur.uurchlultuud.length > 3 && (
+                  <div className="relative ml-auto w-full max-w-[220px]">
+                    <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[color:var(--muted-text)]" />
+                    <input
+                      value={khailt}
+                      onChange={(e) => setKhailt(e.target.value)}
+                      placeholder="Талбар, утга хайх..."
+                      className="h-8 w-full rounded-xl border border-[color:var(--ctl-border)] bg-[color:var(--surface-hover)] pl-8 pr-3 text-[12px] text-[color:var(--panel-text)] outline-none placeholder:text-[color:var(--muted-text)] focus:border-theme"
+                    />
+                  </div>
+                )}
+              </div>
+            )}
             {!zassan && mur.shaltgaan && (
               <div className="rounded-xl border border-warning/30 bg-warning/10 px-3.5 py-2.5 text-[13px]">
                 <div className="text-[12px] text-warning">Устгасан шалтгаан</div>
@@ -200,7 +225,7 @@ export default function TuukhModal({ mur, turul, idNer = {}, onClose }: Props) {
               )
             ) : uurchlultuud.length === 0 ? (
                 <div className="py-10 text-center text-[13px] text-[color:var(--muted-text)]">
-                  {zassan ? "Мэдэгдэхүйц өөрчлөлт алга" : "Устгасан баримтын мэдээлэл алга"}
+                  {khailt.trim() ? "Хайлтад тохирох өөрчлөлт алга" : "Мэдэгдэхүйц өөрчлөлт алга"}
                 </div>
               ) : (
                 uurchlultuud.map((c, i) => {
