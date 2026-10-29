@@ -7,7 +7,7 @@
  * тооцоолол хийхгүй (өмнөх сартай харьцуулах өөрчлөлтөөс бусад) — тайлан бүр
  * өөрөө бодох нь ижил үзүүлэлтийг өөр өөр тоогоор гаргах шалтгаан болдог.
  *
- * Бүтэц: KPI → Төлбөрийн орлого (сараар; нэг сар шүүвэл өдрөөр) → Авлагын бүтэц / Топ 5 /
+ * Бүтэц: KPI → Төлбөрийн орлого (сараар; 31 хоног хүртэл бол өдрөөр) → Авлагын бүтэц / Топ 5 /
  * Төлөлтийн хувь (барилгаар).
  */
 
@@ -233,17 +233,14 @@ const AVLAGA_TABUUD: { key: AvlagaTab; ner: string }[] = [
 export default function BiTailanPage() {
   const { token, ajiltan, baiguullaga } = useAuth();
   const { selectedBuildingId } = useBuilding();
-  /** Сараар шүүлт: "YYYY-MM". Хоосон бол сүүлийн 12 сар (сараар). */
-  const [sar, setSar] = useState<string>("");
+  /** Огнооны хүрээ: ["YYYY-MM-DD", "YYYY-MM-DD"]. Хоосон бол сүүлийн 12 сар. */
+  const [ognoo, setOgnoo] = useState<[string, string]>(["", ""]);
   const [avlagaTab, setAvlagaTab] = useState<AvlagaTab>("angilal");
   /** Хэвлэхийн өмнө байрлалыг нэг хуудсанд багтахаар бэлтгэнэ. */
   const [khevlej, setKhevlej] = useState(false);
 
-  // Сонгосон сарын 1-нээс сүүлийн өдөр (28-31) хүртэл
-  const ekhlekh = sar ? `${sar}-01` : undefined;
-  const duusakh = sar
-    ? dayjs(`${sar}-01`).endOf("month").format("YYYY-MM-DD")
-    : undefined;
+  const ekhlekh = ognoo[0] || undefined;
+  const duusakh = ognoo[1] || undefined;
 
   const { data, error, isLoading } = useSWR(
     token && ajiltan?.baiguullagiinId
@@ -282,7 +279,7 @@ export default function BiTailanPage() {
   const kpi = data?.kpi;
   const saruud: string[] = data?.khugatsaa?.saruud || [];
   const orlogoMur: any[] = data?.orlogo?.saraar || [];
-  /** Нэг сар шүүсэн үед сервер өдрийн (1-31) мөр буцаана */
+  /** 31 хоног хүртэлх хүрээ шүүсэн үед сервер өдрийн мөр буцаана */
   const udruur: any[] = data?.orlogo?.udruur || [];
   const udruurEsekh = udruur.length > 0;
   const grafikMur: any[] = udruurEsekh ? udruur : orlogoMur;
@@ -552,12 +549,11 @@ export default function BiTailanPage() {
         <div className="flex w-full items-center gap-2 sm:w-auto">
           {isLoading && <Loader2 className="h-4 w-4 shrink-0 animate-spin text-theme" />}
           <FilterDatePicker
-            single
-            picker="month"
-            placeholder="Сар сонгох"
-            value={sar ? dayjs(`${sar}-01`) : null}
-            onChange={(_utga, mur) => setSar(mur || "")}
-            className="w-full sm:w-[180px]"
+            value={ognoo[0] ? [dayjs(ognoo[0]), dayjs(ognoo[1] || ognoo[0])] : null}
+            onChange={(_utga, murnuud) =>
+              setOgnoo([murnuud?.[0] || "", murnuud?.[1] || murnuud?.[0] || ""])
+            }
+            className="w-full sm:w-[284px]"
           />
           <ExcelButton
             onClick={csvTatya}
@@ -623,7 +619,7 @@ export default function BiTailanPage() {
       <Karti
         garchig={
           udruurEsekh
-            ? `Төлбөрийн орлого (өдрөөр, ${sarBuren(grafikTulkhuur[0].slice(0, 7))})`
+            ? "Төлбөрийн орлого (өдрөөр)"
             : "Төлбөрийн орлого (сараар)"
         }
       >
