@@ -167,7 +167,7 @@ function AuditTuukhAgguulga({ turul }: { turul: TuukhTurul }) {
     const q = khailt.trim().toLowerCase();
     return murnuud.filter((m) => {
       if (talbar && !m.uurchlultuud.some((c) => c.label === talbar)) return false;
-      if (q && !murKhailtTekst(m).includes(q)) return false;
+      if (q && !murKhailtTekst(m, auditAngilalNer(m.turul)).includes(q)) return false;
       return true;
     });
   }, [murnuud, khailt, talbar]);

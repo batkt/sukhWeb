@@ -325,30 +325,72 @@ const AUTO_TALBAR = new Set([
 export function massiviinUurchlult(umnukhRaw: unknown, shineRaw: unknown): MassiviinUurchlult | null {
   const a = jsonZadlakh(umnukhRaw);
   const b = jsonZadlakh(shineRaw);
+  if ((a != null && !Array.isArray(a)) || (b != null && !Array.isArray(b))) return null;
+  if (!Array.isArray(a) && !Array.isArray(b)) return null;
   const objMassiv = (v: unknown) =>
     Array.isArray(v) && v.length > 0 && v.every((x) => x && typeof x === "object");
-  if (!(objMassiv(a) || objMassiv(b))) return null;
-  if ((a != null && !Array.isArray(a)) || (b != null && !Array.isArray(b))) return null;
 
-  const umnukh = new Map<string, Record<string, unknown>>();
-  ((a as Record<string, unknown>[]) || []).forEach((m, i) => umnukh.set(murTulkhuur(m, i), m));
-  const shine = new Map<string, Record<string, unknown>>();
-  ((b as Record<string, unknown>[]) || []).forEach((m, i) => shine.set(murTulkhuur(m, i), m));
+  // Энгийн утгын массив (шошго г.м.): зөвхөн нэмсэн / хассан утгууд
+  if (!(objMassiv(a) || objMassiv(b))) {
+    const tekst = (v: unknown) =>
+      ((v as unknown[]) || []).map((x) => utgaFormat(x)).filter((x): x is string => x !== null);
+    const ta = tekst(a);
+    const tb = tekst(b);
+    const ugA = new Set(ta);
+    const ugB = new Set(tb);
+    return {
+      nemsen: tb.filter((x) => !ugA.has(x)),
+      khassan: ta.filter((x) => !ugB.has(x)),
+      uurchlugdsun: [],
+    };
+  }
+
+  const murA = ((a as Record<string, unknown>[]) || []).filter((x) => x && typeof x === "object");
+  const murB = ((b as Record<string, unknown>[]) || []).filter((x) => x && typeof x === "object");
 
   const nemsen: string[] = [];
   const khassan: string[] = [];
   const uurchlugdsun: DedUurchlult[] = [];
-  shine.forEach((m, k) => {
-    if (!umnukh.has(k)) nemsen.push(murTovch(m));
-  });
-  umnukh.forEach((m, k) => {
-    const s2 = shine.get(k);
-    if (!s2) {
-      khassan.push(murTovch(m));
-      return;
+  const khosuud: [Record<string, unknown>, Record<string, unknown>][] = [];
+
+  // 1) _id-аар, 2) утгын түлхүүрээр тааруулна
+  const usedB = new Set<number>();
+  const uldsenA: Record<string, unknown>[] = [];
+  const idStr = (m: Record<string, unknown>) => (m._id == null ? "" : String(mongoUtga(m._id)));
+  const tulkhuurB = murB.map((m, i) => murTulkhuur(m, i));
+  murA.forEach((m, i) => {
+    let j = idStr(m) ? murB.findIndex((x, k) => !usedB.has(k) && idStr(x) === idStr(m)) : -1;
+    if (j < 0) {
+      const t = murTulkhuur(m, i);
+      j = tulkhuurB.findIndex((x, k) => !usedB.has(k) && x === t);
     }
-    const ded = dedUurchlultuud(m, s2) || [];
-    ded
+    if (j < 0) uldsenA.push(m);
+    else {
+      usedB.add(j);
+      khosuud.push([m, murB[j]]);
+    }
+  });
+  const uldsenB = murB.filter((_, k) => !usedB.has(k));
+
+  // 3) Үлдсэнийг дарааллаар хослуулна — талбаруудын ихэнх нь ижил бол
+  //    «засварласан мөр» (зөвхөн ялгааг), эс бөгөөс нэмсэн/хассан
+  const talbarToo = (m: Record<string, unknown>) => Object.keys(khavtgailakh(m)).length || 1;
+  uldsenA.forEach((m) => {
+    const s2 = uldsenB[0];
+    if (s2) {
+      const ded = dedUurchlultuud(m, s2) || [];
+      if (ded.length <= Math.max(talbarToo(m), talbarToo(s2)) / 2) {
+        uldsenB.shift();
+        khosuud.push([m, s2]);
+        return;
+      }
+    }
+    khassan.push(murTovch(m));
+  });
+  uldsenB.forEach((m) => nemsen.push(murTovch(m)));
+
+  khosuud.forEach(([m, s2]) => {
+    (dedUurchlultuud(m, s2) || [])
       // Автомат талбар хоосорсон бол засвар биш
       .filter((d) => !(AUTO_TALBAR.has(d.zam) && d.shine === null))
       .forEach((d) => uurchlugdsun.push({ ...d, label: `${murTovch(s2)} · ${d.label}` }));
@@ -539,6 +581,10 @@ function uurchlultuudAvya(r: AnyRec): { jagsaalt: AuditUurchlult[]; niit: number
     // нэмэгдсэн/хасагдсан том объект (Түүх, Урьсан машин г.м.) нь засвар биш
     // бүтцийн агшин зураг — зөвхөн утга нь зассан мөрүүдийг үлдээнэ.
     .filter((c) => {
+      // Жагсаалт: нэмсэн/хассан/өөрчилсөн юу ч үлдээгүй бол харуулахгүй
+      const massiv = massiviinUurchlult(c.umnukh, c.shine);
+      if (massiv && massiv.nemsen.length + massiv.khassan.length + massiv.uurchlugdsun.length === 0)
+        return false;
       const ded = dedUurchlultuud(c.umnukh, c.shine);
       if (ded === null) return true;
       if (ded.length === 0) return false;
@@ -564,9 +610,20 @@ const golTalbarEremb = (talbar: string) => {
   return i < 0 ? 999 : i;
 };
 
-/** Мөрийг хайхад ашиглах текст: нэр, ажилтан, талбарын нэр, утгууд */
-export function murKhailtTekst(m: AuditMur): string {
-  const khesguud = [m.ner, m.dugaar, m.ajiltniiNer, m.shaltgaan];
+/**
+ * Мөрийг хайхад ашиглах текст — хүснэгтийн БҮХ баганын утга: огноо, төрөл,
+ * нэр/дугаар, ажилтан, үйлдлийн огноо, шалтгаан, өөрчлөгдсөн талбар/утгууд.
+ */
+export function murKhailtTekst(m: AuditMur, turulNer = ""): string {
+  const khesguud = [
+    ognooKharuulakh(m.bichlegiinOgnoo),
+    turulNer || m.turul,
+    m.ner,
+    m.dugaar,
+    m.ajiltniiNer,
+    ognooKharuulakh(m.uildelOgnoo, true),
+    m.shaltgaan,
+  ];
   m.uurchlultuud.forEach((c) => {
     khesguud.push(c.label, utgaFormat(c.umnukh) || "", utgaFormat(c.shine) || "");
   });

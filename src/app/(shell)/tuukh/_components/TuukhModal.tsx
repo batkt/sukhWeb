@@ -265,6 +265,8 @@ export default function TuukhModal({ mur, turul, idNer = {}, onClose }: Props) {
                     );
                   }
                   const ded = dedUurchlultuud(c.umnukh, c.shine);
+                  // Утга нь ижил (зөвхөн бүтэц) — өөрчлөгдсөн талбар биш
+                  if (ded && ded.length === 0) return null;
                   return (
                     <div
                       key={`${c.talbar}-${i}`}
@@ -275,11 +277,7 @@ export default function TuukhModal({ mur, turul, idNer = {}, onClose }: Props) {
                       </div>
                       {ded ? (
                         // Объект/массив: зөвхөн өөрчлөгдсөн дэд талбарууд
-                        ded.length === 0 ? (
-                          <div className="text-[12px] text-[color:var(--muted-text)]">
-                            Дотоод бүтэц өөрчлөгдсөн (утга ижил)
-                          </div>
-                        ) : (
+                        (
                           <div className="overflow-hidden rounded-lg border border-[color:var(--ctl-border)]">
                             <div className="grid grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)_minmax(0,1fr)] bg-[color:var(--surface-hover)] px-3 py-1.5 text-[11px] text-[color:var(--muted-text)]">
                               <span>Талбар</span>
