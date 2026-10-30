@@ -1272,7 +1272,11 @@ export default function Camera() {
       }
 
       if (!data?.oruulakhguiEsekh) {
-        khaalgaNeey(data.cameraIP);
+        // Хэрэв сервер өөрөө хаалт нээх коммандыг төхөөрөмж рүү шууд илгээсэн бол (khaalgaNeesen)
+        // вэбээс дахин /neeye дуудаж давхар саатал үүсгэх шаардлагагүй.
+        if (!data?.khaalgaNeesen) {
+          khaalgaNeey(data.cameraIP);
+        }
 
         // Create synthetic update to avoid REST fetch and update "Идэвхтэй" list
         // Use plate as ID to ensure we only have one entry for this car in liveUpdates
