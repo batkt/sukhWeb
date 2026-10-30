@@ -46,14 +46,22 @@ export interface AuditMur {
  * шүүлтүүрийн дараалал; «Тохиргоо» нь сүүлд, бусад бүх засварыг багтаана.
  */
 export const ZASVAR_ANGILAL_NER: Record<string, string> = {
-  burtgel: "Бүртгэл",
+  burtgel: "Оршин суугч / Харилцагч",
   umch: "Өмч бүртгэл",
   nekhemjlekh: "Нэхэмжлэх",
   khungulult: "Хөнгөлөлт",
   jagsaalt: "Жагсаалт",
   mashin: "Машин бүртгэл",
+  khaalga: "Хаалт нээх эрх",
+  gerBul: "Гэр бүлийн гишүүн урих",
+  // Зөвхөн «Устгасан түүх»-д (засвар нь бүртгэгдэхгүй)
+  ebarimt: "И-баримт",
   tokhirgoo: "Тохиргоо",
 };
+
+/** Төрлийн жагсаалт (шүүлтүүрийн дарааллаар) — хуудас бүрт */
+export const angilaluudKhuudsaar = (turul: TuukhTurul) =>
+  Object.entries(ZASVAR_ANGILAL_NER).filter(([k]) => turul === "ustgasan" || k !== "ebarimt");
 
 const ANGILAL_MODEL: Record<string, string[]> = {
   khungulult: ["khungulult", "khungulultiinTuukh"],
@@ -64,14 +72,22 @@ const ANGILAL_MODEL: Record<string, string[]> = {
   jagsaalt: ["uilchluulegch", "blockMashin"],
   mashin: ["mashin", "orshinSuugchMashin", "khariltsagchMashin", "uneguiMashin"],
   umch: ["tootBurtgel", "talbai"],
-  burtgel: ["orshinSuugch", "khariltsagch", "ajiltan", "geree"],
+  burtgel: ["orshinSuugch", "khariltsagch", "geree"],
+  gerBul: ["gerBuliinUrilga"],
+  ebarimt: ["ebarimt", "ebarimtShine", "easyRegisterUser"],
 };
 
+/**
+ * Талбараар тодорхойлогдох төрөл (model-оос давуу). Оршин суугчийн
+ * «холбогдсон тоот» нь оршин суугчийн бүртгэлд үлдэнэ — «Өмч бүртгэл» нь
+ * тоотын бүртгэл өөрөө (tootBurtgel).
+ */
 const ANGILAL_TALBAR: Record<string, string[]> = {
   khungulult: ["khungulult", "khungulultuud"],
   nekhemjlekh: ["zardluud", "ekhniiUldegdel", "ehniiUldegdel"],
   mashin: ["mashin", "mashinuud", "mashiniiDugaar"],
-  umch: ["toots", "units", "toot", "davkhar", "orts", "talbai"],
+  khaalga: ["khaalga", "khaalganuud", "khaalganiiErkh", "khaalgaNeekhErkh"],
+  gerBul: ["gishuuniiErkh", "gerBuliinGishuud", "gishuud"],
 };
 
 /** Нэг өөрчлөлтийн төрөл: эхлээд талбараар, дараа нь model-оор */
@@ -112,6 +128,47 @@ export function angilalaarSalgakh(m: AuditMur): AuditMur[] {
     uurchlultuud: jagsaalt,
     ...tokhiruulakh(a),
   }));
+}
+
+/* ------------------------- устгасан товч ------------------------- */
+
+const mungu = (v: unknown) => {
+  const n = Number(v);
+  return Number.isFinite(n) && v !== "" && v !== null ? `${n.toLocaleString("en-US")}₮` : null;
+};
+
+/**
+ * Устгасан баримтыг нэг өгүүлбэрээр («Нэхэмжлэхээс 1 ашиглалтын зардал
+ * устгасан») + зөвхөн хамааралтай талбарууд. Тодорхой загваргүй бол null —
+ * тэр үед бүх талбарыг харуулна.
+ */
+export function ustgasanTovch(
+  m: AuditMur,
+): { garchig: string; delgerengui: string | null; talbaruud: string[] } | null {
+  const d = (m.deletedData || {}) as Record<string, unknown>;
+  const s = (k: string) => (d[k] == null ? "" : String(d[k]).trim());
+  if (m.turul === "guilgeeAvlaguud") {
+    const dun = mungu(d.dun ?? d.tulukhDun ?? d.undsenDun);
+    const talbaruud = ["zardliinNer", "dun", "toot", "gereeniiDugaar", "ognoo", "nemeltTailbar"];
+    if (d.ekhniiUldegdelEsekh === true || d.ekhniiUldegdelEsekh === "true")
+      return {
+        garchig: "Нэхэмжлэхээс 1 эхний үлдэгдэл устгасан",
+        delgerengui: dun,
+        talbaruud: ["dun", "toot", "gereeniiDugaar", "ognoo", "tailbar"],
+      };
+    if (s("zardliinNer") || s("zardliinId"))
+      return {
+        garchig: "Нэхэмжлэхээс 1 ашиглалтын зардал устгасан",
+        delgerengui: [s("zardliinNer") || s("tailbar"), dun].filter(Boolean).join(" — ") || null,
+        talbaruud,
+      };
+    return {
+      garchig: "1 гүйлгээ устгасан",
+      delgerengui: [s("tailbar"), mungu(d.tulsunDun) || dun].filter(Boolean).join(" — ") || null,
+      talbaruud: ["tulsunDun", "dun", "toot", "gereeniiDugaar", "ognoo", "tailbar"],
+    };
+  }
+  return null;
 }
 
 /** Нууц үгийн талбар — hash-ийг хэзээ ч харуулахгүй */
@@ -231,6 +288,12 @@ export const TALBARIIN_NER: Record<string, string> = {
   sariinTulbur: "Сарын төлбөр",
   niitTulukhDun: "Нийт төлөх дүн",
   khariult: "Хариулт",
+  khaalga: "Хаалга",
+  khaalganuud: "Хаалганууд",
+  khaalganiiErkh: "Хаалга нээх эрх",
+  ajiltnuud: "Ажилтнууд",
+  gishuuniiErkh: "Гишүүний эрх",
+  gishuud: "Гишүүд",
   // Банкны гүйлгээ
   kholbosonAjiltniiNer: "Холбосон ажилтан",
   kholbosonDun: "Холбосон дүн",
@@ -250,6 +313,26 @@ export const TALBARIIN_NER: Record<string, string> = {
   income: "Орлого",
   outcome: "Зарлага",
   balance: "Үлдэгдэл",
+  // Гүйлгээ / авлага
+  zardliinNer: "Зардлын нэр",
+  zardliinTurul: "Зардлын төрөл",
+  undsenDun: "Үндсэн дүн",
+  tulukhAldangi: "Төлөх алданги",
+  tulsunAldangi: "Төлсөн алданги",
+  aldangiinTurul: "Алдангийн төрөл",
+  nekhemjlekhDeerKharagdakh: "Нэхэмжлэх дээр харагдах",
+  nemeltTailbar: "Нэмэлт тайлбар",
+  khungulsunDun: "Хөнгөлсөн дүн",
+  khungulultKhuvi: "Хөнгөлөлтийн хувь",
+  khungulultKhonog: "Хөнгөлөлтийн хоног",
+  ekhniiUldegdelEsekh: "Эхний үлдэгдэл эсэх",
+  nuatBodokhEsekh: "НӨАТ бодох эсэх",
+  khonogTootsokhEsekh: "Хоног тооцох эсэх",
+  tulsunDans: "Төлсөн данс",
+  khelber: "Хэлбэр",
+  source: "Эх сурвалж",
+  guilgeeKhiisenAjiltniiNer: "Гүйлгээ хийсэн ажилтан",
+  avlagaGuilgeeIndex: "Дараалал",
   nuutsUg: "Нууц үг",
   password: "Нууц үг",
   nuutsKod: "Нууц код",
@@ -741,7 +824,12 @@ function uurchlultuudAvya(r: AnyRec): { jagsaalt: AuditUurchlult[]; niit: number
     // Зөвхөн ID хадгалдаг талбар (kholbosonGereeniiId г.м.) — хүнд утгагүй,
     // харгалзах нэрийн талбар нь (kholbosonAjiltniiNer) тусдаа харагдана
     .filter((c) => !idNerTalbarEsekh(c.talbar) && !zuvkhunIdEsekh(c.umnukh, c.shine))
-    .filter((c) => !adilUtga(utgaFormat(c.umnukh), utgaFormat(c.shine)))
+    // Объект/жагсаалтыг товч тайлбараар биш, талбар бүрээр нь харьцуулна
+    .filter((c) => {
+      const ded = dedUurchlultuud(c.umnukh, c.shine);
+      if (ded !== null) return ded.length > 0;
+      return !adilUtga(utgaFormat(c.umnukh), utgaFormat(c.shine));
+    })
     // Объектын зөвхөн ID/огноо/дараалал өөрчлөгдсөн бол утгагүй. Мөн бүхэлдээ
     // нэмэгдсэн/хасагдсан том объект (Түүх, Урьсан машин г.м.) нь засвар биш
     // бүтцийн агшин зураг — зөвхөн утга нь зассан мөрүүдийг үлдээнэ.

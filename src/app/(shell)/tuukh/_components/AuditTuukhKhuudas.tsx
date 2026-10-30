@@ -11,18 +11,13 @@ import FilterSelect from "@/components/ui/FilterSelect";
 import PermissionGuard from "@/components/PermissionGuard";
 import uilchilgee from "@/lib/uilchilgee";
 import { useAuth } from "@/lib/useAuth";
-import {
-  ZASSAN_KHASAKH_MODEL,
-  auditAngilalNer,
-  auditServerModel,
-  useAuditTurluud,
-} from "@/lib/auditTurluud";
+import { ZASSAN_KHASAKH_MODEL, auditAngilalNer } from "@/lib/auditTurluud";
 import TuukhModal from "./TuukhModal";
 import {
   type AuditMur,
   type TuukhTurul,
-  ZASVAR_ANGILAL_NER,
   angilalaarSalgakh,
+  angilaluudKhuudsaar,
   murKhailtTekst,
   murKhevjuulekh,
   ognooKharuulakh,
@@ -72,14 +67,6 @@ function AuditTuukhAgguulga({ turul }: { turul: TuukhTurul }) {
   const [pageSize, setPageSize] = useState(50);
   const [songogdson, setSongogdson] = useState<AuditMur | null>(null);
 
-  const { angilaluud } = useAuditTurluud(
-    token,
-    orgId,
-    turul,
-    dateRange[0],
-    dateRange[1],
-  );
-
   const { data: ajiltnuudData } = useSWR(
     token && orgId ? ["/ajiltan", token, orgId] : null,
     async ([url, tkn, id]) => {
@@ -118,21 +105,17 @@ function AuditTuukhAgguulga({ turul }: { turul: TuukhTurul }) {
           orgId,
           dateRange[0] || "",
           dateRange[1] || "",
-          turul === "ustgasan" ? model : "",
           ajiltniiId,
         ]
       : null,
-    async ([url, tkn, id, ekh, duus, m, aj]) => {
+    // Төрөл нь өөрчлөлт/model-оор клиент дээр тодорхойлогддог тул серверт
+    // төрлийн шүүлт илгээхгүй
+    async ([url, tkn, id, ekh, duus, aj]) => {
       const params: Record<string, unknown> = {
         baiguullagiinId: id,
         khuudasniiDugaar: 1,
         khuudasniiKhemjee: 10000,
       };
-      // Нэг сонголтод хэд хэдэн model байж болно («ebarimt,ebarimtShine») —
-      // тэр үед бүгдийг авч клиент дээр шүүнэ
-      // Зассан түүхийн төрөл нь өөрчлөлтөөр тодорхойлогддог тул клиент дээр
-      if (turul === "ustgasan" && m && !m.includes(","))
-        params.modelName = auditServerModel(m);
       if (aj) params.ajiltniiId = aj;
       if (ekh && duus) {
         params.ekhlekhOgnoo = `${ekh} 00:00:00`;
@@ -169,18 +152,14 @@ function AuditTuukhAgguulga({ turul }: { turul: TuukhTurul }) {
         }
         return true;
       });
-    // Зассан: нэг засварыг өөрчлөлтийн төрөл бүрээр мөр болгоно
-    return turul === "zassan" ? tseverlesen.flatMap(angilalaarSalgakh) : tseverlesen;
+    // Засвар: өөрчлөлтийн төрөл бүрээр мөр болгоно; устгал: model-оор нь
+    return tseverlesen.flatMap(angilalaarSalgakh);
   }, [data, ajiltniiId, turul]);
 
-  const murnuud = useMemo(() => {
-    if (!model) return buhMur;
-    if (turul === "zassan") return buhMur.filter((m) => m.angilal === model);
-    // Устгасан: серверийн шүүлт алдвал ч клиент дээр давхар шүүнэ
-    return buhMur.filter((m) =>
-      model.split(",").some((x) => x.toLowerCase() === m.turul.toLowerCase()),
-    );
-  }, [buhMur, model, turul]);
+  const murnuud = useMemo(
+    () => (model ? buhMur.filter((m) => m.angilal === model) : buhMur),
+    [buhMur, model],
+  );
 
   const shuugdsen = useMemo(() => {
     const q = khailt.trim().toLowerCase();
@@ -190,27 +169,16 @@ function AuditTuukhAgguulga({ turul }: { turul: TuukhTurul }) {
     );
   }, [murnuud, khailt]);
 
+  // Тогтмол жагсаалт, энэ дарааллаар — тоо нь сонгосон хугацааных
   const turulOptions = useMemo(() => {
-    if (turul === "zassan") {
-      // Тогтмол жагсаалт, энэ дарааллаар — тоо нь сонгосон хугацааных
-      const too = new Map<string, number>();
-      buhMur.forEach((m) => too.set(m.angilal, (too.get(m.angilal) || 0) + 1));
-      return Object.entries(ZASVAR_ANGILAL_NER).map(([value, label]) => ({
-        value,
-        label,
-        tailbar: too.get(value) ? String(too.get(value)) : undefined,
-      }));
-    }
-    return angilaluud.map((a) => ({
-      value: a.value,
-      label: a.label,
-      // Байгууллага/Тохиргоо нэг model тул серверийн тоо нь салгагдаагүй
-      tailbar:
-        a.too > 0 && a.value !== "baiguullaga" && a.value !== "tokhirgoo"
-          ? String(a.too)
-          : undefined,
+    const too = new Map<string, number>();
+    buhMur.forEach((m) => too.set(m.angilal, (too.get(m.angilal) || 0) + 1));
+    return angilaluudKhuudsaar(turul).map(([value, label]) => ({
+      value,
+      label,
+      tailbar: too.get(value) ? String(too.get(value)) : undefined,
     }));
-  }, [angilaluud, buhMur, turul]);
+  }, [buhMur, turul]);
 
   const columns: ColumnsType<AuditMur> = useMemo(() => {
     const uildel: ColumnsType<AuditMur> = [
