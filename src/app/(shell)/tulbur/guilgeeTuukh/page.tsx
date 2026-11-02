@@ -4188,6 +4188,8 @@ export default function DansniiKhuulga() {
                     residentData?.gereeniiId ||
                     residentData?.gereeId,
                   uldegdel: remainingValue,
+                  // Ашиглалтын зардлыг оршин суугч / харилцагчаар шүүхэд хэрэглэнэ
+                  _ezemshigchiinTurul: ezemshigchiinTurul(residentData),
                 });
                 setIsTransactionModalOpen(true);
               }}
