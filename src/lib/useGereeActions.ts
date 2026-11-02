@@ -1286,7 +1286,7 @@ export function useGereeActions(
         { header: "Эхний үлдэгдэл", key: "ekhniiUldegdel", width: 18, dark: false },
         { header: "Цахилгаан кВт", key: "tsakhilgaan", width: 16, dark: false },
         { header: "Хоногоор бодох", key: "khonogoorBodokh", width: 18, dark: false },
-        { header: "Ашиглах хоног", key: "ashiglakhKhonog", width: 18, dark: false },
+        { header: "Ашиглалт хоногоор тооцох", key: "ashiglakhKhonog", width: 22, dark: false },
       ];
 
       ws.columns = cols.map((c) => ({

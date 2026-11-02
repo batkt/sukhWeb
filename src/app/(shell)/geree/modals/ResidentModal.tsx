@@ -1555,7 +1555,7 @@ export default function ResidentModal({
                                   />
                                   <div className="w-11 h-6 bg-[color:var(--panel)] peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-theme dark:peer-focus:ring-theme rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-[color:var(--surface-bg)] after:border-[color:var(--surface-border)] after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-theme"></div>
                                 </label>
-                                <span className="text-[11px] font-medium text-[color:var(--muted-text)]">Ирээдүйд ашиглах хоног</span>
+                                <span className="text-[11px] font-medium text-[color:var(--muted-text)]">Ашиглалт хоногоор тооцох</span>
                                 {mainUnit.khonogoorBodokhEsekh && (
                                   <div className="flex items-center gap-2 animate-in fade-in slide-in-from-left-2 duration-200">
                                     <input
