@@ -383,24 +383,10 @@ export default function ResidentRegistrationModal({
       let found: any = null;
       let isCust = false;
 
-      // 1. Search in OrshinSuugch
-      try {
-        const resp = await uilchilgee(token).get("/orshinSuugch", {
-          params: {
-            baiguullagiinId,
-            barilgiinId,
-            search: phoneToSearch,
-          },
-        });
-        if (Array.isArray(resp.data?.jagsaalt) && resp.data.jagsaalt.length > 0) {
-          found = resp.data.jagsaalt[0];
-        }
-      } catch (e) {
-        console.warn("OrshinSuugch search error:", e);
-      }
+      const isClientType = formData.orshinSuugchTurul === "Харилцагч";
 
-      // 2. Search in Khariltsagch
-      if (!found) {
+      if (isClientType) {
+        // 1. Search in Khariltsagch first
         try {
           const kResp = await uilchilgee(token).get("/khariltsagch", {
             params: {
@@ -415,6 +401,59 @@ export default function ResidentRegistrationModal({
           }
         } catch (e) {
           console.warn("Khariltsagch search error:", e);
+        }
+
+        // 2. Fallback search in OrshinSuugch
+        if (!found) {
+          try {
+            const resp = await uilchilgee(token).get("/orshinSuugch", {
+              params: {
+                baiguullagiinId,
+                barilgiinId,
+                search: phoneToSearch,
+              },
+            });
+            if (Array.isArray(resp.data?.jagsaalt) && resp.data.jagsaalt.length > 0) {
+              found = resp.data.jagsaalt[0];
+            }
+          } catch (e) {
+            console.warn("OrshinSuugch search error:", e);
+          }
+        }
+      } else {
+        // 1. Search in OrshinSuugch first
+        try {
+          const resp = await uilchilgee(token).get("/orshinSuugch", {
+            params: {
+              baiguullagiinId,
+              barilgiinId,
+              search: phoneToSearch,
+            },
+          });
+          if (Array.isArray(resp.data?.jagsaalt) && resp.data.jagsaalt.length > 0) {
+            found = resp.data.jagsaalt[0];
+          }
+        } catch (e) {
+          console.warn("OrshinSuugch search error:", e);
+        }
+
+        // 2. Fallback search in Khariltsagch
+        if (!found) {
+          try {
+            const kResp = await uilchilgee(token).get("/khariltsagch", {
+              params: {
+                baiguullagiinId,
+                barilgiinId,
+                search: phoneToSearch,
+              },
+            });
+            if (Array.isArray(kResp.data?.jagsaalt) && kResp.data.jagsaalt.length > 0) {
+              found = kResp.data.jagsaalt[0];
+              isCust = true;
+            }
+          } catch (e) {
+            console.warn("Khariltsagch search error:", e);
+          }
         }
       }
 
@@ -473,33 +512,27 @@ export default function ResidentRegistrationModal({
         setSearchStatus("notFound");
         setFoundOwnerId(null);
         setFormData((prev) => ({ ...prev, phone: phoneToSearch }));
-        if (formData.orshinSuugchTurul === "Оршин суугч") {
-          toast.error("Бүртгэлгүй оршин суугч байна.");
-          return;
-        }
-        toast("Бүртгэлгүй тул мэдээллийг шинээр оруулна уу.", {
-          icon: "ℹ️",
-        });
-        if (!keepStep) setStep(2);
+        const label =
+          formData.orshinSuugchTurul === "Харилцагч"
+            ? "харилцагч"
+            : "оршин суугч";
+        toast.error(
+          `Бүртгэлтэй ${label} олдсонгүй. Зөвхөн бүртгэлтэй ${label} дээр машин бүртгэх боломжтой.`
+        );
+        return;
       }
     } catch {
       setFormData((prev) => ({ ...prev, phone: phoneToSearch }));
-      if (!keepStep) setStep(2);
+      toast.error("Хайлт хийхэд алдаа гарлаа");
     } finally {
       setSearching(false);
     }
   };
 
   const handleManualProceed = () => {
-    if (isClient && !formData.phone) {
-      setStep(2);
+    if (!formData.phone || formData.phone.length !== 8) {
+      toast.error("Утасны дугаар 8 оронтой байх ёстой");
       return;
-    }
-    if (!isClient) {
-      if (!formData.phone || formData.phone.length !== 8) {
-        toast.error("Утасны дугаар 8 оронтой байх ёстой");
-        return;
-      }
     }
     handleSearch(formData.phone);
   };
@@ -557,10 +590,14 @@ export default function ResidentRegistrationModal({
         foundOwnerId ||
         editData?.ezemshigchiinId ||
         editData?.orshinSuugchiinId ||
-        (isClient ? editData?._id : undefined);
+        (editData?._id ? String(editData._id) : undefined);
 
-      if (formData.orshinSuugchTurul === "Оршин суугч" && !effectiveOwnerId && searchStatus !== "found") {
-        toast.error("Бүртгэлгүй оршин суугч байна.");
+      if (!effectiveOwnerId && searchStatus !== "found") {
+        const label =
+          formData.orshinSuugchTurul === "Харилцагч"
+            ? "харилцагч"
+            : "оршин суугч";
+        toast.error(`Бүртгэлтэй ${label} сонгогдоогүй байна. Эхлээд хайна уу.`);
         return;
       }
 
@@ -764,9 +801,9 @@ export default function ResidentRegistrationModal({
                       ) : null
                     }
                   />
-                  {searchStatus === "notFound" && formData.orshinSuugchTurul === "Оршин суугч" && (
+                  {searchStatus === "notFound" && (
                     <p className="text-xs text-red-500 font-medium mt-1.5 flex items-center gap-1">
-                      <span>⚠️</span> Бүртгэлгүй оршин суугч байна.
+                      <span>⚠️</span> Бүртгэлгүй {formData.orshinSuugchTurul === "Харилцагч" ? "харилцагч" : "оршин суугч"} байна.
                     </p>
                   )}
                 </div>
@@ -774,7 +811,7 @@ export default function ResidentRegistrationModal({
                 <div className="flex flex-col gap-2 pt-1">
                   <Button
                     onClick={handleManualProceed}
-                    disabled={searching}
+                    disabled={searching || formData.phone?.length !== 8}
                     variant="primary"
                     size="md"
                     fullWidth
@@ -785,26 +822,8 @@ export default function ResidentRegistrationModal({
                       !searching ? <ArrowRight className="w-4 h-4" /> : undefined
                     }
                   >
-                    {formData.phone?.length === 8
-                      ? "Хайж үргэлжлүүлэх"
-                      : isClient
-                        ? "Шууд үргэлжлүүлэх (Утасгүй)"
-                        : "Үргэлжлүүлэх"}
+                    Хайж үргэлжлүүлэх
                   </Button>
-
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (formData.orshinSuugchTurul === "Оршин суугч") {
-                        toast.error("Бүртгэлгүй оршин суугч байна. Эхлээд бүртгэлтэй оршин суугчийн утсаар хайна уу.");
-                        return;
-                      }
-                      setStep(2);
-                    }}
-                    className="py-1 text-xs text-[color:var(--muted-text)] hover:text-[color:var(--panel-text)] transition-colors text-center cursor-pointer"
-                  >
-                    Хайлтгүйгээр шууд гараар бөглөх →
-                  </button>
                 </div>
               </div>
             </div>
@@ -827,29 +846,16 @@ export default function ResidentRegistrationModal({
                     <div className="space-y-4">
                       <InputField
                         icon={Phone}
-                        label={isClient ? "Утас (заавал биш)" : "Утас"}
+                        label="Утас"
                         value={formData.phone}
                         type="tel"
+                        disabled={true}
                         onChange={(v) => {
                           const val = v.replace(/\D/g, "");
                           if (val.length > 8) return;
                           setFormData((prev) => ({ ...prev, phone: val }));
                         }}
-                        placeholder={isClient ? "Заавал биш" : "88888888"}
-                        rightElement={
-                          searching ? (
-                            <Loader2 className="w-4 h-4 animate-spin text-brand mr-1" />
-                          ) : formData.phone?.length === 8 ? (
-                            <button
-                              type="button"
-                              onClick={() => handleSearch(formData.phone, true)}
-                              title="Энэ утсаар мэдээлэл татах"
-                              className="p-1 text-brand hover:bg-brand/10 rounded-lg transition-colors cursor-pointer"
-                            >
-                              <Search className="w-4 h-4" />
-                            </button>
-                          ) : null
-                        }
+                        placeholder="88888888"
                       />
 
                       {!["СӨХ", "Ажилтан", "Үнэгүй", "Дотоод", "Харилцагч"].includes(
@@ -862,14 +868,15 @@ export default function ResidentRegistrationModal({
                           <input
                             list="toot-suggestions"
                             value={formData.unit}
+                            disabled={true}
                             onChange={(e) =>
                               setFormData((prev) => ({
                                 ...prev,
                                 unit: e.target.value,
                               }))
                             }
-                            className="w-full h-11 pl-10 pr-4 bg-[color:var(--surface-hover)] border border-[color:var(--surface-border)] dark:border-white/10 rounded-xl text-sm text-[color:var(--panel-text)] dark:text-white placeholder:text-[color:var(--muted-text)] focus:outline-none focus:ring-2 focus:ring-theme/20 focus:border-theme transition-colors"
-                            placeholder="Тоот сонгох"
+                            className="w-full h-11 pl-10 pr-4 bg-[color:var(--surface-hover)] border border-[color:var(--surface-border)] dark:border-white/10 rounded-xl text-sm text-[color:var(--panel-text)] dark:text-white placeholder:text-[color:var(--muted-text)] focus:outline-none focus:ring-2 focus:ring-theme/20 focus:border-theme transition-colors disabled:opacity-60"
+                            placeholder="Тоот"
                           />
                           {availableToots.length > 0 && (
                             <datalist id="toot-suggestions">
@@ -889,6 +896,7 @@ export default function ResidentRegistrationModal({
                           icon={User}
                           label="Овог"
                           value={formData.ovog}
+                          disabled={true}
                           onChange={(v) =>
                             setFormData((prev) => ({ ...prev, ovog: v }))
                           }
@@ -898,6 +906,7 @@ export default function ResidentRegistrationModal({
                           icon={User}
                           label="Нэр"
                           value={formData.name}
+                          disabled={true}
                           onChange={(v) =>
                             setFormData((prev) => ({ ...prev, name: v }))
                           }
