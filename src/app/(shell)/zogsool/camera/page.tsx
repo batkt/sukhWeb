@@ -89,8 +89,9 @@ const RealTimeDuration = ({
   updatedAt?: string;
   isClosed?: boolean;
 }) => {
-  const hasZurchil = !!zurchil || tuluv === -2 || tuluv === -3;
-  const isLive = !garsanTsag && !isClosed && !hasZurchil;
+  const isTseverlesen = tuluv === -3;
+  const hasZurchil = (!!zurchil || tuluv === -2) && !isTseverlesen;
+  const isLive = !garsanTsag && !isClosed && !hasZurchil && !isTseverlesen;
   const [now, setNow] = useState(moment());
 
   useEffect(() => {
@@ -186,9 +187,10 @@ function murNiiluulye(rawTransaction: any) {
   const tuluv = mur?.tuluv;
   const niitDun = transaction?.niitDun || 0;
   const zurchil = transaction?.zurchil || mur?.zurchil;
-  const hasZurchil = !!zurchil || tuluv === -2 || tuluv === -3;
-  const isCurrentlyIn = !mur?.garsanKhaalga && !garsanTsag && !hasZurchil;
-  const isFreeExit = (!!mur?.uneguiGarsan || tuluv === -1) && !hasZurchil;
+  const isTseverlesen = tuluv === -3 || mur?.garsanKhaalga === "tseverlesen";
+  const hasZurchil = (!!zurchil || tuluv === -2) && !isTseverlesen;
+  const isCurrentlyIn = !mur?.garsanKhaalga && !garsanTsag && !hasZurchil && !isTseverlesen;
+  const isFreeExit = (!!mur?.uneguiGarsan || tuluv === -1 || isTseverlesen) && !hasZurchil;
   const rawTulbur = mur?.tulbur;
   const tulburArr: any[] = Array.isArray(rawTulbur)
     ? rawTulbur
@@ -234,6 +236,7 @@ function murNiiluulye(rawTransaction: any) {
     hasZurchil,
     updatedAt: transaction?.updatedAt || mur?.updatedAt,
     isCurrentlyIn,
+    isTseverlesen,
     isFreeExit: isFreeExit || bureenKhungulsun,
     bureenKhungulsun,
     isPaid,
@@ -785,6 +788,9 @@ export default function Camera() {
       query["tuukh.garsanKhaalga"] = { $exists: true };
       query["tuukh.0.tuluv"] = { $nin: [-2, -3] };
       query.zurchil = { $exists: false };
+    } else if (statusFilter === "cleaned") {
+      // Цэвэрлэсэн: автоматаар хаагдсан
+      query["tuukh.0.tuluv"] = -3;
     }
 
     // 4. "Сүүлд гарсан эхэнд" шүүлттэй үед (хэрэв хайлт хийгээгүй, "Идэвхтэй" төлөв биш бол)
@@ -1489,9 +1495,10 @@ export default function Camera() {
         const garsanTsag = tsag?.garsanTsag;
         const tuluv = mur?.tuluv;
         const zurchil = t.zurchil || (mur as any)?.zurchil;
-        const hasZurchil = !!zurchil || tuluv === -2 || tuluv === -3;
+        const isTseverlesen = tuluv === -3 || mur?.garsanKhaalga === "tseverlesen";
+        const hasZurchil = (!!zurchil || tuluv === -2) && !isTseverlesen;
         // Check garsanKhaalga, garsanTsag, and zurchil
-        const isCurrentlyIn = !mur?.garsanKhaalga && !garsanTsag && !hasZurchil;
+        const isCurrentlyIn = !mur?.garsanKhaalga && !garsanTsag && !hasZurchil && !isTseverlesen;
         const niitDun = t.niitDun || 0;
         const isDebt =
           tuluv === -4 || (tuluv === 0 && niitDun > 0 && !isCurrentlyIn);
@@ -1514,6 +1521,9 @@ export default function Camera() {
           // Үнэгүй: Exited with no payment, excluding violations
           if (murNiiluulye(t).bureenKhungulsun || murNiiluulye(t).isFreeExit) return true;
           return !isCurrentlyIn && (niitDun === 0 || tuluv === -1) && !hasZurchil;
+        }
+        if (statusFilter === "cleaned") {
+          return isTseverlesen;
         }
         return true;
       });
@@ -2106,6 +2116,7 @@ export default function Camera() {
           { label: "Төлсөн", value: "paid" },
           { label: "Төлөөгүй", value: "unpaid" },
           { label: "Үнэгүй", value: "free" },
+          { label: "Цэвэрлэсэн", value: "cleaned" },
         ],
         (v) => {
           setStatusFilter(v);
@@ -2120,6 +2131,7 @@ export default function Camera() {
           tuluv,
           niitDun,
           isCurrentlyIn,
+          isTseverlesen,
           isFreeExit,
           isPaid,
           isDebt,
@@ -2141,6 +2153,7 @@ export default function Camera() {
         );
 
         if (!showActionBtn) {
+          if (isTseverlesen) return badge("bg-slate-400 border-slate-400", "Цэвэрлэсэн");
           if (isFreeExit || tuluv === -1) return badge("bg-slate-400 border-slate-400", "Үнэгүй");
           if (tuluv === -2)
             return badge("bg-danger border-danger", "Зөрчилтэй");
@@ -2177,7 +2190,7 @@ export default function Camera() {
                 }
               }}
               className={`mx-auto flex w-[100px] max-w-[100px] min-w-[100px] cursor-pointer flex-nowrap items-center justify-center overflow-hidden rounded-[6px] border px-2 py-0.5 whitespace-nowrap ${
-                isFreeExit || tuluv === -1
+                isTseverlesen || isFreeExit || tuluv === -1
                   ? "bg-slate-400 border-slate-400"
                   : hasRemainingBalance
                     ? "bg-warning border-warning"
@@ -2190,15 +2203,17 @@ export default function Camera() {
               style={{ color: "white" }}
             >
               {!isCurrentlyIn
-                ? isFreeExit || tuluv === -1
-                  ? "Үнэгүй"
-                  : tuluv === -2 || hasZurchil
-                    ? "Зөрчилтэй"
-                    : hasRemainingBalance
-                      ? "Төлбөр"
-                      : isDebt
-                        ? "Төлбөртэй"
-                        : "Дууссан"
+                ? isTseverlesen
+                  ? "Цэвэрлэсэн"
+                  : isFreeExit || tuluv === -1
+                    ? "Үнэгүй"
+                    : tuluv === -2 || hasZurchil
+                      ? "Зөрчилтэй"
+                      : hasRemainingBalance
+                        ? "Төлбөр"
+                        : isDebt
+                          ? "Төлбөртэй"
+                          : "Дууссан"
                 : isPaid && niitDun > 0
                   ? "Төлсөн"
                   : tuluv === 2

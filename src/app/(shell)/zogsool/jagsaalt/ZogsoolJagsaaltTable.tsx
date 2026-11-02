@@ -71,8 +71,9 @@ const RealTimeDuration = ({
   updatedAt?: string;
   isClosed?: boolean;
 }) => {
-  const hasZurchil = !!zurchil || tuluv === -2 || tuluv === -3;
-  const isLive = !garsanTsag && !isClosed && !hasZurchil;
+  const isTseverlesen = tuluv === -3;
+  const hasZurchil = (!!zurchil || tuluv === -2) && !isTseverlesen;
+  const isLive = !garsanTsag && !isClosed && !hasZurchil && !isTseverlesen;
   const [now, setNow] = React.useState(moment());
 
   React.useEffect(() => {
@@ -292,12 +293,25 @@ export const ZogsoolJagsaaltTable: React.FC<ZogsoolJagsaaltTableProps> = ({
           const garsanTsag = mur?.tsagiinTuukh?.[0]?.garsanTsag;
           const niitDun = record.niitDun || 0;
           const zurchil = record.zurchil || (mur as any)?.zurchil;
-          const hasZurchil = !!zurchil || tuluv === -2 || tuluv === -3;
+          const isTseverlesen = tuluv === -3 || mur?.garsanKhaalga === "tseverlesen";
+          const hasZurchil = (!!zurchil || tuluv === -2) && !isTseverlesen;
           // Car is currently in if no exit gate AND no exit timestamp AND no violation
-          const isCurrentlyIn = !mur?.garsanKhaalga && !garsanTsag && !hasZurchil;
+          const isCurrentlyIn = !mur?.garsanKhaalga && !garsanTsag && !hasZurchil && !isTseverlesen;
 
           const badgeClass =
             "flex items-center justify-center flex-nowrap w-[100px] min-w-[100px] max-w-[100px] mx-auto px-2 py-0.5 rounded-[6px] overflow-hidden border";
+          if (isTseverlesen) {
+            return (
+              <div
+                className={`${badgeClass} bg-slate-400 border-slate-400`}
+                style={{ borderRadius: "6px" }}
+              >
+                <span className="text-white whitespace-nowrap">
+                  Цэвэрлэсэн
+                </span>
+              </div>
+            );
+          }
           if (tuluv === -2 || hasZurchil) {
             return (
               <div

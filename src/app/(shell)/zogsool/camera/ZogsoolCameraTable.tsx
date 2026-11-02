@@ -71,8 +71,9 @@ const RealTimeDuration = ({
   updatedAt?: string;
   isClosed?: boolean;
 }) => {
-  const hasZurchil = !!zurchil || tuluv === -2 || tuluv === -3;
-  const isLive = !garsanTsag && !isClosed && !hasZurchil;
+  const isTseverlesen = tuluv === -3;
+  const hasZurchil = (!!zurchil || tuluv === -2) && !isTseverlesen;
+  const isLive = !garsanTsag && !isClosed && !hasZurchil && !isTseverlesen;
   const [now, setNow] = React.useState(moment());
 
   React.useEffect(() => {
@@ -201,9 +202,10 @@ export const ZogsoolCameraTable: React.FC<ZogsoolCameraTableProps> = ({
           const niitDun = record.niitDun || 0;
           const tuluv = mur?.tuluv;
           const zurchil = (record as any)?.zurchil || (mur as any)?.zurchil;
-          const hasZurchil = !!zurchil || tuluv === -2 || tuluv === -3;
-          const isCurrentlyIn = !mur?.garsanKhaalga && !garsanTsag && !hasZurchil;
-          const isFreeExit = (!!mur?.uneguiGarsan || tuluv === -1) && !hasZurchil;
+          const isTseverlesen = tuluv === -3 || mur?.garsanKhaalga === "tseverlesen";
+          const hasZurchil = (!!zurchil || tuluv === -2) && !isTseverlesen;
+          const isCurrentlyIn = !mur?.garsanKhaalga && !garsanTsag && !hasZurchil && !isTseverlesen;
+          const isFreeExit = (!!mur?.uneguiGarsan || tuluv === -1 || isTseverlesen) && !hasZurchil;
           const isDebt =
             !isFreeExit &&
             (tuluv === -4 || (tuluv === 0 && niitDun > 0 && !isCurrentlyIn));
@@ -211,6 +213,9 @@ export const ZogsoolCameraTable: React.FC<ZogsoolCameraTableProps> = ({
           const badgeClass =
             "flex items-center justify-center flex-nowrap w-[100px] min-w-[100px] max-w-[100px] mx-auto px-2 py-0.5 rounded-[6px] overflow-hidden border !text-white whitespace-nowrap";
           const getStatusColor = () => {
+            if (isTseverlesen) {
+              return "bg-slate-400 border-slate-400";
+            }
             if (tuluv === -2 || hasZurchil) {
               return "bg-danger border-danger";
             }
@@ -384,10 +389,11 @@ export const ZogsoolCameraTable: React.FC<ZogsoolCameraTableProps> = ({
           const niitDun = record.niitDun || 0;
           const garsanTsag = mur?.tsagiinTuukh?.[0]?.garsanTsag;
           const zurchil = (record as any)?.zurchil || (mur as any)?.zurchil;
-          const hasZurchil = !!zurchil || tuluv === -2 || tuluv === -3;
-          const isCurrentlyIn = !mur?.garsanKhaalga && !garsanTsag && !hasZurchil;
+          const isTseverlesen = tuluv === -3 || mur?.garsanKhaalga === "tseverlesen";
+          const hasZurchil = (!!zurchil || tuluv === -2) && !isTseverlesen;
+          const isCurrentlyIn = !mur?.garsanKhaalga && !garsanTsag && !hasZurchil && !isTseverlesen;
           const isFreeExit =
-            (!!mur?.uneguiGarsan || tuluv === -1) && !hasZurchil;
+            (!!mur?.uneguiGarsan || tuluv === -1 || isTseverlesen) && !hasZurchil;
           const isPaid = tuluv === 1;
           const isDebt =
             !isFreeExit &&
@@ -438,6 +444,16 @@ export const ZogsoolCameraTable: React.FC<ZogsoolCameraTableProps> = ({
             );
           }
 
+          if (isTseverlesen) {
+            return (
+              <div
+                className={`${badgeClass} bg-slate-400 border-slate-400`}
+                style={{ color: "white" }}
+              >
+                Цэвэрлэсэн
+              </div>
+            );
+          }
           if (isFreeExit || tuluv === -1) {
             return (
               <div

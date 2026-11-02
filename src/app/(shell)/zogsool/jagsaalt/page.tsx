@@ -110,8 +110,9 @@ const RealTimeDuration = ({
   updatedAt?: string;
   isClosed?: boolean;
 }) => {
-  const hasZurchil = !!zurchil || tuluv === -2 || tuluv === -3;
-  const isLive = !garsanTsag && !isClosed && !hasZurchil;
+  const isTseverlesen = tuluv === -3;
+  const hasZurchil = (!!zurchil || tuluv === -2) && !isTseverlesen;
+  const isLive = !garsanTsag && !isClosed && !hasZurchil && !isTseverlesen;
   const [now, setNow] = useState(moment());
   useEffect(() => {
     if (isLive) {
@@ -225,9 +226,10 @@ function murNiiluulye(rawTransaction: any) {
   const tuluv = mur?.tuluv;
   const niitDun = transaction?.niitDun || 0;
   const zurchil = transaction?.zurchil || mur?.zurchil;
-  const hasZurchil = !!zurchil || tuluv === -2 || tuluv === -3;
-  const isCurrentlyIn = !mur?.garsanKhaalga && !garsanTsag && !hasZurchil;
-  const isFreeExit = (!!mur?.uneguiGarsan || tuluv === -1) && !hasZurchil;
+  const isTseverlesen = tuluv === -3 || mur?.garsanKhaalga === "tseverlesen";
+  const hasZurchil = (!!zurchil || tuluv === -2) && !isTseverlesen;
+  const isCurrentlyIn = !mur?.garsanKhaalga && !garsanTsag && !hasZurchil && !isTseverlesen;
+  const isFreeExit = (!!mur?.uneguiGarsan || tuluv === -1 || isTseverlesen) && !hasZurchil;
   const rawTulbur = mur?.tulbur;
   const tulburArr: any[] = Array.isArray(rawTulbur)
     ? rawTulbur
@@ -261,6 +263,7 @@ function murNiiluulye(rawTransaction: any) {
 
   // Төлвийн өнгө — Хугацаа болон Төлөв багана хоёулаа үүнийг хуваалцана.
   const getStatusColor = () => {
+    if (isTseverlesen) return "bg-slate-400 border-slate-400";
     if (tuluv === -2 || hasZurchil) return "bg-danger border-danger";
     if (isFreeExit || tuluv === -1) return "bg-neutral border-neutral";
     if (hasRemainingBalance) return "bg-warning border-warning";
@@ -477,6 +480,8 @@ export default function Jagsaalt() {
         query["tuukh.garsanKhaalga"] = { $exists: true };
         query["tuukh.0.tuluv"] = { $nin: [-2, -3] };
         query.zurchil = { $exists: false };
+      } else if (status === "cleaned") {
+        query["tuukh.0.tuluv"] = -3;
       }
 
       if (payMethod && payMethod !== "all") {
