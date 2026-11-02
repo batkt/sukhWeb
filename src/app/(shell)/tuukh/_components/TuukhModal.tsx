@@ -4,6 +4,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { ArrowRight, Search, X } from "lucide-react";
 import { ModalPortal } from "../../../../../components/shell/ModalPortal";
 import useModalHotkeys from "@/lib/useModalHotkeys";
+import { useZardalZadargaa } from "./useZardalZadargaa";
 import {
   type AuditMur,
   GOL_TALBAR,
@@ -58,7 +59,7 @@ export default function TuukhModal({ mur, turul, idNer = {}, onClose }: Props) {
   useEffect(() => setKhailt(""), [mur]);
 
   // Засвар: бүх өөрчлөлтийг (жагсаалт, объект дотор ч) нэг хавтгай хүснэгт болгоно
-  const zasvarMuruud = useMemo<ZasvarMur[]>(() => {
+  const undsenMuruud = useMemo<ZasvarMur[]>(() => {
     if (!mur) return [];
     const out: ZasvarMur[] = [];
     // Устгасан: баримтын талбар бүр «утга → Устгагдсан», гол талбарууд эхэнд
@@ -121,6 +122,18 @@ export default function TuukhModal({ mur, turul, idNer = {}, onClose }: Props) {
       [m.talbar, m.kontekst, m.umnukh, m.shine].join(" ").toLowerCase().includes(q),
     );
   }, [mur, zassan, khailt, idNer]);
+
+  // Нэхэмжлэхийн нийт дүн өөрчлөгдсөн бол яг аль зардал нэмэгдсэн/хасагдсан
+  const { zadargaa, achaalj } = useZardalZadargaa(mur, zassan);
+  const zasvarMuruud = useMemo<ZasvarMur[]>(() => {
+    if (zadargaa.length === 0) return undsenMuruud;
+    const q = khailt.trim().toLowerCase();
+    const zardal = zadargaa.filter(
+      (z) => !q || [z.talbar, z.umnukh, z.shine].join(" ").toLowerCase().includes(q),
+    );
+    // Зардлын мөрүүд эхэнд, «Нийт нэхэмжилсэн» нь доор нь
+    return [...zardal, ...undsenMuruud];
+  }, [zadargaa, undsenMuruud, khailt]);
 
   if (!mur) return null;
 
@@ -215,6 +228,12 @@ export default function TuukhModal({ mur, turul, idNer = {}, onClose }: Props) {
                 </div>
               </div>
             ) : null}
+
+            {achaalj && (
+              <div className="text-[12px] text-[color:var(--muted-text)]">
+                Зардлын задаргаа ачаалж байна…
+              </div>
+            )}
 
             {zasvarMuruud.length === 0 ? (
               <div className="py-10 text-center text-[13px] text-[color:var(--muted-text)]">

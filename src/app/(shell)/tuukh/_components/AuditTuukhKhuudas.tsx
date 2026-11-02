@@ -273,27 +273,7 @@ function AuditTuukhAgguulga({ turul }: { turul: TuukhTurul }) {
             width: 150,
             align: "center",
             sorter: (a, b) => textEremb(a.angilalNer, b.angilalNer),
-            render: (_: unknown, r) => {
-              // Зассан: төрлийн доор яг аль талбар өөрчлөгдсөн (Утас, Нууц үг…)
-              const talbaruud = Array.from(new Set(r.uurchlultuud.map((c) => c.label)));
-              const tovch =
-                talbaruud.length > 3
-                  ? `${talbaruud.slice(0, 3).join(", ")} +${talbaruud.length - 3}`
-                  : talbaruud.join(", ");
-              return (
-                <div className="flex min-w-0 flex-col items-center leading-tight">
-                  <span>{r.angilalNer}</span>
-                  {turul === "zassan" && tovch && (
-                    <span
-                      className="max-w-full truncate text-[11px] text-[color:var(--muted-text)]"
-                      title={talbaruud.join(", ")}
-                    >
-                      {tovch}
-                    </span>
-                  )}
-                </div>
-              );
-            },
+            render: (_: unknown, r) => r.angilalNer,
           },
           {
             key: "ner",
