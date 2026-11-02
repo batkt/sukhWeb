@@ -156,6 +156,7 @@ export default function KhariltsagchModal({
       str(utas),
       str(c.tailbar),
       !!c.gadnaZogsoolEsekh,
+      !!c.khaalgaNeehErkh,
       mashinuud,
       units,
       Array.isArray(c.songosonZardluud)
@@ -1800,6 +1801,30 @@ export default function KhariltsagchModal({
                               </span>
                               <span className="mt-0.5 block text-xs text-[color:var(--muted-text)]">
                                 Гараж / агуулахгүйгээр хадгалах, эсвэл давхар нэмж болно
+                              </span>
+                            </span>
+                          </label>
+
+                          {/* Апп-аас хаалт нээх эрх */}
+                          <label className="flex cursor-pointer items-start gap-2.5 rounded-xl border border-[color:var(--surface-border)] bg-[color:var(--surface-hover)] px-3 py-2.5 transition-colors hover:border-theme/40 sm:col-span-2">
+                            <input
+                              type="checkbox"
+                              checked={!!newClient.khaalgaNeehErkh}
+                              onChange={(e) => {
+                                const asaav = e.target.checked;
+                                setNewClient((p: any) => ({
+                                  ...p,
+                                  khaalgaNeehErkh: asaav,
+                                }));
+                              }}
+                              className="mt-0.5 h-4 w-4 shrink-0 cursor-pointer accent-[color:var(--theme)]"
+                            />
+                            <span className="min-w-0">
+                              <span className="block text-sm text-[color:var(--panel-text)]">
+                                Апп-аас хаалт нээх эрх
+                              </span>
+                              <span className="mt-0.5 block text-xs text-[color:var(--muted-text)]">
+                                Байрны тохиргоо хаалттай байсан ч энэ харилцагчид апп дээр «Нээх» товч харагдаж, хаалт нээхийг зөвшөөрнө
                               </span>
                             </span>
                           </label>

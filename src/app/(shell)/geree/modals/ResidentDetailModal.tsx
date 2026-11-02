@@ -185,6 +185,10 @@ export const ResidentDetailModal: React.FC<Props> = ({
   const [zasajBuiGishuun, setZasajBuiGishuun] = useState<any | null>(null);
   const [gishuunKhadgaljBaina, setGishuunKhadgaljBaina] = useState(false);
 
+  /* Хаалт нээх эрх */
+  const [khaalgaNeehErkh, setKhaalgaNeehErkh] = useState(false);
+  const [khaalgaNeehErkhSolijBaina, setKhaalgaNeehErkhSolijBaina] = useState(false);
+
   /* Хувийн мэдээлэл засах */
   const [zasajBuiKhuvi, setZasajBuiKhuvi] = useState(false);
   const [bugdKhadgaljBaina, setBugdKhadgaljBaina] = useState(false);
@@ -234,6 +238,7 @@ export const ResidentDetailModal: React.FC<Props> = ({
       }
       const data = resp.data;
       setMedeelel(data);
+      setKhaalgaNeehErkh(Boolean(data?.khaalgaNeehErkh));
       setMashinJagsaalt(Array.isArray(data?.mashinuud) ? data.mashinuud : []);
       setMashinOorchlogdson(false);
       const toots = Array.isArray(data?.toots) ? data.toots : [];
@@ -752,6 +757,34 @@ export const ResidentDetailModal: React.FC<Props> = ({
     return "";
   }, [medeelel, tootJagsaalt]);
 
+  /** Апп-аас хаалт нээх эрхийг шууд солих */
+  const khaalgaErkhSolyo = async (shineUtga: boolean) => {
+    if (!token || !residentId || khaalgaNeehErkhSolijBaina) return;
+    setKhaalgaNeehErkhSolijBaina(true);
+    try {
+      const endpoint = (isKhariltsagch || medeelel?.erkh === "khariltsagch" || medeelel?.erkh === "Khariltsagch")
+        ? `/khariltsagch/${residentId}`
+        : `/orshinSuugch/${residentId}`;
+      await uilchilgee(token).put(endpoint, {
+        khaalgaNeehErkh: shineUtga,
+        baiguullagiinId,
+      });
+      setKhaalgaNeehErkh(shineUtga);
+      setMedeelel((prev: any) => ({ ...prev, khaalgaNeehErkh: shineUtga }));
+      openSuccessOverlay(
+        shineUtga
+          ? "Апп-аас хаалт нээх эрх олгогдлоо"
+          : "Апп-аас хаалт нээх эрх цуцлагдлаа",
+      );
+    } catch (err: any) {
+      openErrorOverlay(
+        err?.response?.data?.aldaa || "Хаалт нээх эрх өөрчлөхөд алдаа гарлаа",
+      );
+    } finally {
+      setKhaalgaNeehErkhSolijBaina(false);
+    }
+  };
+
   /** Засах горимд шилжихэд талбаруудыг одоогийн утгаар дүүргэнэ. */
   const khuviiZasya = () => {
     setKhuviinMedeelel({
@@ -760,7 +793,8 @@ export const ResidentDetailModal: React.FC<Props> = ({
       utas: medeelel?.utas || "",
       mail: medeelel?.mail || "",
       tailbar: medeelel?.tailbar || "",
-    });
+      khaalgaNeehErkh: Boolean(medeelel?.khaalgaNeehErkh),
+    } as any);
     setZasajBuiKhuvi(true);
   };
 
@@ -780,12 +814,13 @@ export const ResidentDetailModal: React.FC<Props> = ({
     }
 
     try {
-      const shinechlelt = {
+      const shinechlelt: any = {
         ovog: khuviinMedeelel.ovog.trim(),
         ner: khuviinMedeelel.ner.trim(),
         utas: utas || khuviinMedeelel.utas.trim(),
         mail: khuviinMedeelel.mail.trim(),
         tailbar: khuviinMedeelel.tailbar.trim(),
+        khaalgaNeehErkh: Boolean((khuviinMedeelel as any).khaalgaNeehErkh),
       };
       const endpoint = (isKhariltsagch || medeelel?.erkh === "khariltsagch" || medeelel?.erkh === "Khariltsagch")
         ? `/khariltsagch/${residentId}`
@@ -795,6 +830,7 @@ export const ResidentDetailModal: React.FC<Props> = ({
         baiguullagiinId,
       });
       setMedeelel((prev: any) => ({ ...prev, ...shinechlelt }));
+      setKhaalgaNeehErkh(shinechlelt.khaalgaNeehErkh);
       setZasajBuiKhuvi(false);
       return true;
     } catch (err: any) {
@@ -1140,6 +1176,41 @@ export const ResidentDetailModal: React.FC<Props> = ({
                               className="w-full rounded-lg border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] px-2.5 py-1.5 text-xs text-[color:var(--panel-text)] outline-none focus:border-theme"
                             />
                           </div>
+                          <div className="col-span-2 flex items-center justify-between rounded-xl border border-[color:var(--surface-border)] bg-[color:var(--surface-hover)] px-3 py-2.5">
+                            <div>
+                              <p className="text-xs font-medium text-[color:var(--panel-text)] dark:text-white">
+                                Апп-аас хаалт нээх эрх
+                              </p>
+                              <p className="text-[11px] text-[color:var(--muted-text)] mt-0.5">
+                                Байрны тохиргоо хаалттай байсан ч энэ хэрэглэгчид апп-аас хаалт нээхийг зөвшөөрөх
+                              </p>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setKhuviinMedeelel((m: any) => ({
+                                  ...m,
+                                  khaalgaNeehErkh: !m.khaalgaNeehErkh,
+                                }))
+                              }
+                              className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium transition cursor-pointer ${
+                                (khuviinMedeelel as any).khaalgaNeehErkh
+                                  ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30"
+                                  : "bg-[color:var(--surface-bg)] text-[color:var(--muted-text)] border border-[color:var(--surface-border)]"
+                              }`}
+                            >
+                              <span
+                                className={`h-1.5 w-1.5 rounded-full ${
+                                  (khuviinMedeelel as any).khaalgaNeehErkh
+                                    ? "bg-emerald-500"
+                                    : "bg-gray-400"
+                                }`}
+                              />
+                              {(khuviinMedeelel as any).khaalgaNeehErkh
+                                ? "Зөвшөөрсөн"
+                                : "Хаалттай"}
+                            </button>
+                          </div>
                         </div>
                         <p className="mt-2 text-[11px] text-[color:var(--muted-text)]">
                           Эрх, Бүртгэгдсэн огноо нь системээс
@@ -1220,6 +1291,32 @@ export const ResidentDetailModal: React.FC<Props> = ({
                         <p className="text-xs font-normal text-[color:var(--panel-text)] mt-0.5">
                           {ognooKharuul(medeelel.createdAt)}
                         </p>
+                      </div>
+
+                      <div>
+                        <p className="text-[11px] text-[color:var(--muted-text)]">
+                          Хаалт нээх (Апп)
+                        </p>
+                        <div className="mt-0.5">
+                          <button
+                            type="button"
+                            disabled={khaalgaNeehErkhSolijBaina}
+                            onClick={() => khaalgaErkhSolyo(!khaalgaNeehErkh)}
+                            className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium transition cursor-pointer disabled:opacity-50 ${
+                              khaalgaNeehErkh
+                                ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/20"
+                                : "bg-[color:var(--surface-hover)] text-[color:var(--muted-text)] border border-[color:var(--surface-border)] hover:bg-[color:var(--surface-border)]"
+                            }`}
+                            title="Дарж хаалт нээх эрхийг солино (Байрны нийт тохиргооноос үл хамааран энэ хэрэглэгчид зөвшөөрөх)"
+                          >
+                            <span
+                              className={`h-1.5 w-1.5 rounded-full ${
+                                khaalgaNeehErkh ? "bg-emerald-500" : "bg-gray-400"
+                              }`}
+                            />
+                            {khaalgaNeehErkh ? "Зөвшөөрсөн" : "Хаалттай"}
+                          </button>
+                        </div>
                       </div>
 
                       {medeelel.tailbar && (
