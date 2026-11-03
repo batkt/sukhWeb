@@ -171,16 +171,25 @@ export default function BankStatementImportModal({
   // Calculate available buildings (from organization, homes, and statement rows)
   const availableBuildings = useMemo(() => {
     const set = new Set<string>();
+    const orgClean = String(baiguullaga?.ner || "").trim().toLowerCase();
+
     if (Array.isArray(baiguullaga?.barilguud)) {
       baiguullaga.barilguud.forEach((b: any) => {
-        if (b.ner) set.add(b.ner);
+        const n = String(b.ner || b.dugaar || "").trim();
+        if (n && n !== "Байр" && n.toLowerCase() !== orgClean) set.add(n);
       });
     }
     homes.forEach((h) => {
-      if (h.building && h.building !== "Байр") set.add(h.building);
+      const n = String(h.building || "").trim();
+      if (n && n !== "Байр" && n.toLowerCase() !== orgClean && !n.toLowerCase().endsWith("сөх") && !n.toLowerCase().endsWith("soh")) {
+        set.add(n);
+      }
     });
     banks.forEach((b) => {
-      if (b.building && b.building !== "Байр") set.add(b.building);
+      const n = String(b.building || "").trim();
+      if (n && n !== "Байр" && n.toLowerCase() !== orgClean && !n.toLowerCase().endsWith("сөх") && !n.toLowerCase().endsWith("soh")) {
+        set.add(n);
+      }
     });
     return Array.from(set).sort();
   }, [baiguullaga, homes, banks]);
@@ -210,19 +219,56 @@ export default function BankStatementImportModal({
           (Array.isArray(res.data) ? res.data : []);
 
         if (Array.isArray(jagsaalt) && jagsaalt.length > 0) {
-          const loadedHomes: HomeRow[] = jagsaalt.map((c: any, idx: number) => ({
-            id: c._id || `c-${idx}`,
-            name: c.ner || c.orshinSuugchId?.ner || "Нэргүй",
-            ovog: c.ovog || c.orshinSuugchId?.ovog || "",
-            phone: Array.isArray(c.utas) ? c.utas.join(", ") : (c.utas || ""),
-            building: c.bairNer || c.barilgiinId?.dugaar || c.barilgiinId?.ner || "Байр",
-            unit: String(c.toot || "").trim(),
-            amount: Number(c.suhTulbur || c.niitTulbur || c.sarBuriinTulbur || c.nekhemjlekhDun || c.sarBuriinUilchilgee || c.uilchilgeeniiZardal || 0),
-            note: "СӨХ-ийн төлбөр",
-            status: "open",
-            gereeId: c._id,
-            barilgiinId: c.barilgiinId?._id || c.barilgiinId || "",
-          }));
+          const barilguud = Array.isArray(baiguullaga?.barilguud) ? baiguullaga.barilguud : [];
+          const orgNameClean = String(baiguullaga?.ner || "").trim().toLowerCase();
+
+          const loadedHomes: HomeRow[] = jagsaalt.map((c: any, idx: number) => {
+            const bId = String(c.barilgiinId?._id || c.barilgiinId || "").trim();
+            const matchedBarilga = bId
+              ? barilguud.find((b: any) => String(b?._id || b?.id).trim() === bId)
+              : null;
+
+            // Resolve real building name (e.g. 216, 217, 218, 219) instead of organization name
+            let buildingName =
+              matchedBarilga?.ner ||
+              (matchedBarilga as any)?.dugaar ||
+              c.barilgiinId?.ner ||
+              c.barilgiinId?.dugaar ||
+              "";
+
+            if (!buildingName) {
+              const rawBair = String(c.bairNer || "").trim();
+              const numM = rawBair.match(/\b(21[6-9]|\d{1,4})\b/);
+              if (numM) {
+                buildingName = numM[1];
+              } else if (
+                rawBair &&
+                rawBair.toLowerCase() !== orgNameClean &&
+                !rawBair.toLowerCase().endsWith("сөх") &&
+                !rawBair.toLowerCase().endsWith("soh")
+              ) {
+                buildingName = rawBair;
+              }
+            }
+
+            if (!buildingName) {
+              buildingName = "Байр";
+            }
+
+            return {
+              id: c._id || `c-${idx}`,
+              name: c.ner || c.orshinSuugchId?.ner || "Нэргүй",
+              ovog: c.ovog || c.orshinSuugchId?.ovog || "",
+              phone: Array.isArray(c.utas) ? c.utas.join(", ") : (c.utas || ""),
+              building: buildingName,
+              unit: String(c.toot || "").trim(),
+              amount: Number(c.suhTulbur || c.niitTulbur || c.sarBuriinTulbur || c.nekhemjlekhDun || c.sarBuriinUilchilgee || c.uilchilgeeniiZardal || 0),
+              note: "СӨХ-ийн төлбөр",
+              status: "open",
+              gereeId: c._id,
+              barilgiinId: c.barilgiinId?._id || c.barilgiinId || "",
+            };
+          });
           setHomes(loadedHomes);
 
           // If bank statements are already uploaded and waiting, auto-match right away
@@ -261,7 +307,7 @@ export default function BankStatementImportModal({
     return () => {
       isMounted = false;
     };
-  }, [show, token, baiguullagiinId]);
+  }, [show, token, baiguullagiinId, baiguullaga]);
 
   // Handle Excel File Upload & Client-Side Parse
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -657,7 +703,10 @@ export default function BankStatementImportModal({
 
         if (!descStr && orlogoRaw === 0 && zarlagaRaw === 0) continue;
 
-        const amount = orlogoRaw > 0 ? orlogoRaw : zarlagaRaw;
+        // Skip expense rows (Зарлага): only import income (Орлого) as requested
+        if (orlogoRaw <= 0) continue;
+
+        const amount = orlogoRaw;
         const parsed = parseTransactionDescription(descStr, accName);
         const { dateFormatted, fullDate, timeStr, rowMonth } = formatExcelDate(rawDateVal, rawTimeVal);
         const targetMonths = getEffectiveMonths(descStr, fullDate);
@@ -857,7 +906,7 @@ export default function BankStatementImportModal({
   };
 
   // Intelligent Multi-Tier Auto Matching
-  const autoMatch = (currentBanks = banks, currentHomes = homes) => {
+  const autoMatch = (currentBanks = banks, currentHomes = homes, buildingFilter = selectedBuilding) => {
     let matchCount = 0;
     let likelyCount = 0;
     const newBanks = [...currentBanks];
@@ -868,6 +917,9 @@ export default function BankStatementImportModal({
       const hBld = normalizeBuilding(h.building);
       if (bBld && hBld && bBld !== hBld) {
         return; // NEVER pair cross-building!
+      }
+      if (buildingFilter !== "ALL" && !isBuildingCompatible(buildingFilter, h.building)) {
+        return;
       }
 
       b.status = status;
@@ -1001,9 +1053,10 @@ export default function BankStatementImportModal({
         const hBld = normalizeBuilding(h.building);
         // If bank row explicitly has a building, do NOT match a different building!
         if (bBld && hBld && bBld !== hBld) return false;
+        if (bBld && !hBld) return false;
         if (normalizeToot(h.unit) !== bToot) return false;
-        if (selectedBuilding !== "ALL") {
-          return isBuildingCompatible(selectedBuilding, h.building);
+        if (buildingFilter !== "ALL") {
+          return isBuildingCompatible(buildingFilter, h.building);
         }
         return true;
       });
@@ -1214,8 +1267,14 @@ export default function BankStatementImportModal({
       setSubmitting(true);
       const payloadRows = targetBanks.map((b) => {
         const linkedHome =
-          homes.find((h) => String(h.id) === String(b.matchedHomeId)) ||
-          homes.find((h) => normalizeToot(h.unit) === normalizeToot(b.unit));
+          (b.matchedHomeId ? homes.find((h) => String(h.id) === String(b.matchedHomeId)) : null) ||
+          (b.unit && b.unit !== "—"
+            ? homes.find(
+                (h) =>
+                  normalizeToot(h.unit) === normalizeToot(b.unit) &&
+                  isBuildingCompatible(b.building, h.building)
+              )
+            : null);
         let fullDate = b.rawDate || b.date;
         if (fullDate && !/^\d{4}/.test(fullDate)) {
           const yr = b.month?.substring(0, 4) || new Date().getFullYear();
@@ -1365,7 +1424,7 @@ export default function BankStatementImportModal({
       if ((b.status === "match" || b.status === "done" || b.status === "likely") && b.matchedHomeId != null) {
         const matchedHome =
           filteredHomes.find((h) => h.id === b.matchedHomeId) ||
-          homes.find((h) => h.id === b.matchedHomeId);
+          (selectedBuilding === "ALL" ? homes.find((h) => h.id === b.matchedHomeId) : null);
         if (matchedHome) {
           const pairedHome = {
             ...matchedHome,
@@ -1505,7 +1564,30 @@ export default function BankStatementImportModal({
                       <span className="text-[11px] text-[#7c8b85] font-normal">Байр:</span>
                       <select
                         value={selectedBuilding}
-                        onChange={(e) => setSelectedBuilding(e.target.value)}
+                        onChange={(e) => {
+                          const nextBld = e.target.value;
+                          setSelectedBuilding(nextBld);
+                          setBanks((prevBanks) => {
+                            const resetBanks = prevBanks.map((b) => {
+                              if (b.status === "done") return b;
+                              if (b.status === "likely") {
+                                return { ...b, status: "open" as const, matchedHomeId: undefined };
+                              }
+                              return b;
+                            });
+                            const resetHomes = homes.map((h) => {
+                              if (h.status === "done") return h;
+                              if (h.status === "likely") {
+                                return { ...h, status: "open" as const, matchedBankId: undefined };
+                              }
+                              return h;
+                            });
+                            setTimeout(() => {
+                              autoMatch(resetBanks, resetHomes, nextBld);
+                            }, 50);
+                            return resetBanks;
+                          });
+                        }}
                         className="bg-transparent border-none text-xs font-bold text-[#203a35] dark:text-zinc-100 focus:outline-none cursor-pointer pr-1"
                       >
                         <option value="ALL">Бүх байр ({availableBuildings.length})</option>
@@ -1864,7 +1946,7 @@ export default function BankStatementImportModal({
 
                             {/* Right Table Headers: Айлын төлбөр (50%) */}
                             <th className="sticky top-0 z-30 h-10 py-0 px-3 text-left align-middle font-semibold text-xs whitespace-nowrap bg-[#f4f7f5] dark:bg-zinc-800 text-zinc-700 dark:text-zinc-200 border-b border-zinc-200 dark:border-zinc-700 shadow-xs">
-                              Тоот
+                              Байр, тоот
                             </th>
                             <th className="sticky top-0 z-30 h-10 py-0 px-3 text-left align-middle font-semibold text-xs truncate bg-[#f4f7f5] dark:bg-zinc-800 text-zinc-700 dark:text-zinc-200 border-b border-zinc-200 dark:border-zinc-700 shadow-xs">
                               Оршин суугч
@@ -2125,8 +2207,10 @@ export default function BankStatementImportModal({
                                         <div className="text-xs text-zinc-900 dark:text-zinc-100 font-semibold tracking-tight whitespace-nowrap">
                                           {h.unit} тоот
                                         </div>
-                                        <div className="text-[11px] text-zinc-500 dark:text-zinc-400 mt-0.5 truncate" title={h.building}>
-                                          {h.building}
+                                        <div className="text-[11px] font-medium text-emerald-800 dark:text-emerald-400 mt-0.5 truncate" title={h.building}>
+                                          {h.building && h.building !== "Байр"
+                                            ? (h.building.includes("байр") || h.building.includes("Байр") ? h.building : `${h.building}-р байр`)
+                                            : (baiguullaga?.ner || "Байр")}
                                         </div>
                                       </td>
                                       {/* MID of Home: FIXED POSITION FOR BADGE & САЛГАХ BEFORE NEHEMJLEH AMOUNT */}
