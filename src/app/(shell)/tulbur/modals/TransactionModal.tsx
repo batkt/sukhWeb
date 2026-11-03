@@ -346,12 +346,30 @@ export default function TransactionModal({
   const [selectedAshiglaltIds, setSelectedAshiglaltIds] = useState<string[]>([]);
   const [ashiglaltKhaikh, setAshiglaltKhaikh] = useState<string>("");
 
+  /**
+   * Энэ гүйлгээний эзэмшигч харилцагч (түрээслэгч) уу, оршин суугч уу.
+   * Ашиглалтын зардлыг зөвхөн тухайн эзэмшигчид зориулснаар харуулахад хэрэглэнэ.
+   */
+  const ezemshigchiinTurul: "orshinSuugch" | "khariltsagch" =
+    resident?._ezemshigchiinTurul === "khariltsagch" ||
+    (!resident?._ezemshigchiinTurul &&
+      (resident?.khariltsagchId || resident?._isKhariltsagch))
+      ? "khariltsagch"
+      : "orshinSuugch";
+
   const availableAshiglaltZardluud = useMemo(() => {
     if (!Array.isArray(zardluud)) return [];
     return zardluud.filter(
-      (z) => z && z.ner && String(z._id || z.ner) !== "tsakhilgaan_kv"
+      (z) =>
+        z &&
+        z.ner &&
+        String(z._id || z.ner) !== "tsakhilgaan_kv" &&
+        // zoriulalt-гүй хуучин зардлыг оршин суугчийнх гэж үзнэ (Тохиргоотой ижил)
+        (ezemshigchiinTurul === "khariltsagch"
+          ? z.zoriulalt === "khariltsagch"
+          : z.zoriulalt !== "khariltsagch")
     );
-  }, [zardluud]);
+  }, [zardluud, ezemshigchiinTurul]);
 
   const filteredAshiglaltZardluud = useMemo(() => {
     if (!ashiglaltKhaikh.trim()) return availableAshiglaltZardluud;
