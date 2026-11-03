@@ -14,6 +14,7 @@ import {
   Check,
   Link2,
   AlertTriangle,
+  Building2,
 } from "lucide-react";
 import * as XLSX from "xlsx";
 import { useModalHotkeys } from "@/lib/useModalHotkeys";
@@ -23,7 +24,16 @@ import { useAuth } from "@/lib/useAuth";
 import { ModalPortal } from "../../../../../components/shell/ModalPortal";
 import formatNumber from "../../../../../tools/function/formatNumber";
 
-export type MatchStatus = "open" | "match" | "done";
+export type MatchStatus = "open" | "likely" | "match" | "done";
+
+export type PayerRule = {
+  payerKey: string;
+  relatedAccount?: string;
+  payerName?: string;
+  building?: string;
+  toot: string;
+  gereeId?: string;
+};
 
 export type BankRow = {
   id: number;
@@ -41,6 +51,15 @@ export type BankRow = {
   journal?: string;
   status: MatchStatus;
   matchedHomeId?: string | number | null;
+  matchReason?: string;
+  targetPeriod?: string;
+  phone?: string;
+  ebillToot?: string;
+  ebillBuilding?: string;
+  isExpense?: boolean;
+  isParking?: boolean;
+  isFee?: boolean;
+  isAldangi?: boolean;
 };
 
 export type HomeRow = {
@@ -56,6 +75,7 @@ export type HomeRow = {
   status: MatchStatus;
   matchedBankId?: number | null;
   gereeId?: string;
+  barilgiinId?: string;
 };
 
 interface BankStatementImportModalProps {
@@ -80,12 +100,15 @@ export default function BankStatementImportModal({
   const [loadingFile, setLoadingFile] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
-  // Month Filter state - "ALL" by default to show all transactions
+    // Month Filter state - "ALL" by default to show all transactions
   const [selectedMonth, setSelectedMonth] = useState<string>("ALL");
+  // Building Filter state - "ALL" by default
+  const [selectedBuilding, setSelectedBuilding] = useState<string>("ALL");
 
   // Core Data Lists - NO mock data, initialized to empty arrays
   const [banks, setBanks] = useState<BankRow[]>([]);
   const [homes, setHomes] = useState<HomeRow[]>([]);
+  const [payerRules, setPayerRules] = useState<PayerRule[]>([]);
 
   // Selection states: selB stores checked bank transaction IDs for registration (auto-checked for matched rows)
   const [selB, setSelB] = useState<Set<number>>(new Set());
@@ -93,8 +116,8 @@ export default function BankStatementImportModal({
   const [pairBankId, setPairBankId] = useState<number | null>(null);
   const [pairHomeId, setPairHomeId] = useState<string | number | null>(null);
 
-  // Tabs: 'all' | 'open' (Тулгаагүй) | 'match' (Тулгасан) | 'done' (Бүртгэсэн)
-  const [tab, setTab] = useState<"all" | "open" | "match" | "done">("all");
+  // Tabs: 'all' | 'match' (Тулгасан) | 'likely' (Магадлалтай) | 'open' (Тулгаагүй) | 'done' (Бүртгэсэн)
+  const [tab, setTab] = useState<"all" | "match" | "likely" | "open" | "done">("all");
 
   // Search queries
   const [bankSearch, setBankSearch] = useState("");
@@ -140,21 +163,36 @@ export default function BankStatementImportModal({
     return m;
   };
 
-  // Load actual contracts / residents from Amarhome API using proper queryObj
+  // Calculate available buildings (from organization, homes, and statement rows)
+  const availableBuildings = useMemo(() => {
+    const set = new Set<string>();
+    if (Array.isArray(baiguullaga?.barilguud)) {
+      baiguullaga.barilguud.forEach((b: any) => {
+        if (b.ner) set.add(b.ner);
+      });
+    }
+    homes.forEach((h) => {
+      if (h.building && h.building !== "Байр") set.add(h.building);
+    });
+    banks.forEach((b) => {
+      if (b.building && b.building !== "Байр") set.add(b.building);
+    });
+    return Array.from(set).sort();
+  }, [baiguullaga, homes, banks]);
+
+  // Load actual contracts / residents from Amarhome API for whole organization
   useEffect(() => {
     if (!show || !token || !baiguullagiinId) return;
 
     let isMounted = true;
     const queryObj: any = { baiguullagiinId };
-    if (barilgiinId) queryObj.barilgiinId = barilgiinId;
 
     uilchilgee(token)
       .get("/geree", {
         params: {
           baiguullagiinId,
-          barilgiinId: barilgiinId || undefined,
           khuudasniiDugaar: 1,
-          khuudasniiKhemjee: 1000,
+          khuudasniiKhemjee: 2000,
           query: JSON.stringify(queryObj),
         },
       })
@@ -172,18 +210,19 @@ export default function BankStatementImportModal({
             name: c.ner || c.orshinSuugchId?.ner || "Нэргүй",
             ovog: c.ovog || c.orshinSuugchId?.ovog || "",
             phone: Array.isArray(c.utas) ? c.utas.join(", ") : (c.utas || ""),
-            building: c.bairNer || c.barilgiinId?.dugaar || "Байр",
+            building: c.bairNer || c.barilgiinId?.dugaar || c.barilgiinId?.ner || "Байр",
             unit: String(c.toot || "").trim(),
             amount: Number(c.suhTulbur || c.niitTulbur || c.sarBuriinTulbur || c.nekhemjlekhDun || c.sarBuriinUilchilgee || c.uilchilgeeniiZardal || 0),
             note: "СӨХ-ийн төлбөр",
             status: "open",
             gereeId: c._id,
+            barilgiinId: c.barilgiinId?._id || c.barilgiinId || "",
           }));
           setHomes(loadedHomes);
 
           // If bank statements are already uploaded and waiting, auto-match right away
           setBanks((prevBanks) => {
-            if (prevBanks.length > 0 && prevBanks.some((b) => b.status === "open")) {
+            if (prevBanks.length > 0 && prevBanks.some((b) => b.status === "open" || b.status === "likely")) {
               setTimeout(() => {
                 autoMatch(prevBanks, loadedHomes);
               }, 60);
@@ -199,10 +238,25 @@ export default function BankStatementImportModal({
         if (isMounted) setHomes([]);
       });
 
+    // Also fetch learned payer rules
+    uilchilgee(token)
+      .get("/bankniiGuilgee/tulgaltDurem", { params: { baiguullagiinId } })
+      .then((res) => {
+        if (isMounted && Array.isArray(res.data?.rules)) {
+          setPayerRules(res.data.rules);
+        }
+      })
+      .catch(() => {
+        try {
+          const local = JSON.parse(localStorage.getItem(`sukh_bank_rules_${baiguullagiinId}`) || "[]");
+          if (isMounted && Array.isArray(local)) setPayerRules(local);
+        } catch {}
+      });
+
     return () => {
       isMounted = false;
     };
-  }, [show, token, baiguullagiinId, barilgiinId]);
+  }, [show, token, baiguullagiinId]);
 
   // Handle Excel File Upload & Client-Side Parse
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -210,6 +264,146 @@ export default function BankStatementImportModal({
     const selectedFile = e.target.files[0];
     setFile(selectedFile);
     await parseExcelFile(selectedFile);
+  };
+
+  // Advanced Transaction Description Parser
+  const parseTransactionDescription = (descStr: string, accName?: string) => {
+    const orig = String(descStr || "").trim();
+    const isFee = Boolean(orig.match(/^(fee|шимтгэл|хураамж)$|данс хөтөлсний|гүйлгээний шимтгэл/i));
+    const isExpense = Boolean(orig.match(/\btsalin\b|цалин|lift|лифт|засвар|zaswar|хог\b|hog\b|тээвэр|teewer|унгалгаа|ungulguu|тог\b|tog\b|цонх|хулдаас|huldaas|будаг|budag|харуул|haruul/i));
+    const isParking = Boolean(orig.match(/qrgadaa|зогсоол|автомашин|улсын дугаар/i));
+    const isAldangi = Boolean(orig.match(/алданги/i));
+
+    // 1. E-Bill Barcode (United E-bill: 7 org + 3 bair + 5 toot + 1 check)
+    // e.g. 2003260218000580_М.ЦЭРЭНЖАМЦ_СӨХ_2026/7 or Алданги. 2003260217001080_Ө._СУРМАА_СӨХ_2026/6
+    const ebill = orig.match(/(?:алданги[.\s]*)?(\d{7})(\d{3})(\d{5})(\d{1})_(.+?)_(?:түр__)?сөх_(\d{4}\/\d{1,2})/i);
+    if (ebill) {
+      const rawBair = ebill[2];
+      const rawToot = ebill[3];
+      const ebillName = ebill[5].replace(/_/g, " ").trim();
+      const period = ebill[6].trim();
+      return {
+        type: "EBILL",
+        building: String(parseInt(rawBair, 10)),
+        unit: String(parseInt(rawToot, 10)),
+        ebillBuilding: String(parseInt(rawBair, 10)),
+        ebillToot: String(parseInt(rawToot, 10)),
+        name: ebillName || accName || "",
+        targetPeriod: period,
+        phone: "",
+        isAldangi,
+        isExpense: false,
+        isParking: false,
+        isFee: false,
+      };
+    }
+
+    const ebillAlt = orig.match(/(?:алданги[.\s]*)?(\d{15,18})_(.+?)_(?:түр__)?сөх_(\d{4}\/\d{1,2})/i);
+    if (ebillAlt) {
+      const code = ebillAlt[1];
+      const rawBair = code.substring(7, 10);
+      const rawToot = code.substring(10, 15);
+      const period = ebillAlt[3].trim();
+      return {
+        type: "EBILL",
+        building: String(parseInt(rawBair, 10)),
+        unit: String(parseInt(rawToot, 10)),
+        ebillBuilding: String(parseInt(rawBair, 10)),
+        ebillToot: String(parseInt(rawToot, 10)),
+        name: ebillAlt[2].replace(/_/g, " ").trim() || accName || "",
+        targetPeriod: period,
+        phone: "",
+        isAldangi,
+        isExpense: false,
+        isParking: false,
+        isFee: false,
+      };
+    }
+
+    // 2. Extract periods (target months) before cleaning
+    const periodMatches: string[] = [];
+    const mMulti = orig.match(/\b(\d{1,2}(?:\s*,\s*\d{1,2})+|\d{1,2}\s*-\s*\d{1,2})\s*(?:-[рrR]\s*)?(?:сар|sar)\b/i);
+    if (mMulti) periodMatches.push(mMulti[0]);
+    const mYm = orig.match(/\b(202[4-9][./-](?:0?[1-9]|1[0-2]))\b/);
+    if (mYm) periodMatches.push(mYm[1]);
+    const mNiit = orig.match(/niit\s*(\d{1,2})\s*n?\s*sar/i);
+    if (mNiit) periodMatches.push(`${mNiit[1]} сар (нийт)`);
+
+    // 3. Extract 8-digit phone number
+    const phoneMatch = orig.match(/\b([89]\d{7})\b/);
+    const phone = phoneMatch ? phoneMatch[1] : "";
+
+    // 4. Clean working copy of the description to avoid dates/years becoming toot
+    let clean = orig;
+    clean = clean.replace(/\([^)]*\)/g, " "); // remove parentheses (ХААН БАНК ...)
+    clean = clean.replace(/qpay\s*\d+/gi, " ").replace(/гд[-:]?\d+/gi, " ").replace(/charge:\s*[\d.]+/gi, " ");
+    // Remove full dates e.g. 2026.08.01, 2026-08-01
+    clean = clean.replace(/\b202[0-9][-/.](?:0?[1-9]|1[0-2])[-/.](?:0?[1-9]|[12]\d|3[01])\b/g, " ");
+    // Remove year-month combinations e.g. _2026/7, 2026.07, 2026-8, 202606
+    clean = clean.replace(/[_/.\s-]202[0-9][./-](?:0?[1-9]|1[0-2])\b/g, " ");
+    clean = clean.replace(/\b202[0-9][./-](?:0?[1-9]|1[0-2])\b/g, " ");
+    clean = clean.replace(/\b202[0-9](?:0[1-9]|1[0-2])\b/g, " ");
+    // Remove standalone years e.g. 2025, 2026
+    clean = clean.replace(/\b202[0-9]\b/g, " ");
+    // Remove months e.g. 4,5,6,7sar, 6 sar, 8-r sar, niit6nsar
+    clean = clean.replace(/\b(?:\d{1,2}(?:\s*,\s*\d{1,2})*|\d{1,2}\s*-\s*\d{1,2})\s*(?:-[рrR]\s*)?(?:сар|sar)[а-яөүёa-z]*/gi, " ");
+    clean = clean.replace(/\b\d{1,2}\s*(?:-[рrR]\s*)?(?:сар|sar)[а-яөүёa-z]*/gi, " ");
+    clean = clean.replace(/niit\s*\d+\s*n?\s*sar/gi, " ");
+    if (phone) clean = clean.replace(phone, " ");
+
+    let building = "";
+    let unit = "";
+
+    // 5. Building & Toot pattern matching:
+    // Supports: "217-101", "218.78", "216/56", "218Н 14Т", "218 IIN 105", "219-Р БАЙР 66 ТООТ", "216-151-1", "217-151A"
+    const mBairToot = clean.match(
+      /\b(21[6-9]|\d{1,3})\s*(?:-?[рrR]\s*байр|\s*ба[йи]р|\s*bair|\s*iin|\s*ийн|\s*н|\*|[-./])\s*(\d{1,4}(?:[-/]\d{1,2}|[А-Яа-яA-Za-z])?)\s*(?:тоот|toot|т)?\b/i
+    );
+    if (mBairToot) {
+      const bCandidate = mBairToot[1].trim();
+      const uCandidate = mBairToot[2].trim();
+      if (!bCandidate.startsWith("202")) {
+        building = bCandidate;
+        unit = uCandidate.replace(/^0+/, "") || uCandidate;
+      }
+    }
+
+    // 6. Explicit Toot Word if not matched above:
+    if (!unit) {
+      const mToot = clean.match(/\b(\d{1,4}(?:[-/]\d{1,2}|[А-Яа-яA-Za-z])?)\s*(?:тоот|toot)\b/i) ||
+                    clean.match(/(?:тоот|toot)\s*[:.]?\s*(\d{1,4}(?:[-/]\d{1,2}|[А-Яа-яA-Za-z])?)\b/i);
+      if (mToot) {
+        unit = mToot[1].replace(/^0+/, "") || mToot[1];
+      }
+    }
+
+    // 7. Building alone if not matched:
+    if (!building) {
+      const mBair = clean.match(/\b(21[6-9]|\d{1,3})\s*(?:-?[рrR]\s*байр|\s*ба[йи]р|\s*bair)\b/i);
+      if (mBair && !mBair[1].startsWith("202")) {
+        building = mBair[1];
+      }
+    }
+
+    // Extract name if missing
+    let name = accName || "";
+    if (!name) {
+      const words = orig.split(/\s+/).filter((w) => /^[а-яөүёА-ЯӨҮЁa-zA-Z.]+$/.test(w) && w.length > 2);
+      if (words.length > 0) name = words[words.length - 1];
+    }
+
+    return {
+      type: "TEXT",
+      building,
+      unit,
+      name,
+      targetPeriod: periodMatches.join(", "),
+      phone,
+      isAldangi,
+      isExpense,
+      isParking,
+      isFee,
+    };
   };
 
   const parseExcelFile = async (selectedFile: File) => {
@@ -234,6 +428,7 @@ export default function BankStatementImportModal({
       let orlogoIdx = -1;
       let zarlagaIdx = -1;
       let accNameIdx = -1;
+      let relAccIdx = -1;
       let journalIdx = -1;
 
       for (let i = 0; i < Math.min(rawRows.length, 15); i++) {
@@ -259,6 +454,7 @@ export default function BankStatementImportModal({
             if (colLower.includes("орлого") || (colLower.includes("дүн") && orlogoIdx === -1)) orlogoIdx = cIdx;
             if (colLower.includes("зарлага")) zarlagaIdx = cIdx;
             if (colLower.includes("дансны нэр") || colLower.includes("харилцагч")) accNameIdx = cIdx;
+            if (colLower.includes("харьцсан данс") || (colLower.includes("данс") && !colLower.includes("нэр") && relAccIdx === -1)) relAccIdx = cIdx;
             if (colLower.includes("журнал") || colLower.includes("гүйлгээний дугаар") || colLower.includes("дугаар") || colLower.includes("лавлах")) journalIdx = cIdx;
           });
           break;
@@ -272,6 +468,7 @@ export default function BankStatementImportModal({
         descIdx = 4;
         orlogoIdx = 5;
         zarlagaIdx = 6;
+        relAccIdx = 8;
         accNameIdx = 9;
       }
 
@@ -379,66 +576,21 @@ export default function BankStatementImportModal({
         const orlogoRaw = orlogoIdx !== -1 ? parseNumber(row[orlogoIdx]) : 0;
         const zarlagaRaw = zarlagaIdx !== -1 ? parseNumber(row[zarlagaIdx]) : 0;
         const accName = accNameIdx !== -1 ? String(row[accNameIdx] || "").trim() : "";
+        const relatedAccount = relAccIdx !== -1 ? String(row[relAccIdx] || "").trim() : "";
         const journal = journalIdx !== -1 ? String(row[journalIdx] || "").trim() : "";
 
         if (!descStr && orlogoRaw === 0 && zarlagaRaw === 0) continue;
 
-        // Skip fee or pure expenditure rows
-        if (orlogoRaw === 0 && zarlagaRaw > 0) continue;
         const amount = orlogoRaw > 0 ? orlogoRaw : zarlagaRaw;
-
-        // Extract unit & building from description
-        let unit = "";
-        let building = "";
-        let name = accName;
-
-        const cleanedDesc = descStr
-          .replace(/\b20\d{2}[-/.](0?[1-9]|1[0-2])\b/g, " ")
-          .replace(/\b(0?[1-9]|1[0-2])[-/.](20\d{2})\b/g, " ")
-          .replace(/\b(0?[1-9]|1[0-2])\s*(?:-?[рrR])?\s*(?:сар|sar)\b/gi, " ");
-
-        const explicitMatch = cleanedDesc.match(
-          /(?:байр\s*)?(\d{1,4})\s*(?:-|–|_|\/|н|\*|\s*(?:р\s*)?байр\s*)\s*(?:тоот\s*)?(\d{1,4})\s*(?:тоот|toot)?/i
-        );
-
-        const explicitTootWord =
-          cleanedDesc.match(/\b(\d{1,4})\s*(?:тоот|toot)\b/i) ||
-          cleanedDesc.match(/(?:тоот|toot)\s*[:.]?\s*(\d{1,4})\b/i);
-
-        if (explicitMatch) {
-          building = explicitMatch[1];
-          unit = explicitMatch[2];
-        } else if (explicitTootWord) {
-          unit = explicitTootWord[1];
-        } else {
-          const dashMatch = cleanedDesc.match(/(?:^|\s)[-–_#]\s*(\d{1,4})\b|\b(\d{1,4})\s*[-–_#]/);
-          if (dashMatch) {
-            unit = dashMatch[1] || dashMatch[2];
-          } else {
-            const standaloneMatch = cleanedDesc.match(/(?:^|\s)([1-9]\d{1,3})(?:\s|$)/);
-            if (standaloneMatch && Number(standaloneMatch[1]) <= 2500) {
-              unit = standaloneMatch[1];
-            }
-          }
-        }
-
-        if (unit) {
-          unit = unit.trim().replace(/^0+/, "");
-        }
-
-        if (!name) {
-          const words = descStr.split(/\s+/).filter((w) => /^[а-яөүёА-ЯӨҮЁa-zA-Z.]+$/.test(w) && w.length > 2);
-          if (words.length > 0) name = words[words.length - 1];
-        }
-
+        const parsed = parseTransactionDescription(descStr, accName);
         const { dateFormatted, fullDate, timeStr, rowMonth } = formatExcelDate(rawDateVal, rawTimeVal);
         detectedMonths.add(rowMonth);
 
         extractedBanks.push({
           id: extractedBanks.length,
-          name: name || descStr.substring(0, 25),
-          unit: unit || "—",
-          building: building || "Байр",
+          name: parsed.name || accName || descStr.substring(0, 25),
+          unit: parsed.unit || "—",
+          building: parsed.building || "Байр",
           amount: amount,
           date: dateFormatted,
           rawDate: fullDate,
@@ -446,8 +598,17 @@ export default function BankStatementImportModal({
           time: timeStr,
           description: descStr,
           accName,
+          relatedAccount,
           journal,
           status: "open",
+          targetPeriod: parsed.targetPeriod,
+          ebillToot: (parsed as any).ebillToot,
+          ebillBuilding: (parsed as any).ebillBuilding,
+          phone: parsed.phone,
+          isExpense: parsed.isExpense,
+          isParking: parsed.isParking,
+          isFee: parsed.isFee,
+          isAldangi: parsed.isAldangi,
         });
       }
 
@@ -544,13 +705,88 @@ export default function BankStatementImportModal({
   };
 
   // Intelligent Multi-Tier Auto Matching
+  const normalizeBuilding = (bld?: string): string => {
+    if (!bld || bld === "—" || bld === "Байр") return "";
+    const m = String(bld).match(/(\d{1,4})/);
+    if (m) return m[1];
+    return String(bld).trim().toLowerCase();
+  };
+
+  const isBuildingCompatible = (bBld?: string, hBld?: string): boolean => {
+    const normB = normalizeBuilding(bBld);
+    const normH = normalizeBuilding(hBld);
+    if (!normB || !normH) return true;
+    return normB === normH;
+  };
+
+  // Save learned recurring payer rule
+  const savePayerRule = async (bank: BankRow, home: HomeRow) => {
+    try {
+      const payerKey = (bank.relatedAccount || bank.accName || bank.name || "").trim();
+      if (!payerKey) return;
+      const bldNorm = home.building || bank.building || "";
+      const tootNorm = home.unit || bank.unit || "";
+      const payload = {
+        baiguullagiinId,
+        barilgiinId: home.barilgiinId || barilgiinId,
+        relatedAccount: bank.relatedAccount || "",
+        payerName: bank.accName || bank.name || "",
+        building: bldNorm,
+        toot: tootNorm,
+        gereeId: home.gereeId || (home.id ? String(home.id) : ""),
+      };
+      await uilchilgee(token || "").post("/bankniiGuilgee/saveTulgaltDurem", payload);
+      setPayerRules((prev) => [
+        ...prev.filter((r: PayerRule) => r.payerKey !== payerKey),
+        { ...payload, payerKey },
+      ]);
+    } catch (err) {
+      console.warn("Could not save payer rule:", err);
+    }
+  };
+
+  // Confirm a "likely" match -> promotes to full "match" and learns rule
+  const confirmLikelyMatch = async (bankId: number, homeId: string | number) => {
+    const targetBank = banks.find((b) => b.id === bankId);
+    const targetHome = homes.find((h) => String(h.id) === String(homeId));
+    if (!targetBank || !targetHome) return;
+
+    setBanks((prev) =>
+      prev.map((b) =>
+        b.id === bankId
+          ? {
+              ...b,
+              status: "match",
+              matchedHomeId: targetHome.id,
+              unit: targetHome.unit || b.unit,
+              building: targetHome.building && targetHome.building !== "Байр" ? targetHome.building : b.building,
+            }
+          : b
+      )
+    );
+
+    setHomes((prev) =>
+      prev.map((h) =>
+        h.id === targetHome.id
+          ? { ...h, status: "match", matchedBankId: bankId }
+          : h
+      )
+    );
+
+    setSelB((prev) => new Set([...Array.from(prev), bankId]));
+    await savePayerRule(targetBank, targetHome);
+    toast.success(`${targetHome.unit} тооттой амжилттай тулгаж баталгаажууллаа! Дараа сараас автоматаар танина.`);
+  };
+
+  // Intelligent Multi-Tier Auto Matching
   const autoMatch = (currentBanks = banks, currentHomes = homes) => {
     let matchCount = 0;
+    let likelyCount = 0;
     const newBanks = [...currentBanks];
     const newHomes = [...currentHomes];
 
-    const pairMatch = (b: BankRow, h: HomeRow) => {
-      b.status = "match";
+    const pairMatch = (b: BankRow, h: HomeRow, status: "match" | "likely" = "match") => {
+      b.status = status;
       b.matchedHomeId = h.id;
       if ((!b.unit || b.unit === "—") && h.unit && h.unit !== "-") {
         b.unit = h.unit;
@@ -558,95 +794,190 @@ export default function BankStatementImportModal({
       if ((!b.building || b.building === "Байр") && h.building && h.building !== "Байр") {
         b.building = h.building;
       }
-      h.status = "match";
-      h.matchedBankId = b.id;
-      matchCount++;
+
+      if (status === "match") {
+        h.status = "match";
+        h.matchedBankId = b.id;
+        matchCount++;
+      } else {
+        if (h.status === "open") {
+          h.status = "likely";
+          h.matchedBankId = b.id;
+        }
+        likelyCount++;
+      }
     };
 
-    // TIER 1: Exact Apartment Toot AND Resident Name match (100% verified match)
+    // TIER 0: Learned Recurring Rules (Previous months' confirmed pairings)
     newBanks.forEach((b) => {
-      if (b.status !== "open") return;
+      if (b.status !== "open" || b.isExpense || b.isParking) return;
+      const bKey = (b.relatedAccount || b.accName || b.name || "").trim().toLowerCase();
+      if (!bKey) return;
+
+      const rule = payerRules.find((r) => {
+        const rKey = (r.payerKey || r.relatedAccount || r.payerName || "").trim().toLowerCase();
+        return rKey && (bKey.includes(rKey) || rKey.includes(bKey));
+      });
+
+      if (rule) {
+        const candidate = newHomes.find((h) => {
+          if (h.status !== "open") return false;
+          const hToot = normalizeToot(h.unit);
+          const rToot = normalizeToot(rule.toot);
+          if (hToot !== rToot) return false;
+          return isBuildingCompatible(rule.building, h.building);
+        });
+
+        if (candidate) {
+          pairMatch(b, candidate, "match");
+        }
+      }
+    });
+
+    // TIER 1: E-Bill exact match (7 digits + 3 digits + 5 digits + 1 digit -> exact building & toot)
+    newBanks.forEach((b) => {
+      if (b.status !== "open" || b.isExpense || b.isParking) return;
+      if (!b.ebillToot) return;
+      const eToot = normalizeToot(b.ebillToot);
+
+      const candidate = newHomes.find((h) => {
+        if (h.status !== "open") return false;
+        if (normalizeToot(h.unit) !== eToot) return false;
+        return isBuildingCompatible(b.ebillBuilding, h.building);
+      });
+
+      if (candidate) {
+        pairMatch(b, candidate, "match");
+      }
+    });
+
+    // TIER 2: Exact Building + Exact Toot AND Resident Name match (100% verified)
+    newBanks.forEach((b) => {
+      if (b.status !== "open" || b.isExpense || b.isParking) return;
       const bToot = normalizeToot(b.unit);
       if (!bToot) return;
+      const bBld = normalizeBuilding(b.building);
 
       const candidates = newHomes.filter((h) => {
         if (h.status !== "open") return false;
-        const hToot = normalizeToot(h.unit);
-        if (hToot !== bToot) return false;
+        if (normalizeToot(h.unit) !== bToot) return false;
+        if (bBld && !isBuildingCompatible(b.building, h.building)) return false;
         return isNameMatch(b.name, b.description, h.name, h.ovog);
       });
 
       if (candidates.length >= 1) {
-        pairMatch(b, candidates[0]);
+        pairMatch(b, candidates[0], "match");
       }
     });
 
-    // TIER 2: Exact Apartment Toot match alone (unique Toot in the building)
+    // TIER 3: Exact Building + Exact Toot (without name match -> likely or match if single)
     newBanks.forEach((b) => {
-      if (b.status !== "open") return;
+      if (b.status !== "open" || b.isExpense || b.isParking) return;
+      const bToot = normalizeToot(b.unit);
+      if (!bToot) return;
+      const bBld = normalizeBuilding(b.building);
+      if (!bBld) return; // only for explicit building specification
+
+      const candidates = newHomes.filter((h) => {
+        if (h.status !== "open") return false;
+        if (normalizeToot(h.unit) !== bToot) return false;
+        return isBuildingCompatible(b.building, h.building);
+      });
+
+      if (candidates.length === 1) {
+        const nameMatches = isNameMatch(b.name, b.description, candidates[0].name, candidates[0].ovog);
+        if (nameMatches) {
+          pairMatch(b, candidates[0], "match");
+        } else {
+          // Building and toot match, but payer name differs -> Likely (Магадлалтай)
+          pairMatch(b, candidates[0], "likely");
+        }
+      }
+    });
+
+    // TIER 4: Toot match alone (when building was not explicitly given in statement)
+    newBanks.forEach((b) => {
+      if (b.status !== "open" || b.isExpense || b.isParking) return;
       const bToot = normalizeToot(b.unit);
       if (!bToot) return;
 
       const candidates = newHomes.filter((h) => {
         if (h.status !== "open") return false;
-        return normalizeToot(h.unit) === bToot;
+        if (normalizeToot(h.unit) !== bToot) return false;
+        if (selectedBuilding !== "ALL") {
+          return isBuildingCompatible(selectedBuilding, h.building);
+        }
+        return true;
       });
 
       if (candidates.length === 1) {
-        pairMatch(b, candidates[0]);
+        const nameMatches = isNameMatch(b.name, b.description, candidates[0].name, candidates[0].ovog);
+        if (nameMatches) {
+          pairMatch(b, candidates[0], "match");
+        } else {
+          pairMatch(b, candidates[0], "likely");
+        }
       } else if (candidates.length > 1) {
-        const amt = candidates.find((h) => h.amount === b.amount);
-        pairMatch(b, amt || candidates[0]);
+        // Multiple buildings have this toot! Only match if name matches one of them
+        const nameCandidate = candidates.find((h) =>
+          isNameMatch(b.name, b.description, h.name, h.ovog)
+        );
+        if (nameCandidate) {
+          pairMatch(b, nameCandidate, "match");
+        }
       }
     });
 
-    // TIER 3: Match by Resident Name (e.g. Sisi online shop or Отгонбилэг)
+    // TIER 5: Phone number match in description
     newBanks.forEach((b) => {
-      if (b.status !== "open") return;
-
-      const candidates = newHomes.filter((h) => {
-        if (h.status !== "open") return false;
-        return isNameMatch(b.name, b.description, h.name, h.ovog);
-      });
-
-      if (candidates.length === 1) {
-        pairMatch(b, candidates[0]);
-      } else if (candidates.length > 1) {
-        const amt = candidates.find((h) => h.amount === b.amount);
-        pairMatch(b, amt || candidates[0]);
-      }
-    });
-
-    // TIER 4: Phone number match in description
-    newBanks.forEach((b) => {
-      if (b.status !== "open") return;
-      const phoneMatch = b.description.match(/\b([89]\d{7})\b/);
+      if (b.status !== "open" || b.isExpense || b.isParking) return;
+      const phoneMatch = b.phone || b.description.match(/\b([89]\d{7})\b/)?.[1];
       if (!phoneMatch) return;
-      const phone = phoneMatch[1];
 
       const candidates = newHomes.filter((h) => {
         if (h.status !== "open") return false;
-        return Boolean(h.phone && h.phone.includes(phone));
+        return Boolean(h.phone && h.phone.includes(phoneMatch));
       });
 
-      if (candidates.length >= 1) {
-        pairMatch(b, candidates[0]);
+      if (candidates.length === 1) {
+        pairMatch(b, candidates[0], "likely");
+      }
+    });
+
+    // TIER 6: Resident Name alone (unique name match across complex)
+    newBanks.forEach((b) => {
+      if (b.status !== "open" || b.isExpense || b.isParking) return;
+      const candidates = newHomes.filter((h) => {
+        if (h.status !== "open") return false;
+        if (selectedBuilding !== "ALL" && !isBuildingCompatible(selectedBuilding, h.building)) return false;
+        return isNameMatch(b.name, b.description, h.name, h.ovog);
+      });
+
+      if (candidates.length === 1) {
+        pairMatch(b, candidates[0], "likely");
       }
     });
 
     setBanks(newBanks);
     setHomes(newHomes);
-    // Auto check all matched / tulgagdsan transactions!
+
+    // Auto check all 100% matched transactions (never auto-check "likely" ones)
     const matchedIds = new Set(newBanks.filter((b) => b.status === "match").map((b) => b.id));
     setSelB(matchedIds);
     setPairBankId(null);
     setPairHomeId(null);
 
     const totalMatched = newBanks.filter((b) => b.status === "match").length;
-    if (matchCount > 0) {
-      toast.success(`${matchCount} гүйлгээг автоматаар амжилттай тулгаж сонголоо!`);
-    } else if (totalMatched > 0) {
-      toast.success(`Бүх тохирох гүйлгээ (${totalMatched}) аль хэдийн тулгагдсан байна.`);
+    const totalLikely = newBanks.filter((b) => b.status === "likely").length;
+
+    if (matchCount > 0 || likelyCount > 0) {
+      toast.success(
+        `Тулгалт дууслаа: ${matchCount} баталгаажсан (Ногоон), ${likelyCount} магадлалтай (Шар).`
+      );
+    } else if (totalMatched > 0 || totalLikely > 0) {
+      toast.success(
+        `Нийт ${totalMatched} тулгагдсан, ${totalLikely} магадлалтай гүйлгээ байна.`
+      );
     } else {
       toast("Шинээр тохирох гүйлгээ олдсонгүй.");
     }
@@ -678,7 +1009,7 @@ export default function BankStatementImportModal({
     return homes.find((h) => h.id === pairHomeId) || null;
   }, [pairHomeId, homes]);
 
-  const confirmManualMatch = () => {
+  const confirmManualMatch = async () => {
     if (!selectedBankRow || !selectedHomeRow) return;
 
     const bankId = selectedBankRow.id;
@@ -719,21 +1050,21 @@ export default function BankStatementImportModal({
     setPairHomeId(null);
     setShowManualMatchModal(false);
 
+    // Save learned rule so future payments from this account/name are automatically matched
+    await savePayerRule(selectedBankRow, selectedHomeRow);
+
     toast.success(
-      `${selectedBankRow.name || selectedBankRow.unit || ""} болон ${selectedHomeRow.unit} тоот амжилттай тулгагдлаа!`
+      `${selectedBankRow.name || selectedBankRow.unit || ""} болон ${selectedHomeRow.unit} тоот амжилттай тулгагдлаа! Дүрэм хадгалагдлаа.`
     );
   };
 
   // Pairing trigger:
-  // RED rows (unmatched) NEED THAT CONFIRMATION! GREEN rows (already matched) DO NOT!
   useEffect(() => {
     if (selectedBankRow && selectedHomeRow) {
-      const isRed = selectedBankRow.status === "open" || selectedHomeRow.status === "open";
+      const isRed = selectedBankRow.status === "open" || selectedHomeRow.status === "open" || selectedBankRow.status === "likely";
       if (isRed) {
-        // Red rows prompt the confirmation modal!
         setShowManualMatchModal(true);
       } else {
-        // Green does not need confirmation
         confirmManualMatch();
       }
     }
@@ -788,6 +1119,9 @@ export default function BankStatementImportModal({
         }
         const tootStr = b.unit !== "—" && b.unit ? b.unit : linkedHome?.unit || "";
         const targetGereeId = linkedHome?.gereeId || (linkedHome?.id ? String(linkedHome.id) : undefined);
+        const resolvedBuilding = b.building && b.building !== "Байр" ? b.building : linkedHome?.building || "";
+        const resolvedBarilgaId = linkedHome?.barilgiinId || barilgiinId;
+
         return {
           journal: b.journal && !b.journal.startsWith("J-") ? b.journal : `EXCEL-${Date.now()}-${b.id}`,
           date: fullDate,
@@ -801,8 +1135,11 @@ export default function BankStatementImportModal({
           bank: "Банк",
           matchedGereeId: targetGereeId,
           detectedToot: tootStr,
+          barilgiinId: resolvedBarilgaId,
+          building: resolvedBuilding,
+          targetPeriod: b.targetPeriod || "",
           action: targetGereeId || tootStr ? "IMPORT_AND_PAY" : "IMPORT_ONLY",
-          tailbar: `Банк тулгалт - ${fullDate}${tootStr ? ` - ${tootStr} тоот` : ""}`,
+          tailbar: `Банк тулгалт - ${fullDate}${tootStr ? ` - ${tootStr} тоот` : ""}${b.targetPeriod ? ` (${b.targetPeriod})` : ""}`,
         };
       });
 
@@ -818,6 +1155,15 @@ export default function BankStatementImportModal({
           return;
         }
         toast.success(resp.data.message || "Гүйлгээнүүд амжилттай бүртгэгдлээ!");
+
+        // Also save rules for these confirmed imports
+        for (const b of targetBanks) {
+          const linkedHome = homes.find((h) => String(h.id) === String(b.matchedHomeId));
+          if (linkedHome) {
+            savePayerRule(b, linkedHome);
+          }
+        }
+
         const registeredIds = new Set(targetBanks.map((b) => b.id));
         setBanks((prev) => prev.map((b) => (registeredIds.has(b.id) ? { ...b, status: "done" } : b)));
         setHomes((prev) =>
@@ -846,22 +1192,31 @@ export default function BankStatementImportModal({
     }
   };
 
-  // Filtered rows by selected month, tab, and search
+  // Filtered rows by selected building, selected month, tab, and search
   const filteredBanks = useMemo(() => {
     return banks.filter((x) => {
+      if (selectedBuilding !== "ALL") {
+        const matchesBankBuilding = isBuildingCompatible(x.building, selectedBuilding);
+        const linkedHome = x.matchedHomeId ? homes.find((h) => h.id === x.matchedHomeId) : null;
+        const matchesHomeBuilding = linkedHome ? isBuildingCompatible(linkedHome.building, selectedBuilding) : false;
+        if (!matchesBankBuilding && !matchesHomeBuilding) return false;
+      }
       if (selectedMonth !== "ALL" && x.month && x.month !== selectedMonth) return false;
       if (tab !== "all" && x.status !== tab) return false;
       if (bankSearch.trim()) {
         const q = bankSearch.toLowerCase().trim();
-        const str = [x.name, x.unit, x.building, x.amount, x.description].join(" ").toLowerCase();
+        const str = [x.name, x.unit, x.building, x.amount, x.description, x.targetPeriod].join(" ").toLowerCase();
         if (!str.includes(q)) return false;
       }
       return true;
     });
-  }, [banks, tab, bankSearch, selectedMonth]);
+  }, [banks, homes, tab, bankSearch, selectedMonth, selectedBuilding]);
 
   const filteredHomes = useMemo(() => {
     return homes.filter((x) => {
+      if (selectedBuilding !== "ALL") {
+        if (!isBuildingCompatible(x.building, selectedBuilding)) return false;
+      }
       if (selectedMonth !== "ALL" && x.month && x.month !== selectedMonth) return false;
       if (tab !== "all" && x.status !== tab) return false;
       if (homeSearch.trim()) {
@@ -871,27 +1226,27 @@ export default function BankStatementImportModal({
       }
       return true;
     });
-  }, [homes, tab, homeSearch, selectedMonth]);
+  }, [homes, tab, homeSearch, selectedMonth, selectedBuilding]);
 
   // Aligned side-by-side row display:
-  // Each entry in displayRows has { bank: BankRow | null, home: HomeRow | null }
-  // Both "match" and "done" (burtgegdsen) rows remain paired side-by-side!
+  // Matched, Done, and Likely rows remain paired with their matched home.
+  // Unmatched (open) bank rows have home: null (NO fake alignment padding).
   const displayRows = useMemo(() => {
-    // Sort banks: matched & done first, then open
+    // Sort banks: matched & done & likely first, then open
     const sBanks = [...filteredBanks].sort((a, b) => {
-      const aDoneOrMatch = a.status === "match" || a.status === "done";
-      const bDoneOrMatch = b.status === "match" || b.status === "done";
-      if (aDoneOrMatch && !bDoneOrMatch) return -1;
-      if (!aDoneOrMatch && bDoneOrMatch) return 1;
+      const aPrior = a.status === "match" || a.status === "done" || a.status === "likely";
+      const bPrior = b.status === "match" || b.status === "done" || b.status === "likely";
+      if (aPrior && !bPrior) return -1;
+      if (!aPrior && bPrior) return 1;
       return a.id - b.id;
     });
 
     const rows: { bank: BankRow | null; home: HomeRow | null }[] = [];
     const usedHomeIds = new Set<string | number>();
 
-    // 1. For each bank row, place its matched home on the exact same row (works for both "match" and "done")
+    // 1. For each bank row: if matched, done, or likely, pair with matched home
     sBanks.forEach((b) => {
-      if ((b.status === "match" || b.status === "done") && b.matchedHomeId != null) {
+      if ((b.status === "match" || b.status === "done" || b.status === "likely") && b.matchedHomeId != null) {
         const matchedHome =
           filteredHomes.find((h) => h.id === b.matchedHomeId) ||
           homes.find((h) => h.id === b.matchedHomeId);
@@ -907,17 +1262,11 @@ export default function BankStatementImportModal({
         }
       }
 
-      // If bank is open, pair with next open home so they align row-by-row
-      const nextOpenHome = filteredHomes.find((h) => !usedHomeIds.has(h.id) && h.status === "open");
-      if (nextOpenHome) {
-        rows.push({ bank: b, home: nextOpenHome });
-        usedHomeIds.add(nextOpenHome.id);
-      } else {
-        rows.push({ bank: b, home: null });
-      }
+      // If bank is open, keep home as NULL - do not falsely pair with an arbitrary resident
+      rows.push({ bank: b, home: null });
     });
 
-    // 2. For any remaining homes that were not yet included, append them
+    // 2. For any remaining homes in current tab/filter that were not yet paired, append them
     filteredHomes.forEach((h) => {
       if (!usedHomeIds.has(h.id)) {
         rows.push({ bank: null, home: h });
@@ -930,13 +1279,27 @@ export default function BankStatementImportModal({
 
   // Statistics calculation
   const stats = useMemo(() => {
-    const list = selectedMonth === "ALL" ? banks : banks.filter((x) => !x.month || x.month === selectedMonth);
+    const list = banks.filter((x) => {
+      if (selectedBuilding !== "ALL") {
+        const matchesBankBuilding = isBuildingCompatible(x.building, selectedBuilding);
+        const linkedHome = x.matchedHomeId ? homes.find((h) => h.id === x.matchedHomeId) : null;
+        const matchesHomeBuilding = linkedHome ? isBuildingCompatible(linkedHome.building, selectedBuilding) : false;
+        if (!matchesBankBuilding && !matchesHomeBuilding) return false;
+      }
+      if (selectedMonth !== "ALL" && x.month && x.month !== selectedMonth) return false;
+      return true;
+    });
+
     const totalCount = list.length;
     const totalSum = list.reduce((s, x) => s + x.amount, 0);
 
     const matchedList = list.filter((x) => x.status === "match");
     const matchedCount = matchedList.length;
     const matchedSum = matchedList.reduce((s, x) => s + x.amount, 0);
+
+    const likelyList = list.filter((x) => x.status === "likely");
+    const likelyCount = likelyList.length;
+    const likelySum = likelyList.reduce((s, x) => s + x.amount, 0);
 
     const openList = list.filter((x) => x.status === "open");
     const openCount = openList.length;
@@ -951,12 +1314,14 @@ export default function BankStatementImportModal({
       totalSum,
       matchedCount,
       matchedSum,
+      likelyCount,
+      likelySum,
       openCount,
       openSum,
       doneCount,
       doneSum,
     };
-  }, [banks, selectedMonth]);
+  }, [banks, homes, selectedMonth, selectedBuilding]);
 
   const selBankSum = useMemo(() => {
     return banks.filter((b) => selB.has(b.id)).reduce((s, b) => s + b.amount, 0);
@@ -1007,6 +1372,25 @@ export default function BankStatementImportModal({
                       ))}
                     </select>
                   </div>
+                  {/* Building Selection Dropdown - Added for Multi-Building Complexes */}
+                  {availableBuildings.length > 0 && (
+                    <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[#dce5e0] dark:border-zinc-700 bg-white dark:bg-zinc-800 text-xs font-semibold text-[#203a35] dark:text-zinc-200 shadow-sm hover:border-[#087f64] transition">
+                      <Building2 className="w-3.5 h-3.5 text-[#087f64]" />
+                      <span className="text-[11px] text-[#7c8b85] font-normal">Байр:</span>
+                      <select
+                        value={selectedBuilding}
+                        onChange={(e) => setSelectedBuilding(e.target.value)}
+                        className="bg-transparent border-none text-xs font-bold text-[#203a35] dark:text-zinc-100 focus:outline-none cursor-pointer pr-1"
+                      >
+                        <option value="ALL">Бүх байр ({availableBuildings.length})</option>
+                        {availableBuildings.map((b) => (
+                          <option key={b} value={b}>
+                            {b.includes("байр") || b.includes("Байр") ? b : `${b}-р байр`}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
 
                   {/* File Upload / Replace Pill */}
                   <input
@@ -1076,55 +1460,68 @@ export default function BankStatementImportModal({
               {/* Body Content Area */}
               <div className="flex-1 overflow-hidden px-6 py-3 flex flex-col space-y-3 min-h-0">
                 {/* 4 Stats Cards (Sleek Compact Height: px-3 py-1.5) */}
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5 shrink-0">
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2.5 shrink-0">
                   {/* Card 1: Нийт орлогын гүйлгээ */}
                   <div className="bg-white dark:bg-zinc-900 border border-[#e7ece9] dark:border-zinc-800 rounded-lg px-3 py-1.5 shadow-xs flex items-center justify-between">
                     <div>
-                      <div className="text-[11px] text-black dark:text-zinc-200 leading-none">Нийт орлогын гүйлгээ</div>
-                      <div className="text-base text-black dark:text-white leading-tight mt-1">
+                      <div className="text-[11px] text-black dark:text-zinc-200 leading-none">Нийт орлого</div>
+                      <div className="text-base text-black dark:text-white leading-tight mt-1 font-bold">
                         {stats.totalCount}
                       </div>
                     </div>
-                    <div className="text-xs text-black dark:text-zinc-200 tabular-nums text-right">
+                    <div className="text-xs text-black dark:text-zinc-200 tabular-nums text-right font-medium">
                       {formatNumber(stats.totalSum)} ₮
                     </div>
                   </div>
 
                   {/* Card 2: Тулгасан (Green) */}
-                  <div className="bg-white dark:bg-zinc-900 border border-emerald-200 dark:border-emerald-900/50 rounded-lg px-3 py-1.5 shadow-xs flex items-center justify-between bg-emerald-50/30">
+                  <div className="bg-emerald-50/40 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-900/50 rounded-lg px-3 py-1.5 shadow-xs flex items-center justify-between">
                     <div>
-                      <div className="text-[11px] text-emerald-900 dark:text-emerald-300 leading-none">✓ Тулгасан</div>
-                      <div className="text-base text-emerald-800 dark:text-emerald-300 leading-tight mt-1">
+                      <div className="text-[11px] text-emerald-900 dark:text-emerald-300 leading-none font-semibold">✓ Тулгасан</div>
+                      <div className="text-base text-emerald-800 dark:text-emerald-300 leading-tight mt-1 font-bold">
                         {stats.matchedCount}
                       </div>
                     </div>
-                    <div className="text-xs text-emerald-800 dark:text-emerald-300 tabular-nums text-right">
+                    <div className="text-xs text-emerald-800 dark:text-emerald-300 tabular-nums text-right font-medium">
                       {formatNumber(stats.matchedSum)} ₮
                     </div>
                   </div>
 
-                  {/* Card 3: Тулгаагүй (Red / Rose) */}
-                  <div className="bg-white dark:bg-zinc-900 border border-rose-200 dark:border-rose-900/50 rounded-lg px-3 py-1.5 shadow-xs flex items-center justify-between bg-rose-50/30">
+                  {/* Card 3: Магадлалтай (Amber) */}
+                  <div className="bg-amber-50/40 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/50 rounded-lg px-3 py-1.5 shadow-xs flex items-center justify-between">
                     <div>
-                      <div className="text-[11px] text-rose-900 dark:text-rose-300 leading-none">✕ Тулгаагүй</div>
-                      <div className="text-base text-rose-700 dark:text-rose-400 leading-tight mt-1">
+                      <div className="text-[11px] text-amber-900 dark:text-amber-300 leading-none font-semibold">⚡ Магадлалтай</div>
+                      <div className="text-base text-amber-800 dark:text-amber-300 leading-tight mt-1 font-bold">
+                        {stats.likelyCount}
+                      </div>
+                    </div>
+                    <div className="text-xs text-amber-800 dark:text-amber-300 tabular-nums text-right font-medium">
+                      {formatNumber(stats.likelySum)} ₮
+                    </div>
+                  </div>
+
+                  {/* Card 4: Тулгаагүй (Red / Rose) */}
+                  <div className="bg-rose-50/40 dark:bg-rose-950/20 border border-rose-200 dark:border-rose-900/50 rounded-lg px-3 py-1.5 shadow-xs flex items-center justify-between">
+                    <div>
+                      <div className="text-[11px] text-rose-900 dark:text-rose-300 leading-none font-semibold">✕ Тулгаагүй</div>
+                      <div className="text-base text-rose-700 dark:text-rose-400 leading-tight mt-1 font-bold">
                         {stats.openCount}
                       </div>
                     </div>
-                    <div className="text-xs text-rose-700 dark:text-rose-400 tabular-nums text-right">
+                    <div className="text-xs text-rose-700 dark:text-rose-400 tabular-nums text-right font-medium">
                       {formatNumber(stats.openSum)} ₮
                     </div>
                   </div>
 
-                  {/* Card 4: Бүртгэсэн */}
+                  {/* Card 5: Бүртгэсэн */}
                   <div className="bg-white dark:bg-zinc-900 border border-[#e7ece9] dark:border-zinc-800 rounded-lg px-3 py-1.5 shadow-xs flex items-center justify-between">
                     <div>
-                      <div className="text-[11px] text-black dark:text-zinc-200 leading-none">Бүртгэсэн</div>
-                      <div className="text-base text-black dark:text-white leading-tight mt-1">
+                      <div className="text-[11px] text-zinc-600 dark:text-zinc-400 leading-none">Бүртгэсэн</div>
+                      <div className="text-base text-zinc-700 dark:text-zinc-200 leading-tight mt-1 font-bold">
                         {stats.doneCount}
                       </div>
                     </div>
-                    <div className="text-xs text-black dark:text-zinc-200 tabular-nums text-right">
+                    <div className="text-xs text-zinc-600 dark:text-zinc-300 tabular-nums text-right font-medium">
                       {formatNumber(stats.doneSum)} ₮
                     </div>
                   </div>
@@ -1138,8 +1535,9 @@ export default function BankStatementImportModal({
                       {(
                         [
                           ["all", `Бүгд (${stats.totalCount})`],
-                          ["open", `Тулгаагүй (${stats.openCount})`],
                           ["match", `Тулгасан (${stats.matchedCount})`],
+                          ["likely", `Магадлалтай (${stats.likelyCount})`],
+                          ["open", `Тулгаагүй (${stats.openCount})`],
                           ["done", `Бүртгэсэн (${stats.doneCount})`],
                         ] as const
                       ).map(([key, label]) => {
@@ -1366,13 +1764,18 @@ export default function BankStatementImportModal({
                               const isBankMatched = Boolean(b && (b.status === "match" || b.status === "done"));
                               const isHomeMatched = Boolean(h && (h.status === "match" || h.status === "done"));
 
-                              // Distinct cell colors: Green for matched, Red for unmatched, Sky for selected
+                              const isBankLikely = Boolean(b && b.status === "likely");
+                              const isHomeLikely = Boolean(h && h.status === "likely");
+
+                              // Distinct cell colors: Green for matched, Amber for likely, Red for unmatched, Sky for selected
                               const bankBg = isPairSelectedBank
                                 ? "bg-[#e0f2fe] dark:bg-sky-950/50"
                                 : !b
                                 ? "bg-zinc-50 dark:bg-zinc-900/30"
                                 : isBankMatched
                                 ? "bg-[#eaf5ef] dark:bg-emerald-950/30 hover:bg-[#e1f0e7]"
+                                : isBankLikely
+                                ? "bg-[#fefce8] dark:bg-amber-950/30 hover:bg-[#fef9c3]"
                                 : "bg-[#fef2f2] dark:bg-rose-950/30 hover:bg-[#fde8e8]";
 
                               const homeBg = isPairSelectedHome
@@ -1381,6 +1784,8 @@ export default function BankStatementImportModal({
                                 ? "bg-zinc-50 dark:bg-zinc-900/30"
                                 : isHomeMatched
                                 ? "bg-[#eaf5ef] dark:bg-emerald-950/30 hover:bg-[#e1f0e7]"
+                                : isHomeLikely
+                                ? "bg-[#fefce8] dark:bg-amber-950/30 hover:bg-[#fef9c3]"
                                 : "bg-[#fef2f2] dark:bg-rose-950/30 hover:bg-[#fde8e8]";
 
                               // Foolproof Date & Time converter for Bank Statement
@@ -1469,8 +1874,23 @@ export default function BankStatementImportModal({
                                             <div className="text-xs text-zinc-900 dark:text-zinc-100 font-semibold truncate" title={b.name}>
                                               {b.name}
                                             </div>
-                                            <div className="text-[11px] text-zinc-500 dark:text-zinc-400 mt-0.5 truncate" title={b.description}>
-                                              {b.building} байр, {b.unit} тоот · {b.description}
+                                            <div className="text-[11px] text-zinc-500 dark:text-zinc-400 mt-0.5 truncate flex items-center gap-1.5" title={b.description}>
+                                              {b.targetPeriod && (
+                                                <span className="inline-flex items-center text-[10px] font-bold px-1.5 py-0.2 rounded bg-cyan-100 text-cyan-800 dark:bg-cyan-950 dark:text-cyan-300 border border-cyan-200 dark:border-cyan-800 shrink-0">
+                                                  Төлсөн: {b.targetPeriod}
+                                                </span>
+                                              )}
+                                              {b.isExpense && (
+                                                <span className="inline-flex items-center text-[10px] font-bold px-1.5 py-0.2 rounded bg-slate-200 text-slate-700 dark:bg-zinc-800 dark:text-zinc-300 shrink-0">
+                                                  Зардал
+                                                </span>
+                                              )}
+                                              {b.isParking && (
+                                                <span className="inline-flex items-center text-[10px] font-bold px-1.5 py-0.2 rounded bg-purple-100 text-purple-700 dark:bg-purple-950 dark:text-purple-300 shrink-0">
+                                                  Зогсоол QPay
+                                                </span>
+                                              )}
+                                              <span>{b.building} байр, {b.unit} тоот · {b.description}</span>
                                             </div>
                                           </div>
 
@@ -1484,6 +1904,32 @@ export default function BankStatementImportModal({
                                                 <button
                                                   onClick={(e) => handleUnlink(e, b.id, b.matchedHomeId)}
                                                   className="text-[11px] text-zinc-400 hover:text-rose-600 font-medium px-1.5 py-0.5 rounded hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors cursor-pointer shrink-0"
+                                                  title="Тулгалт салгах"
+                                                >
+                                                  [Салгах]
+                                                </button>
+                                              </>
+                                            )}
+                                            {b.status === "likely" && (
+                                              <>
+                                                <span className="inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full bg-amber-50 dark:bg-amber-950/50 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800 shrink-0">
+                                                  ⚡ Магадлалтай
+                                                </span>
+                                                {b.matchedHomeId && (
+                                                  <button
+                                                    onClick={(e) => {
+                                                      e.stopPropagation();
+                                                      confirmLikelyMatch(b.id, b.matchedHomeId!);
+                                                    }}
+                                                    className="text-[11px] text-emerald-700 hover:text-emerald-800 font-bold px-1.5 py-0.5 rounded bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 transition-colors cursor-pointer shrink-0"
+                                                    title="Энэ айлын төлбөр мөн болохыг батлах"
+                                                  >
+                                                    [Батлах]
+                                                  </button>
+                                                )}
+                                                <button
+                                                  onClick={(e) => handleUnlink(e, b.id, b.matchedHomeId)}
+                                                  className="text-[11px] text-zinc-400 hover:text-rose-600 font-medium px-1 py-0.5 rounded hover:bg-rose-50 transition-colors cursor-pointer shrink-0"
                                                   title="Тулгалт салгах"
                                                 >
                                                   [Салгах]
@@ -1525,6 +1971,10 @@ export default function BankStatementImportModal({
                                     {isBothMatched || isBothDone ? (
                                       <div className="flex items-center justify-center" title="Тулгагдсан холбоос">
                                         <span className="text-emerald-600 dark:text-emerald-400 font-bold text-base leading-none">→</span>
+                                      </div>
+                                    ) : (b?.status === "likely" || h?.status === "likely") ? (
+                                      <div className="flex items-center justify-center" title="Магадлалтай холбоос">
+                                        <span className="text-amber-500 font-bold text-sm leading-none animate-pulse">⚡</span>
                                       </div>
                                     ) : isPairSelected ? (
                                       <div className="flex items-center justify-center animate-pulse" title="Сонгосон холбоос">
@@ -1576,6 +2026,20 @@ export default function BankStatementImportModal({
                                                 <button
                                                   onClick={(e) => handleUnlink(e, h.matchedBankId, h.id)}
                                                   className="text-[11px] text-zinc-400 hover:text-rose-600 font-medium px-1.5 py-0.5 rounded hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors cursor-pointer shrink-0"
+                                                  title="Тулгалт салгах"
+                                                >
+                                                  [Салгах]
+                                                </button>
+                                              </>
+                                            )}
+                                            {h.status === "likely" && (
+                                              <>
+                                                <span className="inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full bg-amber-50 dark:bg-amber-950/50 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800 shrink-0">
+                                                  ⚡ Магадлалтай
+                                                </span>
+                                                <button
+                                                  onClick={(e) => handleUnlink(e, h.matchedBankId, h.id)}
+                                                  className="text-[11px] text-zinc-400 hover:text-rose-600 font-medium px-1 py-0.5 rounded hover:bg-rose-50 transition-colors cursor-pointer shrink-0"
                                                   title="Тулгалт салгах"
                                                 >
                                                   [Салгах]
@@ -1699,6 +2163,23 @@ export default function BankStatementImportModal({
                     <span className="text-emerald-800 dark:text-emerald-200">{stats.matchedCount}</span>
                     <span className="text-emerald-400 dark:text-emerald-700">·</span>
                     <span className="tabular-nums text-emerald-800 dark:text-emerald-300">{formatNumber(stats.matchedSum)} ₮</span>
+                  </button>
+
+                  {/* Likely amber pill */}
+                  <button
+                    onClick={() => setTab("likely")}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs transition cursor-pointer ${
+                      tab === "likely"
+                        ? "bg-amber-100 dark:bg-amber-950/60 border-amber-500"
+                        : "bg-amber-50/70 dark:bg-amber-950/30 border-amber-200 dark:border-amber-800/40 hover:bg-amber-100"
+                    }`}
+                    title="Магадлалтай гүйлгээг шүүх"
+                  >
+                    <span className="inline-block w-2 h-2 rounded-full bg-amber-500"></span>
+                    <span className="text-amber-900 dark:text-amber-300">Магадлалтай:</span>
+                    <span className="text-amber-800 dark:text-amber-200">{stats.likelyCount}</span>
+                    <span className="text-amber-400 dark:text-amber-700">·</span>
+                    <span className="tabular-nums text-amber-800 dark:text-amber-300">{formatNumber(stats.likelySum)} ₮</span>
                   </button>
 
                   {/* Unmatched red pill */}
