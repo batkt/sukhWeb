@@ -148,7 +148,7 @@ export default function NemeltTokhirgoo({
    * true  - Идэвхтэй (өөр төхөөрөмжөөс нэвтэрвэл өмнөх төхөөрөмж гарна).
    * false - Унтраасан (хэдэн ч төхөөрөмжнөөс зэрэг хандах эрхтэй).
    */
-  const [negSessionEsekh, setNegSessionEsekh] = useState<boolean>(true);
+  const [negSessionEsekh, setNegSessionEsekh] = useState<boolean>(false);
 
   // Цахилгааны тооцооны горим.
   // true  - тоолуурын заалт оруулж, систем кВт тарифаар бодно.
@@ -524,8 +524,8 @@ export default function NemeltTokhirgoo({
     setResidentGateOpenEnabled(!!find("orshinSuugchKhaalgaNeehEsekh", false));
     setGerBuliinGishuunEnabled(find("gerBuliinGishuunEsekh", true) !== false);
     setNegSessionEsekh(
-      find("negSessionEsekh", true) !== false &&
-        !find("olonTokhooromjZuvshuurukh", false),
+      find("negSessionEsekh", false) === true &&
+        !find("olonTokhooromjZuvshuurukh", true),
     );
 
     // Тодорхойгүй бол хуучин зан төлөв — заалтаар бодно.
@@ -1476,7 +1476,7 @@ export default function NemeltTokhirgoo({
       setKhGuestFreeMinutes(v("khGuestFreeMinutes"));
       setGerBuliinGishuunEnabled(v("gerBuliinGishuunEnabled"));
       setMessejYavuulakhEsekh(v("messejYavuulakhEsekh") !== false);
-      setNegSessionEsekh(v("negSessionEsekh") !== false);
+      setNegSessionEsekh(v("negSessionEsekh") === true);
     }
   };
 
