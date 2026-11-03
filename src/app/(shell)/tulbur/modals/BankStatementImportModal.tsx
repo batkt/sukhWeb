@@ -262,7 +262,7 @@ export default function BankStatementImportModal({
               phone: Array.isArray(c.utas) ? c.utas.join(", ") : (c.utas || ""),
               building: buildingName,
               unit: String(c.toot || "").trim(),
-              amount: Number(c.suhTulbur || c.niitTulbur || c.sarBuriinTulbur || c.nekhemjlekhDun || c.sarBuriinUilchilgee || c.uilchilgeeniiZardal || 0),
+              amount: Number(c.ashiglaltiinZardal || c.suhTulbur || c.niitTulbur || c.sarBuriinTulbur || c.nekhemjlekhDun || c.sarBuriinUilchilgee || c.uilchilgeeniiZardal || 0),
               note: "СӨХ-ийн төлбөр",
               status: "open",
               gereeId: c._id,
@@ -1403,9 +1403,10 @@ export default function BankStatementImportModal({
     });
   }, [homes, tab, homeSearch, selectedMonth, selectedBuilding]);
 
-  // Aligned side-by-side row display:
-  // Matched, Done, and Likely rows remain paired with their matched home.
-  // Unmatched (open) bank rows have home: null (NO fake alignment padding).
+  // Aligned side-by-side row display (Option 2):
+  // 1. Matched, Done, and Likely rows remain paired with their matched home.
+  // 2. Unmatched (open) bank rows and unmatched homes are aligned side-by-side in parallel starting from row 0
+  //    (eliminates huge blank gaps and enables intuitive side-by-side manual linking).
   const displayRows = useMemo(() => {
     // Sort banks: matched & done & likely first, then open
     const sBanks = [...filteredBanks].sort((a, b) => {
@@ -1418,6 +1419,7 @@ export default function BankStatementImportModal({
 
     const rows: { bank: BankRow | null; home: HomeRow | null }[] = [];
     const usedHomeIds = new Set<string | number>();
+    const unmatchedBanks: BankRow[] = [];
 
     // 1. For each bank row: if matched, done, or likely, pair with matched home
     sBanks.forEach((b) => {
@@ -1437,20 +1439,45 @@ export default function BankStatementImportModal({
         }
       }
 
-      // If bank is open, keep home as NULL - do not falsely pair with an arbitrary resident
-      rows.push({ bank: b, home: null });
+      unmatchedBanks.push(b);
     });
 
-    // 2. For any remaining homes in current tab/filter that were not yet paired, append them
-    filteredHomes.forEach((h) => {
-      if (!usedHomeIds.has(h.id)) {
-        rows.push({ bank: null, home: h });
-        usedHomeIds.add(h.id);
-      }
+    // 2. Unmatched homes
+    const unmatchedHomes = filteredHomes.filter((h) => !usedHomeIds.has(h.id));
+
+    // Sort unmatched homes: candidate matches for unmatched banks bubble up to top
+    const targetToots = new Set(unmatchedBanks.map((b) => normalizeToot(b.unit)).filter(Boolean));
+    const targetNames = unmatchedBanks.map((b) => (b.name || "").toLowerCase().trim()).filter(Boolean);
+
+    unmatchedHomes.sort((a, b) => {
+      const aTootMatch = targetToots.has(normalizeToot(a.unit));
+      const bTootMatch = targetToots.has(normalizeToot(b.unit));
+      if (aTootMatch && !bTootMatch) return -1;
+      if (!aTootMatch && bTootMatch) return 1;
+
+      const aNameMatch = targetNames.some((n) => isNameMatch(n, "", a.name, a.ovog));
+      const bNameMatch = targetNames.some((n) => isNameMatch(n, "", b.name, b.ovog));
+      if (aNameMatch && !bNameMatch) return -1;
+      if (!aNameMatch && bNameMatch) return 1;
+
+      const numA = parseInt(normalizeToot(a.unit), 10);
+      const numB = parseInt(normalizeToot(b.unit), 10);
+      if (!isNaN(numA) && !isNaN(numB)) return numA - numB;
+
+      return String(a.unit).localeCompare(String(b.unit));
     });
+
+    // 3. Align unmatched banks and unmatched homes side-by-side in parallel!
+    const maxUnmatched = Math.max(unmatchedBanks.length, unmatchedHomes.length);
+    for (let i = 0; i < maxUnmatched; i++) {
+      rows.push({
+        bank: unmatchedBanks[i] || null,
+        home: unmatchedHomes[i] || null,
+      });
+    }
 
     return rows;
-  }, [filteredBanks, filteredHomes, homes]);
+  }, [filteredBanks, filteredHomes, homes, selectedBuilding]);
 
   // Statistics calculation
   const stats = useMemo(() => {
@@ -2192,7 +2219,7 @@ export default function BankStatementImportModal({
                                         <span className="text-sky-500 font-bold text-base leading-none">→</span>
                                       </div>
                                     ) : (
-                                      <span className="text-zinc-300 dark:text-zinc-600 text-sm leading-none">→</span>
+                                      <span className="text-zinc-300 dark:text-zinc-600 text-sm leading-none">·</span>
                                     )}
                                   </td>
 

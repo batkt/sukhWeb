@@ -69,6 +69,7 @@ import HistoryModal from "../../geree/modals/HistoryModal";
 import InvoiceModal from "../../geree/modals/InvoiceModal";
 import InitialBalanceExcelModal from "../modals/InitialBalanceExcelModal";
 import BankStatementImportModal from "../modals/BankStatementImportModal";
+import BankReconciliationExcelModal from "../modals/BankReconciliationExcelModal";
 import { useGereeActions } from "@/lib/useGereeActions";
 import { StandardPagination } from "@/components/ui/StandardTable";
 import {
@@ -278,6 +279,7 @@ export default function DansniiKhuulga() {
     useState(false);
   const [isBankStatementModalOpen, setIsBankStatementModalOpen] =
     useState(false);
+  const [isBankReconModalOpen, setIsBankReconModalOpen] = useState(false);
   const [invoiceRefreshTrigger, setInvoiceRefreshTrigger] = useState(0);
   // Map gereeId -> latest row uldegdel from history ledger
   const [latestRowUldegdelByGereeId, setLatestRowUldegdelByGereeId] = useState<
@@ -4036,6 +4038,16 @@ export default function DansniiKhuulga() {
                   />
                 </motion.div>
               </Tooltip>
+              <Tooltip title="Банкны тулгалт (Төлбөр хаалтын Excel бэлтгэх)">
+                <motion.div>
+                  <IconTextButton
+                    onClick={() => setIsBankReconModalOpen(true)}
+                    icon={<Download className="h-4 w-4 text-emerald-600" />}
+                    label="Банкны тулгалт"
+                    className="btn-minimal inline-flex h-9 items-center justify-center gap-1.5 px-3"
+                  />
+                </motion.div>
+              </Tooltip>
               <input
                 ref={fileInputRef}
                 type="file"
@@ -4328,6 +4340,19 @@ export default function DansniiKhuulga() {
           setLatestRowUldegdelByGereeId({});
           latestRowUldegdelRequestedRef.current.clear();
         }}
+      />
+
+      {/* Bank Reconciliation Export Modal */}
+      <BankReconciliationExcelModal
+        show={isBankReconModalOpen}
+        onClose={() => setIsBankReconModalOpen(false)}
+        baiguullaga={baiguullaga}
+        barilguud={baiguullaga?.barilguud || []}
+        currentBuildingId={effectiveBarilgiinId || undefined}
+        historyItems={buildingHistoryItems || allHistoryItems || []}
+        contracts={gereeGaralt?.jagsaalt || []}
+        contractsById={contractsById}
+        contractsByNumber={contractsByNumber}
       />
 
       {/* Bank Statement Import & Auto-Match Modal */}
