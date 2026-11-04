@@ -762,16 +762,66 @@ export default function KhariltsagchModal({
       });
     });
     garages.forEach((g: any) => {
-      activeUnits.push({ orts: "1", davkhar: g.davkhar || "", toot: g.toot || "", turul: "Гараж",
+      activeUnits.push({
+        orts: "1",
+        davkhar: g.davkhar || "",
+        toot: g.toot || "",
+        turul: "Гараж",
         ...kholboos(g),
-        ekhniiUldegdel: Number(g.ekhniiUldegdel || 0), tsahilgaaniiZaalt: Number(g.tsahilgaaniiZaalt || 0),
-        khonogoorBodokhEsekh: !!g.khonogoorBodokhEsekh, bodokhKhonog: Number(g.bodokhKhonog || 0) });
+        ekhniiUldegdel: Number(g.ekhniiUldegdel || 0),
+        tsahilgaaniiZaalt: Number(g.tsahilgaaniiZaalt || 0),
+        ...(avlagaOgnooSolison
+          ? (() => {
+              const udur = Number(avlagaOgnoo) || 0;
+              const khonog = avlagiinKhonogTootsoolokh(udur);
+              const ognoo = avlagiinOgnooOlokh(udur);
+              return {
+                khonogoorBodokhEsekh: khonog > 0,
+                bodokhKhonog: khonog,
+                avlagaUusekhUdur: udur || null,
+                burtguulsenOgnoo: udur ? unuudur() : "",
+                avlagaUusekhOgnoo: ognoo ? ognoo.format("YYYY-MM-DD") : "",
+              };
+            })()
+          : {
+              khonogoorBodokhEsekh: !!g.khonogoorBodokhEsekh,
+              bodokhKhonog: Number(g.bodokhKhonog || 0),
+              avlagaUusekhUdur: Number(g.avlagaUusekhUdur) || null,
+              burtguulsenOgnoo: ognooKhevshuulekh(g.burtguulsenOgnoo),
+              avlagaUusekhOgnoo: ognooKhevshuulekh(g.avlagaUusekhOgnoo),
+            }),
+      });
     });
     storages.forEach((s: any) => {
-      activeUnits.push({ orts: "1", davkhar: s.davkhar || "", toot: s.toot || "", turul: "Агуулах",
+      activeUnits.push({
+        orts: "1",
+        davkhar: s.davkhar || "",
+        toot: s.toot || "",
+        turul: "Агуулах",
         ...kholboos(s),
-        ekhniiUldegdel: Number(s.ekhniiUldegdel || 0), tsahilgaaniiZaalt: Number(s.tsahilgaaniiZaalt || 0),
-        khonogoorBodokhEsekh: !!s.khonogoorBodokhEsekh, bodokhKhonog: Number(s.bodokhKhonog || 0) });
+        ekhniiUldegdel: Number(s.ekhniiUldegdel || 0),
+        tsahilgaaniiZaalt: Number(s.tsahilgaaniiZaalt || 0),
+        ...(avlagaOgnooSolison
+          ? (() => {
+              const udur = Number(avlagaOgnoo) || 0;
+              const khonog = avlagiinKhonogTootsoolokh(udur);
+              const ognoo = avlagiinOgnooOlokh(udur);
+              return {
+                khonogoorBodokhEsekh: khonog > 0,
+                bodokhKhonog: khonog,
+                avlagaUusekhUdur: udur || null,
+                burtguulsenOgnoo: udur ? unuudur() : "",
+                avlagaUusekhOgnoo: ognoo ? ognoo.format("YYYY-MM-DD") : "",
+              };
+            })()
+          : {
+              khonogoorBodokhEsekh: !!s.khonogoorBodokhEsekh,
+              bodokhKhonog: Number(s.bodokhKhonog || 0),
+              avlagaUusekhUdur: Number(s.avlagaUusekhUdur) || null,
+              burtguulsenOgnoo: ognooKhevshuulekh(s.burtguulsenOgnoo),
+              avlagaUusekhOgnoo: ognooKhevshuulekh(s.avlagaUusekhOgnoo),
+            }),
+      });
     });
 
     setNewClient((p: any) => {

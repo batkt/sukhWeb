@@ -183,36 +183,29 @@ export default function BankStatementImportModal({
   };
 
   // Calculate available buildings (from organization, homes, and statement rows, deduplicated by building code)
+  // Calculate available buildings (strictly from the organization's official building list)
   const availableBuildings = useMemo(() => {
     const rawList: string[] = [];
     const orgClean = String(baiguullaga?.ner || "").trim().toLowerCase();
 
-    if (Array.isArray(baiguullaga?.barilguud)) {
+    if (Array.isArray(baiguullaga?.barilguud) && baiguullaga.barilguud.length > 0) {
       baiguullaga.barilguud.forEach((b: any) => {
         const n = String(b.ner || b.dugaar || "").trim();
         if (n && n !== "Байр" && n.toLowerCase() !== orgClean) rawList.push(n);
       });
+    } else {
+      homes.forEach((h) => {
+        const n = String(h.building || "").trim();
+        if (n && n !== "Байр" && n.toLowerCase() !== orgClean) rawList.push(n);
+      });
     }
-    homes.forEach((h) => {
-      const n = String(h.building || "").trim();
-      if (n && n !== "Байр" && n.toLowerCase() !== orgClean && !n.toLowerCase().endsWith("сөх") && !n.toLowerCase().endsWith("soh")) {
-        rawList.push(n);
-      }
-    });
-    banks.forEach((b) => {
-      const n = String(b.building || "").trim();
-      if (n && n !== "Байр" && n.toLowerCase() !== orgClean && !n.toLowerCase().endsWith("сөх") && !n.toLowerCase().endsWith("soh")) {
-        rawList.push(n);
-      }
-    });
 
-    // Deduplicate by building code/number so "Time tower 216" and "216" merge into a single canonical entry
+    // Deduplicate by building code/number
     const codeMap = new Map<string, string>();
     rawList.forEach((name) => {
       const m = name.match(/(\d{1,4})/);
       const code = m ? m[1] : name.toLowerCase();
       const existing = codeMap.get(code);
-      // Prefer the longer/descriptive building name (e.g. "Time tower 216" over "216")
       if (!existing || name.length > existing.length) {
         codeMap.set(code, name);
       }
@@ -223,7 +216,7 @@ export default function BankStatementImportModal({
       const numB = parseInt(b.match(/(\d+)/)?.[1] || "0", 10);
       return numA - numB || a.localeCompare(b);
     });
-  }, [baiguullaga, homes, banks]);
+  }, [baiguullaga, homes]);
 
   // Load actual contracts / residents from Amarhome API for whole organization
   useEffect(() => {
@@ -251,42 +244,44 @@ export default function BankStatementImportModal({
 
         if (Array.isArray(jagsaalt) && jagsaalt.length > 0) {
           const barilguud = Array.isArray(baiguullaga?.barilguud) ? baiguullaga.barilguud : [];
-          const orgNameClean = String(baiguullaga?.ner || "").trim().toLowerCase();
+          const validBuildingCodes = new Set<string>();
+          barilguud.forEach((b: any) => {
+            const m = String(b.ner || b.dugaar || "").match(/(\d{1,4})/);
+            if (m) validBuildingCodes.add(m[1]);
+          });
 
-          const loadedHomes: HomeRow[] = jagsaalt.map((c: any, idx: number) => {
+          const loadedHomes: HomeRow[] = [];
+
+          jagsaalt.forEach((c: any, idx: number) => {
             const bId = String(c.barilgiinId?._id || c.barilgiinId || "").trim();
             const matchedBarilga = bId
               ? barilguud.find((b: any) => String(b?._id || b?.id).trim() === bId)
               : null;
 
-            // Resolve real building name (e.g. 216, 217, 218, 219) instead of organization name
             let buildingName =
               matchedBarilga?.ner ||
               (matchedBarilga as any)?.dugaar ||
-              c.barilgiinId?.ner ||
-              c.barilgiinId?.dugaar ||
               "";
 
             if (!buildingName) {
               const rawBair = String(c.bairNer || "").trim();
-              const numM = rawBair.match(/\b(21[6-9]|\d{1,4})\b/);
-              if (numM) {
-                buildingName = numM[1];
-              } else if (
-                rawBair &&
-                rawBair.toLowerCase() !== orgNameClean &&
-                !rawBair.toLowerCase().endsWith("сөх") &&
-                !rawBair.toLowerCase().endsWith("soh")
-              ) {
-                buildingName = rawBair;
+              const numM = rawBair.match(/(\d{1,4})/);
+              if (numM && (validBuildingCodes.size === 0 || validBuildingCodes.has(numM[1]))) {
+                const found = barilguud.find((b: any) => String(b.ner || b.dugaar || "").includes(numM[1]));
+                buildingName = found?.ner || numM[1];
               }
+            }
+
+            // If the organization has official buildings, SKIP contracts belonging to non-existing/deleted buildings!
+            if (barilguud.length > 0 && !buildingName) {
+              return;
             }
 
             if (!buildingName) {
               buildingName = "Байр";
             }
 
-            return {
+            loadedHomes.push({
               id: c._id || `c-${idx}`,
               name: c.ner || c.orshinSuugchId?.ner || "Нэргүй",
               ovog: c.ovog || c.orshinSuugchId?.ovog || "",
@@ -297,8 +292,8 @@ export default function BankStatementImportModal({
               note: "СӨХ-ийн төлбөр",
               status: "open",
               gereeId: c._id,
-              barilgiinId: c.barilgiinId?._id || c.barilgiinId || "",
-            };
+              barilgiinId: matchedBarilga?._id || c.barilgiinId?._id || c.barilgiinId || "",
+            });
           });
           setHomes(loadedHomes);
 
@@ -815,12 +810,14 @@ export default function BankStatementImportModal({
         const bRelAccClean = String(b.relatedAccount || "").trim().toLowerCase().replace(/[\s\-_.,/()]/g, "");
 
         const existingMatch = currentExisting.find((ex) => {
-          // 1. Direct journal / record match
+          // 1. Direct journal / record match (must be a valid unique transaction identifier)
           const exRec = String(ex.record || "").trim().toLowerCase();
-          if (jClean && exRec && !jClean.startsWith("excel-") && (jClean === exRec || exRec.includes(jClean) || jClean.includes(exRec))) {
-            return true;
+          if (jClean && exRec && !jClean.startsWith("excel-") && !exRec.startsWith("excel-") && jClean.length >= 6) {
+            if (jClean === exRec || exRec.includes(jClean) || jClean.includes(exRec)) {
+              return true;
+            }
           }
-          // 2. Compound signature: Same Amount + Same Date + (Same Description or Same Account or Same Time)
+          // 2. Strict Compound signature: Same Amount + Same Date + (Same Related Account or Exact Description)
           if (Math.abs(ex.amount - bAmt) >= 0.01) return false;
 
           const exDateClean = String(ex.date || "").replace(/[-./]/g, "");
@@ -829,18 +826,14 @@ export default function BankStatementImportModal({
 
           if (bRelAccClean && ex.relatedAccount) {
             const exRelClean = String(ex.relatedAccount).trim().toLowerCase().replace(/[\s\-_.,/()]/g, "");
-            if (bRelAccClean === exRelClean) return true;
+            if (bRelAccClean.length >= 6 && bRelAccClean === exRelClean) return true;
           }
 
           if (bDescClean && ex.description) {
             const exDescClean = String(ex.description).trim().toLowerCase().replace(/[\s\-_.,/()]/g, "");
-            if (bDescClean === exDescClean || (bDescClean.length > 5 && (bDescClean.includes(exDescClean) || exDescClean.includes(bDescClean)))) {
+            if (bDescClean.length >= 12 && bDescClean === exDescClean) {
               return true;
             }
-          }
-
-          if (b.time && ex.time && b.time === ex.time) {
-            return true;
           }
 
           return false;
@@ -855,7 +848,12 @@ export default function BankStatementImportModal({
             const linkedHome = updatedHomes.find(
               (h) => String(h.gereeId || h.id) === String(existingMatch.matchedGereeId)
             );
-            if (linkedHome) {
+            // ONLY link if BOTH unit (toot) AND building match!
+            if (
+              linkedHome &&
+              normalizeToot(linkedHome.unit) === normalizeToot(b.unit) &&
+              isBuildingCompatible(b.building, linkedHome.building)
+            ) {
               b.matchedHomeId = linkedHome.id;
               linkedHome.status = "done";
               linkedHome.matchedBankId = b.id;

@@ -689,18 +689,32 @@ export default function ResidentModal({
         gereeUtas: String(mu.gereeUtas || "").trim(),
       });
       (mu.garages || []).forEach((g: any) => {
-        activeUnits.push({ orts: "1", davkhar: g.davkhar || "", toot: g.toot || "", turul: "Гараж",
+        activeUnits.push({
+          orts: "1",
+          davkhar: g.davkhar || "",
+          toot: g.toot || "",
+          turul: "Гараж",
           // Аль тоотын дор нэмсэн нь — гэрээ, нэхэмжлэх тэр тоот дээр үүснэ.
           linkedAptToot: mu.toot || "",
-          ekhniiUldegdel: Number(g.ekhniiUldegdel || 0), tsahilgaaniiZaalt: Number(g.tsahilgaaniiZaalt || 0),
-          khonogoorBodokhEsekh: !!g.khonogoorBodokhEsekh, bodokhKhonog: Number(g.bodokhKhonog || 0) });
+          ekhniiUldegdel: Number(g.ekhniiUldegdel || 0),
+          tsahilgaaniiZaalt: Number(g.tsahilgaaniiZaalt || 0),
+          khonogoorBodokhEsekh: g.khonogoorBodokhEsekh !== undefined ? !!g.khonogoorBodokhEsekh : !!mu.khonogoorBodokhEsekh,
+          bodokhKhonog: g.bodokhKhonog !== undefined ? Number(g.bodokhKhonog || 0) : Number(mu.bodokhKhonog || 0),
+        });
       });
       (mu.storages || []).forEach((s: any) => {
-        activeUnits.push({ orts: "1", davkhar: s.davkhar || "", toot: s.toot || "", turul: "Агуулах",
+        activeUnits.push({
+          orts: "1",
+          davkhar: s.davkhar || "",
+          toot: s.toot || "",
+          turul: "Агуулах",
           // Аль тоотын дор нэмсэн нь — гэрээ, нэхэмжлэх тэр тоот дээр үүснэ.
           linkedAptToot: mu.toot || "",
-          ekhniiUldegdel: Number(s.ekhniiUldegdel || 0), tsahilgaaniiZaalt: Number(s.tsahilgaaniiZaalt || 0),
-          khonogoorBodokhEsekh: !!s.khonogoorBodokhEsekh, bodokhKhonog: Number(s.bodokhKhonog || 0) });
+          ekhniiUldegdel: Number(s.ekhniiUldegdel || 0),
+          tsahilgaaniiZaalt: Number(s.tsahilgaaniiZaalt || 0),
+          khonogoorBodokhEsekh: s.khonogoorBodokhEsekh !== undefined ? !!s.khonogoorBodokhEsekh : !!mu.khonogoorBodokhEsekh,
+          bodokhKhonog: s.bodokhKhonog !== undefined ? Number(s.bodokhKhonog || 0) : Number(mu.bodokhKhonog || 0),
+        });
       });
     });
 

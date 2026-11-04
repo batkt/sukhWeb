@@ -164,8 +164,13 @@ export default function NemeltTokhirgoo({
   // Garage payment states
   const [garagePaymentEnabled, setGaragePaymentEnabled] =
     useState<boolean>(false);
+  const [garageCalculationEnabled, setGarageCalculationEnabled] =
+    useState<boolean>(false);
   const [garagePaymentMethod, setGaragePaymentMethod] =
-    useState<string>("Тогтмол");
+    useState<string>("Хуанли");
+  const [garageFixedDayCount, setGarageFixedDayCount] = useState<number | string>(
+    30,
+  );
   const [garagePaymentValue, setGaragePaymentValue] = useState<number | string>(
     "",
   );
@@ -173,8 +178,13 @@ export default function NemeltTokhirgoo({
   // Storage payment states
   const [storagePaymentEnabled, setStoragePaymentEnabled] =
     useState<boolean>(false);
+  const [storageCalculationEnabled, setStorageCalculationEnabled] =
+    useState<boolean>(false);
   const [storagePaymentMethod, setStoragePaymentMethod] =
-    useState<string>("Тогтмол");
+    useState<string>("Хуанли");
+  const [storageFixedDayCount, setStorageFixedDayCount] = useState<number | string>(
+    30,
+  );
   const [storagePaymentValue, setStoragePaymentValue] = useState<number | string>(
     "",
   );
@@ -513,11 +523,15 @@ export default function NemeltTokhirgoo({
     setFixedDayCount(find("bodokhKhonog", 30));
     setCalculationEnabled(!!find("bodokhArgaEnabled", false));
 
-    setGaragePaymentMethod(find("garsiinTolborArga", "Тогтмол"));
+    setGaragePaymentMethod(find("garsiinTolborArga", "Хуанли"));
+    setGarageFixedDayCount(find("garsiinTolborKhonog", 30));
+    setGarageCalculationEnabled(!!find("garsiinTolborBodokhArgaEnabled", false));
     setGaragePaymentValue(find("garsiinTolborUtga", ""));
     setGaragePaymentEnabled(!!find("garsiinTolborEnabled", false));
 
-    setStoragePaymentMethod(find("aguulakhTolborArga", "Тогтмол"));
+    setStoragePaymentMethod(find("aguulakhTolborArga", "Хуанли"));
+    setStorageFixedDayCount(find("aguulakhTolborKhonog", 30));
+    setStorageCalculationEnabled(!!find("aguulakhTolborBodokhArgaEnabled", false));
     setStoragePaymentValue(find("aguulakhTolborUtga", ""));
     setStoragePaymentEnabled(!!find("aguulakhTolborEnabled", false));
 
@@ -709,6 +723,8 @@ export default function NemeltTokhirgoo({
       const garageData = {
         garsiinTolborEnabled: isEnabled,
         garsiinTolborArga: garagePaymentMethod,
+        garsiinTolborKhonog: Number(garageFixedDayCount) || 30,
+        garsiinTolborBodokhArgaEnabled: garageCalculationEnabled,
         garsiinTolborUtga: Number(garagePaymentValue) || 0,
       };
 
@@ -769,6 +785,8 @@ export default function NemeltTokhirgoo({
       const storageData = {
         aguulakhTolborEnabled: isEnabled,
         aguulakhTolborArga: storagePaymentMethod,
+        aguulakhTolborKhonog: Number(storageFixedDayCount) || 30,
+        aguulakhTolborBodokhArgaEnabled: storageCalculationEnabled,
         aguulakhTolborUtga: Number(storagePaymentValue) || 0,
       };
 
@@ -1288,8 +1306,14 @@ export default function NemeltTokhirgoo({
     zaaltaarBodokh,
     garagePaymentEnabled,
     garagePaymentValue: too(garagePaymentValue),
+    garageCalculationEnabled,
+    garagePaymentMethod,
+    garageFixedDayCount: too(garageFixedDayCount),
     storagePaymentEnabled,
     storagePaymentValue: too(storagePaymentValue),
+    storageCalculationEnabled,
+    storagePaymentMethod,
+    storageFixedDayCount: too(storageFixedDayCount),
     residentGateOpenEnabled,
     residentCarLimit: too(residentCarLimit),
     clientCarLimit: too(clientCarLimit),
@@ -1348,11 +1372,23 @@ export default function NemeltTokhirgoo({
     },
     { talbar: ["zaaltaarBodokh"], khadgal: () => saveZaaltaarBodokhSettings(zaaltaarBodokh) },
     {
-      talbar: ["garagePaymentEnabled", "garagePaymentValue"],
+      talbar: [
+        "garagePaymentEnabled",
+        "garagePaymentValue",
+        "garageCalculationEnabled",
+        "garagePaymentMethod",
+        "garageFixedDayCount",
+      ],
       khadgal: () => saveGaragePaymentSettings(),
     },
     {
-      talbar: ["storagePaymentEnabled", "storagePaymentValue"],
+      talbar: [
+        "storagePaymentEnabled",
+        "storagePaymentValue",
+        "storageCalculationEnabled",
+        "storagePaymentMethod",
+        "storageFixedDayCount",
+      ],
       khadgal: () => saveStoragePaymentSettings(),
     },
     {
@@ -1671,7 +1707,13 @@ export default function NemeltTokhirgoo({
               id="nemelt-garage-storage-box"
               icon={<Car />}
               title="Гараж"
-              changed={uurchlugdsun("garagePaymentEnabled", "garagePaymentValue")}
+              changed={uurchlugdsun(
+                "garagePaymentEnabled",
+                "garagePaymentValue",
+                "garageCalculationEnabled",
+                "garagePaymentMethod",
+                "garageFixedDayCount"
+              )}
               desc={
                 garagePaymentEnabled
                   ? "Сарын төлбөр нэхэмжлэгдэнэ."
@@ -1699,13 +1741,78 @@ export default function NemeltTokhirgoo({
                   />
                 </>
               }
-            />
+            >
+              {garagePaymentEnabled ? (
+                <div className="mt-3 border-t border-[color:var(--surface-border)] pt-3">
+                  <div className="flex flex-col gap-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-medium text-[color:var(--panel-text)]">
+                        Хоногоор хувааж бодох
+                      </span>
+                      <Switch
+                        checked={garageCalculationEnabled}
+                        onChange={(e) => setGarageCalculationEnabled(e.currentTarget.checked)}
+                        label="Хоногоор хувааж бодох"
+                      />
+                    </div>
+                    <span className="text-xs text-[color:var(--muted-text)]">
+                      {!garageCalculationEnabled
+                        ? "Унтраалттай. Сарын төлбөрийг бүтнээр нь бодно."
+                        : garagePaymentMethod === "Хуанли"
+                          ? "Тухайн сарын хоногт (28–31) хувааж бодно."
+                          : `Сар бүрийг ${too(garageFixedDayCount) || 30} хоногт хувааж бодно.`}
+                    </span>
+                    {garageCalculationEnabled ? (
+                      <div className="stg-inline mt-1">
+                        <div className="stg-segment">
+                          {(["Хуанли", "Тогтмол"] as const).map((arga) => (
+                            <button
+                              key={arga}
+                              type="button"
+                              onClick={() => setGaragePaymentMethod(arga)}
+                              className={
+                                garagePaymentMethod === arga
+                                  ? "stg-segment-item is-active"
+                                  : "stg-segment-item"
+                              }
+                            >
+                              {arga === "Хуанли" ? "Хуанлийн хоног" : "Тогтмол хоног"}
+                            </button>
+                          ))}
+                        </div>
+                        {garagePaymentMethod === "Тогтмол" ? (
+                          <>
+                            <MNumberInput
+                              value={garageFixedDayCount === "" ? undefined : Number(garageFixedDayCount)}
+                              onChange={toogoor(setGarageFixedDayCount)}
+                              placeholder="30"
+                              min={1}
+                              max={31}
+                              size="sm"
+                              className="w-20"
+                              aria-label="Хоногийн тоо"
+                            />
+                            <span>хоног</span>
+                          </>
+                        ) : null}
+                      </div>
+                    ) : null}
+                  </div>
+                </div>
+              ) : null}
+            </SettingsItem>
 
             <SettingsItem
               id="nemelt-storage-box"
               icon={<Warehouse />}
               title="Агуулах"
-              changed={uurchlugdsun("storagePaymentEnabled", "storagePaymentValue")}
+              changed={uurchlugdsun(
+                "storagePaymentEnabled",
+                "storagePaymentValue",
+                "storageCalculationEnabled",
+                "storagePaymentMethod",
+                "storageFixedDayCount"
+              )}
               desc={
                 storagePaymentEnabled
                   ? "Сарын төлбөр нэхэмжлэгдэнэ."
@@ -1733,7 +1840,66 @@ export default function NemeltTokhirgoo({
                   />
                 </>
               }
-            />
+            >
+              {storagePaymentEnabled ? (
+                <div className="mt-3 border-t border-[color:var(--surface-border)] pt-3">
+                  <div className="flex flex-col gap-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-medium text-[color:var(--panel-text)]">
+                        Хоногоор хувааж бодох
+                      </span>
+                      <Switch
+                        checked={storageCalculationEnabled}
+                        onChange={(e) => setStorageCalculationEnabled(e.currentTarget.checked)}
+                        label="Хоногоор хувааж бодох"
+                      />
+                    </div>
+                    <span className="text-xs text-[color:var(--muted-text)]">
+                      {!storageCalculationEnabled
+                        ? "Унтраалттай. Сарын төлбөрийг бүтнээр нь бодно."
+                        : storagePaymentMethod === "Хуанли"
+                          ? "Тухайн сарын хоногт (28–31) хувааж бодно."
+                          : `Сар бүрийг ${too(storageFixedDayCount) || 30} хоногт хувааж бодно.`}
+                    </span>
+                    {storageCalculationEnabled ? (
+                      <div className="stg-inline mt-1">
+                        <div className="stg-segment">
+                          {(["Хуанли", "Тогтмол"] as const).map((arga) => (
+                            <button
+                              key={arga}
+                              type="button"
+                              onClick={() => setStoragePaymentMethod(arga)}
+                              className={
+                                storagePaymentMethod === arga
+                                  ? "stg-segment-item is-active"
+                                  : "stg-segment-item"
+                              }
+                            >
+                              {arga === "Хуанли" ? "Хуанлийн хоног" : "Тогтмол хоног"}
+                            </button>
+                          ))}
+                        </div>
+                        {storagePaymentMethod === "Тогтмол" ? (
+                          <>
+                            <MNumberInput
+                              value={storageFixedDayCount === "" ? undefined : Number(storageFixedDayCount)}
+                              onChange={toogoor(setStorageFixedDayCount)}
+                              placeholder="30"
+                              min={1}
+                              max={31}
+                              size="sm"
+                              className="w-20"
+                              aria-label="Хоногийн тоо"
+                            />
+                            <span>хоног</span>
+                          </>
+                        ) : null}
+                      </div>
+                    ) : null}
+                  </div>
+                </div>
+              ) : null}
+            </SettingsItem>
           </SettingsCard>
 
           {/* ── 5. Оршин суугч ба байр ────────────────────────────────── */}
@@ -2044,8 +2210,14 @@ const TOKHIRGOONII_BULEG: Record<string, string[]> = {
     "zaaltaarBodokh",
     "garagePaymentEnabled",
     "garagePaymentValue",
+    "garageCalculationEnabled",
+    "garagePaymentMethod",
+    "garageFixedDayCount",
     "storagePaymentEnabled",
     "storagePaymentValue",
+    "storageCalculationEnabled",
+    "storagePaymentMethod",
+    "storageFixedDayCount",
     "residentGateOpenEnabled",
     "residentCarLimit",
     "clientCarLimit",
