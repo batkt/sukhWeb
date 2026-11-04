@@ -2341,38 +2341,20 @@ export default function BankStatementImportModal({
                     )}
                   </div>
 
-                  {/* Panel Footer: Status & Counts & Money Sums */}
-                  <div className="grid grid-cols-1 lg:grid-cols-2 divide-y lg:divide-y-0 lg:divide-x divide-[#e7ece9] dark:divide-zinc-800 border-t border-[#e7ece9] dark:border-zinc-800 px-5 py-2 text-xs text-black dark:text-zinc-200 shrink-0 bg-[#fbfcfb] dark:bg-zinc-900 relative z-20">
-                    <div className="flex items-center justify-start pr-3">
-                      <div className="flex items-center gap-1.5 flex-wrap">
-                        <span className="text-black dark:text-white">
-                          Нийт: {filteredBanks.length} ({formatNumber(filteredBanks.reduce((s, b) => s + b.amount, 0))} ₮)
-                        </span>
-                        <span className="text-zinc-400">·</span>
-                        <span className="text-emerald-800 dark:text-emerald-300">
-                          Тулгасан: {filteredBanks.filter((b) => b.status === "match").length} ({formatNumber(filteredBanks.filter((b) => b.status === "match").reduce((s, b) => s + b.amount, 0))} ₮)
-                        </span>
-                        <span className="text-zinc-400">·</span>
-                        <span className="text-rose-700 dark:text-rose-400">
-                          Тулгаагүй: {filteredBanks.filter((b) => b.status === "open").length} ({formatNumber(filteredBanks.filter((b) => b.status === "open").reduce((s, b) => s + b.amount, 0))} ₮)
-                        </span>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center justify-end pl-3">
-                      <div className="flex items-center gap-1.5 flex-wrap justify-end">
-                        <span className="text-black dark:text-white">
-                          Нийт: {filteredHomes.length} айл
-                        </span>
-                        <span className="text-zinc-400">·</span>
-                        <span className="text-emerald-800 dark:text-emerald-300">
-                          Тулгасан: {filteredHomes.filter((h) => h.status === "match").length}
-                        </span>
-                        <span className="text-zinc-400">·</span>
-                        <span className="text-rose-700 dark:text-rose-400">
-                          Тулгаагүй: {filteredHomes.filter((h) => h.status === "open").length}
-                        </span>
-                      </div>
+                  {/* Panel Footer: Resident Counts */}
+                  <div className="flex items-center justify-end border-t border-[#e7ece9] dark:border-zinc-800 px-5 py-2 text-xs text-black dark:text-zinc-200 shrink-0 bg-[#fbfcfb] dark:bg-zinc-900 relative z-20">
+                    <div className="flex items-center gap-1.5 flex-wrap justify-end">
+                      <span className="text-black dark:text-white">
+                        Нийт: {filteredHomes.length} айл
+                      </span>
+                      <span className="text-zinc-400">·</span>
+                      <span className="text-emerald-800 dark:text-emerald-300">
+                        Тулгасан: {filteredHomes.filter((h) => h.status === "match").length}
+                      </span>
+                      <span className="text-zinc-400">·</span>
+                      <span className="text-rose-700 dark:text-rose-400">
+                        Тулгаагүй: {filteredHomes.filter((h) => h.status === "open").length}
+                      </span>
                     </div>
                   </div>
                 </div>
