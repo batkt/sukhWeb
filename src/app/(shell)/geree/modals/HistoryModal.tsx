@@ -1088,8 +1088,8 @@ export default function HistoryModal({
     const looksLikeNekhemjlekhiinRow = Boolean(
       contract?.medeelel?.zardluud ||
       contract?.medeelel?.guilgeenuud ||
-      (Array.isArray(contract?.zardluud) && contract.zardluud.length > 0) ||
-      (Array.isArray(contract?.guilgeenuud) && contract.guilgeenuud.length > 0),
+      contract?.nekhemjlekhiinDugaar ||
+      contract?.turul === "nekhemjlekh",
     );
     const contractIdToFetch =
       explicitGereeId ||
@@ -1101,7 +1101,7 @@ export default function HistoryModal({
     try {
       const commonParams = {
         baiguullagiinId: baiguullagiinId || undefined,
-        barilgiinId: barilgiinId || null,
+        barilgiinId: contractIdToFetch ? undefined : (barilgiinId || null),
         khuudasniiDugaar: 1,
         khuudasniiKhemjee: 5000,
       };
@@ -1825,14 +1825,18 @@ export default function HistoryModal({
       const flatLedgerDeduped =
         dedupeSemanticallyIdenticalLedgerRows(flatLedger);
 
-      if (contractIdToFetch) {
+      const targetContractId =
+        contractIdToFetch ||
+        explicitGereeId ||
+        (!looksLikeNekhemjlekhiinRow && contract?._id ? String(contract._id).trim() : "");
+      if (targetContractId) {
         try {
           const ledgerResp = await uilchilgee(token || undefined).get(
             `/guilgeeAvlaguud`,
             {
               params: {
                 baiguullagiinId: baiguullagiinId || undefined,
-                query: JSON.stringify({ gereeniiId: contractIdToFetch }),
+                query: JSON.stringify({ gereeniiId: targetContractId }),
                 khuudasniiDugaar: 1,
                 khuudasniiKhemjee: 5000,
                 sort: JSON.stringify({ ognoo: -1, createdAt: -1 }), // Latest first

@@ -168,30 +168,47 @@ export default function BankStatementImportModal({
     return m;
   };
 
-  // Calculate available buildings (from organization, homes, and statement rows)
+  // Calculate available buildings (from organization, homes, and statement rows, deduplicated by building code)
   const availableBuildings = useMemo(() => {
-    const set = new Set<string>();
+    const rawList: string[] = [];
     const orgClean = String(baiguullaga?.ner || "").trim().toLowerCase();
 
     if (Array.isArray(baiguullaga?.barilguud)) {
       baiguullaga.barilguud.forEach((b: any) => {
         const n = String(b.ner || b.dugaar || "").trim();
-        if (n && n !== "Байр" && n.toLowerCase() !== orgClean) set.add(n);
+        if (n && n !== "Байр" && n.toLowerCase() !== orgClean) rawList.push(n);
       });
     }
     homes.forEach((h) => {
       const n = String(h.building || "").trim();
       if (n && n !== "Байр" && n.toLowerCase() !== orgClean && !n.toLowerCase().endsWith("сөх") && !n.toLowerCase().endsWith("soh")) {
-        set.add(n);
+        rawList.push(n);
       }
     });
     banks.forEach((b) => {
       const n = String(b.building || "").trim();
       if (n && n !== "Байр" && n.toLowerCase() !== orgClean && !n.toLowerCase().endsWith("сөх") && !n.toLowerCase().endsWith("soh")) {
-        set.add(n);
+        rawList.push(n);
       }
     });
-    return Array.from(set).sort();
+
+    // Deduplicate by building code/number so "Time tower 216" and "216" merge into a single canonical entry
+    const codeMap = new Map<string, string>();
+    rawList.forEach((name) => {
+      const m = name.match(/(\d{1,4})/);
+      const code = m ? m[1] : name.toLowerCase();
+      const existing = codeMap.get(code);
+      // Prefer the longer/descriptive building name (e.g. "Time tower 216" over "216")
+      if (!existing || name.length > existing.length) {
+        codeMap.set(code, name);
+      }
+    });
+
+    return Array.from(codeMap.values()).sort((a, b) => {
+      const numA = parseInt(a.match(/(\d+)/)?.[1] || "0", 10);
+      const numB = parseInt(b.match(/(\d+)/)?.[1] || "0", 10);
+      return numA - numB || a.localeCompare(b);
+    });
   }, [baiguullaga, homes, banks]);
 
   // Load actual contracts / residents from Amarhome API for whole organization
