@@ -27,6 +27,19 @@ import formatNumber from "../../../../../tools/function/formatNumber";
 
 export type MatchStatus = "open" | "likely" | "match" | "done";
 
+type ExistingRecord = {
+  _id: string;
+  record: string;
+  date: string;
+  time?: string;
+  amount: number;
+  description: string;
+  relatedAccount?: string;
+  accName?: string;
+  matchedGereeId?: string | null;
+  status?: string;
+};
+
 export type PayerRule = {
   payerKey: string;
   relatedAccount?: string;
@@ -111,6 +124,7 @@ export default function BankStatementImportModal({
   const [banks, setBanks] = useState<BankRow[]>([]);
   const [homes, setHomes] = useState<HomeRow[]>([]);
   const [payerRules, setPayerRules] = useState<PayerRule[]>([]);
+  const [existingBankRecords, setExistingBankRecords] = useState<ExistingRecord[]>([]);
 
   // Selection states: selB stores checked bank transaction IDs for registration (auto-checked for matched rows)
   const [selB, setSelB] = useState<Set<number>>(new Set());
@@ -304,6 +318,18 @@ export default function BankStatementImportModal({
       .catch((err) => {
         console.warn("Contracts fetch notice:", err?.message);
         if (isMounted) setHomes([]);
+      });
+
+    // Fetch existing bank records for deduplication & pre-marking
+    uilchilgee(token)
+      .get("/bankniiGuilgee/existingRecords", { params: { baiguullagiinId, barilgiinId } })
+      .then((res) => {
+        if (isMounted && Array.isArray(res.data?.records)) {
+          setExistingBankRecords(res.data.records);
+        }
+      })
+      .catch((err) => {
+        console.warn("Existing bank records fetch notice:", err?.message);
       });
 
     // Also fetch learned payer rules
@@ -762,17 +788,96 @@ export default function BankStatementImportModal({
         return;
       }
 
+      // Pre-check against existing bank records to prevent duplicate matches/charges
+      let currentExisting = existingBankRecords;
+      if (currentExisting.length === 0 && token && baiguullagiinId) {
+        try {
+          const res = await uilchilgee(token).get("/bankniiGuilgee/existingRecords", {
+            params: { baiguullagiinId, barilgiinId },
+          });
+          if (Array.isArray(res.data?.records)) {
+            currentExisting = res.data.records;
+            setExistingBankRecords(currentExisting);
+          }
+        } catch (e) {
+          console.warn("Could not fetch existing records:", e);
+        }
+      }
+
+      let alreadyDoneCount = 0;
+      const updatedHomes = [...homes];
+
+      extractedBanks.forEach((b) => {
+        const jClean = String(b.journal || "").trim().toLowerCase();
+        const bAmt = Number(b.amount || 0);
+        const bDateClean = String(b.date || b.rawDate || "").replace(/[-./]/g, "");
+        const bDescClean = String(b.description || "").trim().toLowerCase().replace(/[\s\-_.,/()]/g, "");
+        const bRelAccClean = String(b.relatedAccount || "").trim().toLowerCase().replace(/[\s\-_.,/()]/g, "");
+
+        const existingMatch = currentExisting.find((ex) => {
+          // 1. Direct journal / record match
+          const exRec = String(ex.record || "").trim().toLowerCase();
+          if (jClean && exRec && !jClean.startsWith("excel-") && (jClean === exRec || exRec.includes(jClean) || jClean.includes(exRec))) {
+            return true;
+          }
+          // 2. Compound signature: Same Amount + Same Date + (Same Description or Same Account or Same Time)
+          if (Math.abs(ex.amount - bAmt) >= 0.01) return false;
+
+          const exDateClean = String(ex.date || "").replace(/[-./]/g, "");
+          const isDateMatch = bDateClean && exDateClean && (bDateClean.includes(exDateClean) || exDateClean.includes(bDateClean));
+          if (!isDateMatch) return false;
+
+          if (bRelAccClean && ex.relatedAccount) {
+            const exRelClean = String(ex.relatedAccount).trim().toLowerCase().replace(/[\s\-_.,/()]/g, "");
+            if (bRelAccClean === exRelClean) return true;
+          }
+
+          if (bDescClean && ex.description) {
+            const exDescClean = String(ex.description).trim().toLowerCase().replace(/[\s\-_.,/()]/g, "");
+            if (bDescClean === exDescClean || (bDescClean.length > 5 && (bDescClean.includes(exDescClean) || exDescClean.includes(bDescClean)))) {
+              return true;
+            }
+          }
+
+          if (b.time && ex.time && b.time === ex.time) {
+            return true;
+          }
+
+          return false;
+        });
+
+        if (existingMatch) {
+          b.status = "done";
+          b.matchReason = "Өмнө нь системд бүртгэгдсэн гүйлгээ";
+          alreadyDoneCount++;
+
+          if (existingMatch.matchedGereeId) {
+            const linkedHome = updatedHomes.find(
+              (h) => String(h.gereeId || h.id) === String(existingMatch.matchedGereeId)
+            );
+            if (linkedHome) {
+              b.matchedHomeId = linkedHome.id;
+              linkedHome.status = "done";
+              linkedHome.matchedBankId = b.id;
+            }
+          }
+        }
+      });
+
+      setHomes(updatedHomes);
       setBanks(extractedBanks);
       setSelB(new Set());
       setPairBankId(null);
       setPairHomeId(null);
       setTab("all");
-
-      // Show ALL transactions by default so user sees every row
       setSelectedMonth("ALL");
 
-      toast.success(`${extractedBanks.length} гүйлгээ уншигдлаа`);
-      autoMatch(extractedBanks, homes);
+      if (alreadyDoneCount > 0) {
+        toast.success(`${extractedBanks.length} гүйлгээ уншигдлаа (${alreadyDoneCount} нь өмнө нь бүртгэгдсэн)`);
+      } else {
+        toast.success(`${extractedBanks.length} гүйлгээ уншигдлаа`);
+      }
+      autoMatch(extractedBanks, updatedHomes);
     } catch (err: any) {
       console.error("Excel parse error:", err);
       toast.error("Excel файл уншихад алдаа гарлаа: " + (err.message || ""));
@@ -1346,6 +1451,19 @@ export default function BankStatementImportModal({
 
         const registeredIds = new Set(targetBanks.map((b) => b.id));
         setBanks((prev) => prev.map((b) => (registeredIds.has(b.id) ? { ...b, status: "done" } : b)));
+        // Update in-memory existingBankRecords for instant deduplication
+        const newlySavedRecords: ExistingRecord[] = targetBanks.map((b) => ({
+          _id: `NEW-${b.id}`,
+          record: b.journal || "",
+          date: b.date || "",
+          amount: b.amount,
+          description: b.description || "",
+          relatedAccount: b.relatedAccount || "",
+          accName: b.accName || "",
+          matchedGereeId: b.matchedHomeId ? String(b.matchedHomeId) : null,
+          status: "done",
+        }));
+        setExistingBankRecords((prev) => [...newlySavedRecords, ...prev]);
         setHomes((prev) =>
           prev.map((h) => (targetBanks.some((b) => b.matchedHomeId === h.id) ? { ...h, status: "done" } : h))
         );
