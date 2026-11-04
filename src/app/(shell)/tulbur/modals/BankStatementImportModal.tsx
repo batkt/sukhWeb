@@ -2343,7 +2343,7 @@ export default function BankStatementImportModal({
 
                   {/* Panel Footer: Status & Counts & Money Sums */}
                   <div className="grid grid-cols-1 lg:grid-cols-2 divide-y lg:divide-y-0 lg:divide-x divide-[#e7ece9] dark:divide-zinc-800 border-t border-[#e7ece9] dark:border-zinc-800 px-5 py-2 text-xs text-black dark:text-zinc-200 shrink-0 bg-[#fbfcfb] dark:bg-zinc-900 relative z-20">
-                    <div className="flex items-center justify-between pr-3">
+                    <div className="flex items-center justify-start pr-3">
                       <div className="flex items-center gap-1.5 flex-wrap">
                         <span className="text-black dark:text-white">
                           Нийт: {filteredBanks.length} ({formatNumber(filteredBanks.reduce((s, b) => s + b.amount, 0))} ₮)
@@ -2357,11 +2357,10 @@ export default function BankStatementImportModal({
                           Тулгаагүй: {filteredBanks.filter((b) => b.status === "open").length} ({formatNumber(filteredBanks.filter((b) => b.status === "open").reduce((s, b) => s + b.amount, 0))} ₮)
                         </span>
                       </div>
-                      <span className="text-[11px] text-zinc-700 dark:text-zinc-300">{file ? file.name : "Дансны хуулга"}</span>
                     </div>
 
-                    <div className="flex items-center justify-between pl-3">
-                      <div className="flex items-center gap-1.5 flex-wrap">
+                    <div className="flex items-center justify-end pl-3">
+                      <div className="flex items-center gap-1.5 flex-wrap justify-end">
                         <span className="text-black dark:text-white">
                           Нийт: {filteredHomes.length} айл
                         </span>
@@ -2374,7 +2373,6 @@ export default function BankStatementImportModal({
                           Тулгаагүй: {filteredHomes.filter((h) => h.status === "open").length}
                         </span>
                       </div>
-                      <span className="text-[11px] text-zinc-700 dark:text-zinc-300">Айлын төлбөр</span>
                     </div>
                   </div>
                 </div>
@@ -2387,75 +2385,8 @@ export default function BankStatementImportModal({
 
               {/* Bottom Information & Action Bar */}
               <div className="h-16 px-6 bg-white dark:bg-zinc-900 border-t border-[#e7ece9] dark:border-zinc-800 flex items-center justify-between gap-4 shrink-0 shadow-md">
-                {/* Left Side: Must-Have Status Pills (Total, Matched, Unmatched, Selected) */}
+                {/* Left Side: Manual Pair Selection Indicator */}
                 <div className="flex items-center gap-2.5 flex-wrap">
-                  {/* Total pill */}
-                  <button
-                    onClick={() => setTab("all")}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs transition cursor-pointer ${
-                      tab === "all"
-                        ? "bg-gray-100 dark:bg-zinc-800 border-gray-400"
-                        : "bg-gray-50 dark:bg-zinc-900 border-gray-200 dark:border-zinc-700 hover:bg-gray-100"
-                    }`}
-                    title="Бүх гүйлгээг шүүх"
-                  >
-                    <span className="text-black dark:text-zinc-300">Нийт:</span>
-                    <span className="text-black dark:text-white">{stats.totalCount}</span>
-                    <span className="text-zinc-400">·</span>
-                    <span className="tabular-nums text-black dark:text-white">{formatNumber(stats.totalSum)} ₮</span>
-                  </button>
-
-                  {/* Matched green pill */}
-                  <button
-                    onClick={() => setTab("match")}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs transition cursor-pointer ${
-                      tab === "match"
-                        ? "bg-emerald-100 dark:bg-emerald-950/60 border-emerald-500"
-                        : "bg-emerald-50/70 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-800/40 hover:bg-emerald-100"
-                    }`}
-                    title="Тулгасан гүйлгээг шүүх"
-                  >
-                    <span className="inline-block w-2 h-2 rounded-full bg-emerald-500"></span>
-                    <span className="text-emerald-900 dark:text-emerald-300">Тулгасан:</span>
-                    <span className="text-emerald-800 dark:text-emerald-200">{stats.matchedCount}</span>
-                    <span className="text-emerald-400 dark:text-emerald-700">·</span>
-                    <span className="tabular-nums text-emerald-800 dark:text-emerald-300">{formatNumber(stats.matchedSum)} ₮</span>
-                  </button>
-
-                  {/* Likely amber pill */}
-                  <button
-                    onClick={() => setTab("likely")}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs transition cursor-pointer ${
-                      tab === "likely"
-                        ? "bg-amber-100 dark:bg-amber-950/60 border-amber-500"
-                        : "bg-amber-50/70 dark:bg-amber-950/30 border-amber-200 dark:border-amber-800/40 hover:bg-amber-100"
-                    }`}
-                    title="Магадлалтай гүйлгээг шүүх"
-                  >
-                    <span className="inline-block w-2 h-2 rounded-full bg-amber-500"></span>
-                    <span className="text-amber-900 dark:text-amber-300">Магадлалтай:</span>
-                    <span className="text-amber-800 dark:text-amber-200">{stats.likelyCount}</span>
-                    <span className="text-amber-400 dark:text-amber-700">·</span>
-                    <span className="tabular-nums text-amber-800 dark:text-amber-300">{formatNumber(stats.likelySum)} ₮</span>
-                  </button>
-
-                  {/* Unmatched red pill */}
-                  <button
-                    onClick={() => setTab("open")}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs transition cursor-pointer ${
-                      tab === "open"
-                        ? "bg-rose-100 dark:bg-rose-950/60 border-rose-500"
-                        : "bg-rose-50/70 dark:bg-rose-950/30 border-rose-200 dark:border-rose-800/40 hover:bg-rose-100"
-                    }`}
-                    title="Тулгаагүй гүйлгээг шүүх"
-                  >
-                    <span className="inline-block w-2 h-2 rounded-full bg-rose-500"></span>
-                    <span className="text-rose-900 dark:text-rose-300">Тулгаагүй:</span>
-                    <span className="text-rose-700 dark:text-rose-200">{stats.openCount}</span>
-                    <span className="text-rose-400 dark:text-rose-700">·</span>
-                    <span className="tabular-nums text-rose-700 dark:text-rose-300">{formatNumber(stats.openSum)} ₮</span>
-                  </button>
-
                   {/* Manual Pair Selection Indicator */}
                   {(pairBankId !== null || pairHomeId !== null) && (
                     <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-sky-50 dark:bg-sky-950/40 border border-sky-200 dark:border-sky-800/50 text-xs shadow-xs text-sky-800 dark:text-sky-300">
