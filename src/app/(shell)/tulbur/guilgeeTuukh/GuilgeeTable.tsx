@@ -10,18 +10,8 @@ import { getPaymentStatusLabel } from "@/lib/utils";
 import { pickMonthSlice } from "./guilgeeMonthMatrix";
 import { negjiinTurul } from "@/lib/negjiinTurul";
 
-const formatDate = (d?: any) => {
-  if (!d) return "-";
-  try {
-    const dt = new Date(d);
-    if (isNaN(dt.getTime())) return String(d);
-    return dt.toLocaleDateString("mn-MN");
-  } catch {
-    return "-";
-  }
-};
-
-
+const formatDate = (d?: string) =>
+  d ? new Date(d).toLocaleDateString("mn-MN") : "-";
 
 /** Мөнгөн дүнтэй баганууд — хөл мөрөнд нийлбэр гарна */
 const MONEY_KEYS = new Set([
@@ -350,8 +340,8 @@ export default function GuilgeeTable({
             }),
             onCell: () => ({
               className: `!text-center ${isCheckboxVisible
-                  ? "!border-l !border-[hsl(var(--zt-border))]"
-                  : ""
+                ? "!border-l !border-[hsl(var(--zt-border))]"
+                : ""
                 }`,
             }),
             render: (_: any, __: any, index: number) =>
@@ -800,8 +790,8 @@ export default function GuilgeeTable({
               fixed="left"
               leafIndex={0}
               className={`text-left ${isCheckboxVisible && dataCols[0]?.key === "index"
-                  ? "!border-l !border-[hsl(var(--zt-border))]"
-                  : ""
+                ? "!border-l !border-[hsl(var(--zt-border))]"
+                : ""
                 }`}
             >
               Нийт
@@ -834,7 +824,7 @@ export default function GuilgeeTable({
           dataSource={data}
           loading={loading}
           pagination={false}
-          rowKey={(record: any) => record._id || record.id || record.gereeniiId || `${record.ner || ""}|${record.toot || ""}`}
+          rowKey={(record: any) => record._id || Math.random().toString()}
           rowSelection={
             isCheckboxVisible
               ? {

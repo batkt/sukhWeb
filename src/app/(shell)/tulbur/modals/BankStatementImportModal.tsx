@@ -120,6 +120,16 @@ interface BankStatementImportModalProps {
   onSuccess: () => void;
 }
 
+// Pure helper to determine if a bank row should be completely excluded
+// Hoisted outside component to prevent Temporal Dead Zone ReferenceError
+export const isExcludedBankRow = (b: { description?: string; isParking?: boolean; isQPay?: boolean }): boolean => {
+  const desc = b.description || "";
+  if (b.isParking || /qrgadaa|зогсоол|автомашин/i.test(desc)) return true;
+  const isOurSystemQPay = /qpay/i.test(desc) && /(?:гд|gd|гэрээний\s*дугаар)[-:\s#_]?\d+/i.test(desc);
+  if (isOurSystemQPay) return true;
+  return false;
+};
+
 export default function BankStatementImportModal({
   show,
   onClose,
@@ -676,8 +686,8 @@ export default function BankStatementImportModal({
     // 7. Explicit Toot Word if not matched above (support тоот, toot, -т, т, -р тоот, үүслээ: 70 т):
     if (!unit) {
       const mToot = clean.match(/\b(\d{1,4}(?:[-/]\d{1,2}|[А-Яа-яA-Za-z])?)\s*(?:-?[рrR]\s*)?(?:[nн]\s*)?(?:тоот|toot|торт|-?[тtT]\b)\b/i) ||
-                    clean.match(/(?:тоот|toot|-?[тtT]\b)\s*[:.-]?\s*(\d{1,4}(?:[-/]\d{1,2}|[А-Яа-яA-Za-z])?)\b/i) ||
-                    clean.match(/:\s*(\d{1,4})\s*(?:тоот|toot|тоо|-?[тtT]\b)?/i);
+        clean.match(/(?:тоот|toot|-?[тtT]\b)\s*[:.-]?\s*(\d{1,4}(?:[-/]\d{1,2}|[А-Яа-яA-Za-z])?)\b/i) ||
+        clean.match(/:\s*(\d{1,4})\s*(?:тоот|toot|тоо|-?[тtT]\b)?/i);
       if (mToot && !mToot[1].startsWith("202")) {
         unit = mToot[1].replace(/^0+/, "") || mToot[1];
       }
@@ -699,7 +709,7 @@ export default function BankStatementImportModal({
     // 9. Building alone if not matched:
     if (!building) {
       const mBair = clean.match(/\b(\d{1,4})\s*(?:-?[рrR]\s*байр|\s*ба[йи]р|\s*bair)\b/i) ||
-                    clean.match(/(?:байр|баир|bair)\s*[:.-]?\s*(\d{1,4})\b/i);
+        clean.match(/(?:байр|баир|bair)\s*[:.-]?\s*(\d{1,4})\b/i);
       if (mBair && !mBair[1].startsWith("202")) {
         building = mBair[1];
       }
@@ -1047,7 +1057,7 @@ export default function BankStatementImportModal({
               isBuildingCompatible(b.building, linkedHome.building)
             ) {
               b.matchedHomeId = linkedHome.id;
-              // Do NOT lock linkedHome.status = "done" here so current month payments can still match
+              // Do NOT mark linkedHome.status = "done" so current period transactions can match
             }
           }
         }
@@ -1197,18 +1207,6 @@ export default function BankStatementImportModal({
     return true;
   };
 
-  // Helper to determine if a bank row should be completely excluded
-  // ONLY exclude:
-  // 1. Parking payments (QRGADAA, зогсоол, автомашин)
-  // 2. OUR SYSTEM's QPay transactions that have contract number (ГД / GD)
-  // Any other QPay or payments without ГД MUST show as normal income!
-  const isExcludedBankRow = (b: { description?: string; isParking?: boolean; isQPay?: boolean }): boolean => {
-    const desc = b.description || "";
-    if (b.isParking || /qrgadaa|зогсоол|автомашин/i.test(desc)) return true;
-    const isOurSystemQPay = /qpay/i.test(desc) && /(?:гд|gd|гэрээний\s*дугаар)[-:\s#_]?\d+/i.test(desc);
-    if (isOurSystemQPay) return true;
-    return false;
-  };
 
   // Save learned recurring payer rule
   const savePayerRule = async (bank: BankRow, home: HomeRow) => {
@@ -1246,20 +1244,20 @@ export default function BankStatementImportModal({
       prev.map((b) =>
         b.id === bankId
           ? {
-              ...b,
-              status: "match",
-              matchedHomeId: targetHome.id,
-              isManual: true,
-              unit: targetHome.unit || b.unit,
-              building:
-                targetHome.building && targetHome.building !== "Байр"
-                  ? targetHome.building
-                  : b.building,
-              matchReason: "Гараар чирч тулгасан",
-            }
+            ...b,
+            status: "match",
+            matchedHomeId: targetHome.id,
+            isManual: true,
+            unit: targetHome.unit || b.unit,
+            building:
+              targetHome.building && targetHome.building !== "Байр"
+                ? targetHome.building
+                : b.building,
+            matchReason: "Гараар чирч тулгасан",
+          }
           : b.matchedHomeId === targetHome.id
-          ? { ...b, status: "open", matchedHomeId: null, isManual: false }
-          : b
+            ? { ...b, status: "open", matchedHomeId: null, isManual: false }
+            : b
       )
     );
 
@@ -1268,8 +1266,8 @@ export default function BankStatementImportModal({
         String(h.id) === String(homeId)
           ? { ...h, status: "match", matchedBankId: bankId, isManual: true }
           : h.matchedBankId === bankId
-          ? { ...h, status: "open", matchedBankId: null, isManual: false }
-          : h
+            ? { ...h, status: "open", matchedBankId: null, isManual: false }
+            : h
       )
     );
 
@@ -1327,17 +1325,17 @@ export default function BankStatementImportModal({
       prev.map((b) =>
         b.id === bankId
           ? {
-              ...b,
-              status: "match",
-              matchedHomeId: targetHome.id,
-              isManual: true,
-              unit: targetHome.unit || b.unit,
-              building:
-                targetHome.building && targetHome.building !== "Байр"
-                  ? targetHome.building
-                  : b.building,
-              matchReason: "Хэрэглэгч баталгаажуулсан",
-            }
+            ...b,
+            status: "match",
+            matchedHomeId: targetHome.id,
+            isManual: true,
+            unit: targetHome.unit || b.unit,
+            building:
+              targetHome.building && targetHome.building !== "Байр"
+                ? targetHome.building
+                : b.building,
+            matchReason: "Хэрэглэгч баталгаажуулсан",
+          }
           : b
       )
     );
@@ -1412,6 +1410,9 @@ export default function BankStatementImportModal({
       if ((h as any).isManual && h.matchedBankId && validBanks.some((b) => b.id === h.matchedBankId)) {
         return { ...h };
       }
+      if (h.status === "done" && h.matchedBankId && validBanks.some((b) => b.id === h.matchedBankId)) {
+        return { ...h };
+      }
       return {
         ...h,
         status: "open" as const,
@@ -1425,7 +1426,7 @@ export default function BankStatementImportModal({
       status: "match" | "likely" = "match",
       reason?: string
     ) => {
-      if (isExcludedBankRow(b) || b.status === "done") {
+      if (isExcludedBankRow(b) || b.status === "done" || h.status === "done") {
         return false;
       }
 
@@ -1516,6 +1517,7 @@ export default function BankStatementImportModal({
       const bBld = normalizeBuilding(b.ebillBuilding || b.building);
 
       const candidate = newHomes.find((h) => {
+        if (h.status !== "open") return false;
         const hBld = normalizeBuilding(h.building);
         if (bBld && hBld && bBld !== hBld) return false;
         if (normalizeToot(h.unit) !== eToot) return false;
@@ -1535,6 +1537,7 @@ export default function BankStatementImportModal({
       const bBld = normalizeBuilding(b.building);
 
       const candidates = newHomes.filter((h) => {
+        if (h.status !== "open") return false;
         const hBld = normalizeBuilding(h.building);
         if (bBld && hBld && bBld !== hBld) return false;
         if (normalizeToot(h.unit) !== bToot) return false;
@@ -1556,6 +1559,7 @@ export default function BankStatementImportModal({
       if (!bBld) return; // only for explicit building specification
 
       const candidates = newHomes.filter((h) => {
+        if (h.status !== "open") return false;
         const hBld = normalizeBuilding(h.building);
         if (bBld && hBld && bBld !== hBld) return false;
         if (normalizeToot(h.unit) !== bToot) return false;
@@ -1585,6 +1589,7 @@ export default function BankStatementImportModal({
       const tootExistsInMultipleBuildings = new Set(allHomesWithThisToot.map((h) => normalizeBuilding(h.building))).size > 1;
 
       const candidates = newHomes.filter((h) => {
+        if (h.status !== "open") return false;
         const hBld = normalizeBuilding(h.building);
         if (bBld && hBld && bBld !== hBld) return false;
         if (bBld && !hBld) return false;
@@ -1712,7 +1717,14 @@ export default function BankStatementImportModal({
     }
   };
 
-
+  // Auto-clean any residual system QPay or parking rows from banks state
+  useEffect(() => {
+    if (banks.some(isExcludedBankRow)) {
+      const sanitized = banks.filter((b) => !isExcludedBankRow(b));
+      setBanks(sanitized);
+      autoMatch(sanitized, homes, selectedBuilding);
+    }
+  }, [banks, homes, selectedBuilding]);
 
   // Toggle bank row checkbox (check / uncheck for registration)
   const toggleBankRow = (id: number) => {
@@ -2070,24 +2082,6 @@ export default function BankStatementImportModal({
       };
     });
   }, [displayRows]);
-
-  // Fast pagination state for high-performance rendering of 1000+ rows
-  const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState<number>(50);
-
-  // Auto-reset page to 1 whenever filters or search query change
-  useEffect(() => {
-    setPage(1);
-  }, [tab, selectedMonth, selectedBuilding, bankSearch, homeSearch]);
-
-  const totalRows = displayRowsWithNumbers.length;
-  const totalPages = pageSize === 0 ? 1 : Math.max(1, Math.ceil(totalRows / pageSize));
-
-  const pagedRows = useMemo(() => {
-    if (pageSize === 0) return displayRowsWithNumbers;
-    const start = (page - 1) * pageSize;
-    return displayRowsWithNumbers.slice(start, start + pageSize);
-  }, [displayRowsWithNumbers, page, pageSize]);
 
   // Statistics calculation
   const stats = useMemo(() => {
@@ -2567,14 +2561,14 @@ export default function BankStatementImportModal({
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
-                          {pagedRows.length === 0 ? (
+                          {displayRowsWithNumbers.length === 0 ? (
                             <tr>
                               <td colSpan={9} className="py-12 text-center text-zinc-500 dark:text-zinc-400">
                                 Илэрц олдсонгүй
                               </td>
                             </tr>
                           ) : (
-                            pagedRows.map(({ bank: b, home: h, bankNo, homeNo }, idx) => {
+                            displayRowsWithNumbers.map(({ bank: b, home: h, bankNo, homeNo }, idx) => {
                               const isPairSelectedBank = b && pairBankId === b.id;
                               const isPairSelectedHome = h && pairHomeId === h.id;
                               const isPairSelected = isPairSelectedBank || isPairSelectedHome;
@@ -2679,9 +2673,8 @@ export default function BankStatementImportModal({
                               return (
                                 <tr
                                   key={`row-${idx}`}
-                                  className={`h-[60px] transition select-none group ${
-                                    (draggedBankId === b?.id || draggedHomeId === h?.id) ? "opacity-60" : ""
-                                  }`}
+                                  className={`h-[60px] transition select-none group ${(draggedBankId === b?.id || draggedHomeId === h?.id) ? "opacity-60" : ""
+                                    }`}
                                 >
                                   {/* LEFT 5 CELLS: BANK TRANSACTION (50% OF ROW) */}
                                   {b ? (
@@ -2926,11 +2919,10 @@ export default function BankStatementImportModal({
                                             )}
                                             {b.status === "done" && (
                                               <span
-                                                className={`inline-flex items-center text-[10px] font-medium px-2 py-0.5 rounded-full ${
-                                                  b.isQPay
-                                                    ? "bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800"
-                                                    : "bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-700"
-                                                } shrink-0`}
+                                                className={`inline-flex items-center text-[10px] font-medium px-2 py-0.5 rounded-full ${b.isQPay
+                                                  ? "bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800"
+                                                  : "bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-700"
+                                                  } shrink-0`}
                                                 title={b.matchReason}
                                               >
                                                 {b.isQPay ? "QPay бүртгэгдсэн" : "Бүртгэсэн"}
@@ -2957,19 +2949,18 @@ export default function BankStatementImportModal({
                                                 e.stopPropagation();
                                                 openAllocationModal(b, h);
                                               }}
-                                              className={`inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded border transition shadow-xs cursor-pointer ${
-                                                b.allocation && Object.keys(b.allocation.months || {}).length > 0
-                                                  ? "bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-200 border-emerald-300 dark:border-emerald-700 hover:bg-emerald-200"
-                                                  : "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800 hover:bg-emerald-100"
-                                              }`}
+                                              className={`inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded border transition shadow-xs cursor-pointer ${b.allocation && Object.keys(b.allocation.months || {}).length > 0
+                                                ? "bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-200 border-emerald-300 dark:border-emerald-700 hover:bg-emerald-200"
+                                                : "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800 hover:bg-emerald-100"
+                                                }`}
                                               title="Төлбөр хуваарилалт хийх"
                                             >
                                               <Layers className="w-2.5 h-2.5 text-emerald-600 dark:text-emerald-400" />
                                               {b.allocation && Object.keys(b.allocation.months || {}).length > 0
                                                 ? `${Object.keys(b.allocation.months).length} сар (${formatNumber(b.allocation.totalAllocated)}₮)`
                                                 : b.amount > (h.amount || 0)
-                                                ? "Төлбөр хуваарилах"
-                                                : "Хуваарилалт"}
+                                                  ? "Төлбөр хуваарилах"
+                                                  : "Хуваарилалт"}
                                             </button>
                                           </div>
                                         )}
@@ -3130,11 +3121,10 @@ export default function BankStatementImportModal({
                                             )}
                                             {h.status === "done" && (
                                               <span
-                                                className={`inline-flex items-center text-[10px] font-medium px-2 py-0.5 rounded-full ${
-                                                  h.qpayPaid
-                                                    ? "bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800"
-                                                    : "bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-700"
-                                                } shrink-0`}
+                                                className={`inline-flex items-center text-[10px] font-medium px-2 py-0.5 rounded-full ${h.qpayPaid
+                                                  ? "bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800"
+                                                  : "bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-700"
+                                                  } shrink-0`}
                                               >
                                                 {h.qpayPaid ? "QPay төлсөн" : "Бүртгэсэн"}
                                               </span>
@@ -3186,74 +3176,8 @@ export default function BankStatementImportModal({
                     )}
                   </div>
 
-                  {/* Panel Footer: Fast Pagination & Resident Counts */}
-                  <div className="flex items-center justify-between border-t border-[#e7ece9] dark:border-zinc-800 px-5 py-2 text-xs text-black dark:text-zinc-200 shrink-0 bg-[#fbfcfb] dark:bg-zinc-900 relative z-20">
-                    {/* Left: High-Performance Pagination Controls */}
-                    <div className="flex items-center gap-2">
-                      <span className="text-[11px] font-medium text-zinc-600 dark:text-zinc-400">
-                        Нийт {totalRows} мөр (Хуудас {page} / {totalPages})
-                      </span>
-                      <div className="flex items-center gap-1 ml-2">
-                        <button
-                          type="button"
-                          onClick={() => setPage(1)}
-                          disabled={page <= 1}
-                          className="px-2 py-0.5 rounded border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-[11px] font-medium disabled:opacity-40 disabled:cursor-not-allowed hover:bg-zinc-50 dark:hover:bg-zinc-700 transition cursor-pointer"
-                          title="Эхний хуудас"
-                        >
-                          «
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setPage((p) => Math.max(1, p - 1))}
-                          disabled={page <= 1}
-                          className="px-2.5 py-0.5 rounded border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-[11px] font-medium disabled:opacity-40 disabled:cursor-not-allowed hover:bg-zinc-50 dark:hover:bg-zinc-700 transition cursor-pointer"
-                        >
-                          ‹ Өмнөх
-                        </button>
-                        <span className="px-2.5 py-0.5 text-[11px] font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 rounded border border-emerald-200 dark:border-emerald-800">
-                          {page}
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                          disabled={page >= totalPages}
-                          className="px-2.5 py-0.5 rounded border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-[11px] font-medium disabled:opacity-40 disabled:cursor-not-allowed hover:bg-zinc-50 dark:hover:bg-zinc-700 transition cursor-pointer"
-                        >
-                          Дараах ›
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setPage(totalPages)}
-                          disabled={page >= totalPages}
-                          className="px-2 py-0.5 rounded border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-[11px] font-medium disabled:opacity-40 disabled:cursor-not-allowed hover:bg-zinc-50 dark:hover:bg-zinc-700 transition cursor-pointer"
-                          title="Сүүлийн хуудас"
-                        >
-                          »
-                        </button>
-                      </div>
-
-                      {/* Rows per page selector */}
-                      <div className="flex items-center gap-1 ml-3 text-[11px] text-zinc-500">
-                        <span>Мөр:</span>
-                        <select
-                          value={pageSize}
-                          onChange={(e) => {
-                            setPageSize(Number(e.target.value));
-                            setPage(1);
-                          }}
-                          className="px-1.5 py-0.5 rounded border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-[11px] font-semibold text-zinc-700 dark:text-zinc-200 cursor-pointer"
-                        >
-                          <option value={30}>30</option>
-                          <option value={50}>50</option>
-                          <option value={100}>100</option>
-                          <option value={200}>200</option>
-                          <option value={0}>Бүгд ({totalRows})</option>
-                        </select>
-                      </div>
-                    </div>
-
-                    {/* Right: Resident Counts */}
+                  {/* Panel Footer: Resident Counts */}
+                  <div className="flex items-center justify-end border-t border-[#e7ece9] dark:border-zinc-800 px-5 py-2 text-xs text-black dark:text-zinc-200 shrink-0 bg-[#fbfcfb] dark:bg-zinc-900 relative z-20">
                     <div className="flex items-center gap-1.5 flex-wrap justify-end">
                       <span className="text-black dark:text-white">
                         Нийт: {filteredHomes.length} айл
@@ -3548,11 +3472,11 @@ export default function BankStatementImportModal({
                 prev.map((b) =>
                   b.id === bankId
                     ? {
-                        ...b,
-                        targetMonths: targetMonths.length > 0 ? targetMonths : b.targetMonths,
-                        targetPeriod: targetPeriod || b.targetPeriod,
-                        allocation,
-                      }
+                      ...b,
+                      targetMonths: targetMonths.length > 0 ? targetMonths : b.targetMonths,
+                      targetPeriod: targetPeriod || b.targetPeriod,
+                      allocation,
+                    }
                     : b
                 )
               );
