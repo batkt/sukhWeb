@@ -16,6 +16,7 @@ import {
   AlertTriangle,
   Building2,
   Zap,
+  GripVertical,
 } from "lucide-react";
 import * as XLSX from "xlsx";
 import { useModalHotkeys } from "@/lib/useModalHotkeys";
@@ -75,6 +76,7 @@ export type BankRow = {
   isParking?: boolean;
   isFee?: boolean;
   isAldangi?: boolean;
+  isManual?: boolean;
 };
 
 export type HomeRow = {
@@ -91,6 +93,7 @@ export type HomeRow = {
   matchedBankId?: number | null;
   gereeId?: string;
   barilgiinId?: string;
+  isManual?: boolean;
 };
 
 interface BankStatementImportModalProps {
@@ -115,7 +118,7 @@ export default function BankStatementImportModal({
   const [loadingFile, setLoadingFile] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
-    // Month Filter state - "ALL" by default to show all transactions
+  // Month Filter state - "ALL" by default to show all transactions
   const [selectedMonth, setSelectedMonth] = useState<string>("ALL");
   // Building Filter state - "ALL" by default
   const [selectedBuilding, setSelectedBuilding] = useState<string>("ALL");
@@ -132,6 +135,12 @@ export default function BankStatementImportModal({
   const [pairBankId, setPairBankId] = useState<number | null>(null);
   const [pairHomeId, setPairHomeId] = useState<string | number | null>(null);
 
+  // Drag and Drop states for manual matching
+  const [draggedBankId, setDraggedBankId] = useState<number | null>(null);
+  const [draggedHomeId, setDraggedHomeId] = useState<string | number | null>(null);
+  const [dragOverHomeId, setDragOverHomeId] = useState<string | number | null>(null);
+  const [dragOverBankId, setDragOverBankId] = useState<number | null>(null);
+
   // Tabs: 'all' | 'match' (Тулгасан) | 'likely' (Магадлалтай) | 'open' (Тулгаагүй) | 'done' (Бүртгэсэн)
   const [tab, setTab] = useState<"all" | "match" | "likely" | "open" | "done">("all");
 
@@ -144,21 +153,46 @@ export default function BankStatementImportModal({
   const [showRegisterConfirm, setShowRegisterConfirm] = useState(false);
   const [showManualMatchModal, setShowManualMatchModal] = useState(false);
 
+  const resetModalState = () => {
+    setFile(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+    setBanks([]);
+    setSelB(new Set());
+    setPairBankId(null);
+    setPairHomeId(null);
+    setTab("all");
+    setSelectedMonth("ALL");
+    setSelectedBuilding("ALL");
+    setBankSearch("");
+    setHomeSearch("");
+    setDraggedBankId(null);
+    setDraggedHomeId(null);
+    setDragOverHomeId(null);
+    setDragOverBankId(null);
+  };
+
+  const handleClose = () => {
+    resetModalState();
+    onClose();
+  };
+
   useModalHotkeys({
     isOpen: show,
-    onClose,
+    onClose: handleClose,
   });
 
-  // Calculate available months (past 12 months + any from rows)
+  // Reset internal state whenever modal is opened or closed
+  useEffect(() => {
+    if (!show) {
+      resetModalState();
+    }
+  }, [show]);
+
+  // Calculate available months (statement months + recent months fallback)
   const availableMonths = useMemo(() => {
     const set = new Set<string>();
-    const now = new Date();
-    for (let i = 0; i < 12; i++) {
-      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-      const y = d.getFullYear();
-      const m = String(d.getMonth() + 1).padStart(2, "0");
-      set.add(`${y}.${m}`);
-    }
     banks.forEach((b) => {
       if (b.month) set.add(b.month);
       if (Array.isArray(b.targetMonths)) {
@@ -168,6 +202,15 @@ export default function BankStatementImportModal({
     homes.forEach((h) => {
       if (h.month) set.add(h.month);
     });
+    if (set.size === 0) {
+      const now = new Date();
+      for (let i = 0; i < 6; i++) {
+        const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+        const y = d.getFullYear();
+        const m = String(d.getMonth() + 1).padStart(2, "0");
+        set.add(`${y}.${m}`);
+      }
+    }
     return Array.from(set).sort().reverse();
   }, [banks, homes]);
 
@@ -297,15 +340,10 @@ export default function BankStatementImportModal({
           });
           setHomes(loadedHomes);
 
-          // If bank statements are already uploaded and waiting, auto-match right away
-          setBanks((prevBanks) => {
-            if (prevBanks.length > 0 && prevBanks.some((b) => b.status === "open" || b.status === "likely")) {
-              setTimeout(() => {
-                autoMatch(prevBanks, loadedHomes);
-              }, 60);
-            }
-            return prevBanks;
-          });
+          // If bank statements are already uploaded, auto-match deterministically
+          if (banks.length > 0) {
+            autoMatch(banks, loadedHomes);
+          }
         } else {
           setHomes([]);
         }
@@ -339,7 +377,7 @@ export default function BankStatementImportModal({
         try {
           const local = JSON.parse(localStorage.getItem(`sukh_bank_rules_${baiguullagiinId}`) || "[]");
           if (isMounted && Array.isArray(local)) setPayerRules(local);
-        } catch {}
+        } catch { }
       });
 
     return () => {
@@ -353,6 +391,9 @@ export default function BankStatementImportModal({
     const selectedFile = e.target.files[0];
     setFile(selectedFile);
     await parseExcelFile(selectedFile);
+    if (e.target) {
+      e.target.value = "";
+    }
   };
 
   // Helper to extract effective billing months from a transaction
@@ -515,23 +556,23 @@ export default function BankStatementImportModal({
     let unit = "";
 
     // 5. Building & Toot pattern matching:
-    // Supports: "217-101", "218.78", "216/56", "218Н 14Т", "218 IIN 105", "219-Р БАЙР 66 ТООТ", "216-151-1", "217-151A"
+    // Supports: "217-101", "218.78", "216/56", "218 байр 105 тоот", "12-р байр 45 тоот", "12-45", "12/45", "45 тоот", "45т", "45-т"
     const mBairToot = clean.match(
-      /\b(21[6-9]|\d{1,3})\s*(?:-?[рrR]\s*байр|\s*ба[йи]р|\s*bair|\s*iin|\s*ийн|\s*н|\*|[-./])\s*(\d{1,4}(?:[-/]\d{1,2}|[А-Яа-яA-Za-z])?)\s*(?:тоот|toot|т)?\b/i
+      /(?:байр|баир|bair)?\s*(\d{1,4})\s*(?:-?[рrR]\s*байр|\s*ба[йи]р|\s*bair|\s*iin|\s*ийн|\s*н|\*|[-./])\s*(?:тоот|toot|-?[тtT]\b)?\s*(\d{1,4}(?:[-/]\d{1,2}|[А-Яа-яA-Za-z])?)\s*(?:-?[рrR]\s*)?(?:тоот|toot|-?[тtT]\b)?/i
     );
     if (mBairToot) {
       const bCandidate = mBairToot[1].trim();
       const uCandidate = mBairToot[2].trim();
-      if (!bCandidate.startsWith("202")) {
+      if (!bCandidate.startsWith("202") && !uCandidate.startsWith("202")) {
         building = bCandidate;
         unit = uCandidate.replace(/^0+/, "") || uCandidate;
       }
     }
 
-    // 6. Explicit Toot Word if not matched above:
+    // 6. Explicit Toot Word if not matched above (support тоот, toot, -т, т, -р тоот):
     if (!unit) {
-      const mToot = clean.match(/\b(\d{1,4}(?:[-/]\d{1,2}|[А-Яа-яA-Za-z])?)\s*(?:тоот|toot)\b/i) ||
-                    clean.match(/(?:тоот|toot)\s*[:.]?\s*(\d{1,4}(?:[-/]\d{1,2}|[А-Яа-яA-Za-z])?)\b/i);
+      const mToot = clean.match(/\b(\d{1,4}(?:[-/]\d{1,2}|[А-Яа-яA-Za-z])?)\s*(?:-?[рrR]\s*)?(?:тоот|toot|-?[тtT]\b)\b/i) ||
+                    clean.match(/(?:тоот|toot|-?[тtT]\b)\s*[:.-]?\s*(\d{1,4}(?:[-/]\d{1,2}|[А-Яа-яA-Za-z])?)\b/i);
       if (mToot) {
         unit = mToot[1].replace(/^0+/, "") || mToot[1];
       }
@@ -539,7 +580,8 @@ export default function BankStatementImportModal({
 
     // 7. Building alone if not matched:
     if (!building) {
-      const mBair = clean.match(/\b(21[6-9]|\d{1,3})\s*(?:-?[рrR]\s*байр|\s*ба[йи]р|\s*bair)\b/i);
+      const mBair = clean.match(/\b(\d{1,4})\s*(?:-?[рrR]\s*байр|\s*ба[йи]р|\s*bair)\b/i) ||
+                    clean.match(/(?:байр|баир|bair)\s*[:.-]?\s*(\d{1,4})\b/i);
       if (mBair && !mBair[1].startsWith("202")) {
         building = mBair[1];
       }
@@ -904,7 +946,22 @@ export default function BankStatementImportModal({
       .trim();
   };
 
-  // Name matching helper with typo tolerance (e.g. Мичидмаа vs Мичдмаа) and ovog support
+  // Amount compatibility helper (exact amount, multiple months 2x-12x, or within 3% tolerance)
+  const isAmountCompatible = (bAmt: number, hAmt: number): boolean => {
+    if (!hAmt || hAmt <= 0) return true; // neutral if no contract fee set
+    if (!bAmt || bAmt <= 0) return false;
+    // Exact match (+/- 2₮)
+    if (Math.abs(bAmt - hAmt) <= 2) return true;
+    // Multiple months (2x to 12x)
+    for (let k = 2; k <= 12; k++) {
+      if (Math.abs(bAmt - (hAmt * k)) <= 10) return true;
+    }
+    // Percentage tolerance (within 3%)
+    if (Math.abs(bAmt - hAmt) / hAmt <= 0.03) return true;
+    return false;
+  };
+
+  // Name matching helper with typo tolerance and strict token checking to avoid false positives on short names
   const isNameMatch = (payerName: string, desc: string, residentName: string, ovog?: string) => {
     const cleanResident = cleanNameStr(residentName);
     if (!cleanResident || cleanResident.length < 2) return false;
@@ -913,19 +970,26 @@ export default function BankStatementImportModal({
     const cleanDesc = cleanNameStr(desc);
     const cleanOvog = ovog ? cleanNameStr(ovog) : "";
 
-    // 1. Direct contains check
-    if (cleanPayer.includes(cleanResident) || cleanDesc.includes(cleanResident)) return true;
-    if (cleanResident.includes(cleanPayer) && cleanPayer.length >= 3) return true;
-
-    // 2. Ovog match
-    if (cleanOvog && cleanOvog.length >= 3 && (cleanPayer.includes(cleanOvog) || cleanDesc.includes(cleanOvog))) return true;
-
-    // 3. Word-by-word comparison with typo tolerance
     const combinedTokens = `${payerName} ${desc}`
       .split(/[\s,./_–\-]+/)
       .map(cleanNameStr)
-      .filter((w) => w.length >= 3);
+      .filter((w) => w.length >= 2);
 
+    // For short resident names (2-3 chars e.g. Бат, Ари, Ану, Сүх), MUST match as standalone token!
+    if (cleanResident.length <= 3) {
+      if (combinedTokens.includes(cleanResident)) return true;
+      if (cleanOvog && cleanOvog.length >= 3 && combinedTokens.includes(cleanOvog)) return true;
+      return false;
+    }
+
+    // 1. Direct contains check for names >= 4 characters
+    if (cleanPayer.includes(cleanResident) || cleanDesc.includes(cleanResident)) return true;
+    if (cleanResident.includes(cleanPayer) && cleanPayer.length >= 4) return true;
+
+    // 2. Ovog match
+    if (cleanOvog && cleanOvog.length >= 4 && (cleanPayer.includes(cleanOvog) || cleanDesc.includes(cleanOvog))) return true;
+
+    // 3. Word-by-word comparison with typo tolerance
     for (const token of combinedTokens) {
       if (token === cleanResident) return true;
       if (cleanResident.length >= 5 && token.length >= 5 && (cleanResident.includes(token) || token.includes(cleanResident))) return true;
@@ -1000,6 +1064,59 @@ export default function BankStatementImportModal({
     }
   };
 
+  // Direct match triggered by drag-and-drop or manual click pairing
+  const handleDirectMatch = async (bankId: number, homeId: string | number) => {
+    const targetBank = banks.find((b) => b.id === bankId);
+    const targetHome = homes.find((h) => String(h.id) === String(homeId));
+    if (!targetBank || !targetHome) return;
+
+    setBanks((prev) =>
+      prev.map((b) =>
+        b.id === bankId
+          ? {
+              ...b,
+              status: "match",
+              matchedHomeId: targetHome.id,
+              isManual: true,
+              unit: targetHome.unit || b.unit,
+              building:
+                targetHome.building && targetHome.building !== "Байр"
+                  ? targetHome.building
+                  : b.building,
+              matchReason: "Гараар чирч тулгасан",
+            }
+          : b.matchedHomeId === targetHome.id
+          ? { ...b, status: "open", matchedHomeId: null, isManual: false }
+          : b
+      )
+    );
+
+    setHomes((prev) =>
+      prev.map((h) =>
+        String(h.id) === String(homeId)
+          ? { ...h, status: "match", matchedBankId: bankId, isManual: true }
+          : h.matchedBankId === bankId
+          ? { ...h, status: "open", matchedBankId: null, isManual: false }
+          : h
+      )
+    );
+
+    setSelB((prev) => new Set([...Array.from(prev), bankId]));
+    setPairBankId(null);
+    setPairHomeId(null);
+    setDraggedBankId(null);
+    setDraggedHomeId(null);
+    setDragOverHomeId(null);
+    setDragOverBankId(null);
+
+    await savePayerRule(targetBank, targetHome);
+
+    toast.success(
+      `${targetHome.unit} тоот (${targetHome.name}) ↔ ${formatNumber(targetBank.amount)}₮ амжилттай холбогдлоо!`,
+      { icon: "🔗" }
+    );
+  };
+
   // Confirm a "likely" match -> promotes to full "match" and learns rule
   const confirmLikelyMatch = async (bankId: number, homeId: string | number) => {
     const targetBank = banks.find((b) => b.id === bankId);
@@ -1013,8 +1130,13 @@ export default function BankStatementImportModal({
               ...b,
               status: "match",
               matchedHomeId: targetHome.id,
+              isManual: true,
               unit: targetHome.unit || b.unit,
-              building: targetHome.building && targetHome.building !== "Байр" ? targetHome.building : b.building,
+              building:
+                targetHome.building && targetHome.building !== "Байр"
+                  ? targetHome.building
+                  : b.building,
+              matchReason: "Хэрэглэгч баталгаажуулсан",
             }
           : b
       )
@@ -1023,35 +1145,59 @@ export default function BankStatementImportModal({
     setHomes((prev) =>
       prev.map((h) =>
         h.id === targetHome.id
-          ? { ...h, status: "match", matchedBankId: bankId }
+          ? { ...h, status: "match", matchedBankId: bankId, isManual: true }
           : h
       )
     );
 
     setSelB((prev) => new Set([...Array.from(prev), bankId]));
     await savePayerRule(targetBank, targetHome);
-    toast.success(`${targetHome.unit} тооттой амжилттай тулгаж баталгаажууллаа! Дараа сараас автоматаар танина.`);
+    toast.success(`${targetHome.unit} тоот амжилттай баталгаажлаа!`);
   };
 
-  // Intelligent Multi-Tier Auto Matching
+  // Intelligent Multi-Tier Auto Matching (Deterministic, Idempotent, High Accuracy)
   const autoMatch = (currentBanks = banks, currentHomes = homes, buildingFilter = selectedBuilding) => {
     let matchCount = 0;
     let likelyCount = 0;
-    const newBanks = [...currentBanks];
-    const newHomes = [...currentHomes];
 
-    const pairMatch = (b: BankRow, h: HomeRow, status: "match" | "likely" = "match") => {
+    // Reset open & likely rows deterministically; preserve "done" and user-manual confirmed matches
+    const newBanks: BankRow[] = currentBanks.map((b) => {
+      if (b.status === "done" || (b.status === "match" && (b as any).isManual)) return { ...b };
+      return {
+        ...b,
+        status: "open" as const,
+        matchedHomeId: null,
+        matchReason: undefined,
+      };
+    });
+
+    const newHomes: HomeRow[] = currentHomes.map((h) => {
+      if (h.status === "done" || (h.status === "match" && (h as any).isManual)) return { ...h };
+      return {
+        ...h,
+        status: "open" as const,
+        matchedBankId: null,
+      };
+    });
+
+    const pairMatch = (
+      b: BankRow,
+      h: HomeRow,
+      status: "match" | "likely" = "match",
+      reason?: string
+    ) => {
       const bBld = normalizeBuilding(b.building);
       const hBld = normalizeBuilding(h.building);
       if (bBld && hBld && bBld !== hBld) {
-        return; // NEVER pair cross-building!
+        return false; // NEVER pair cross-building!
       }
       if (buildingFilter !== "ALL" && !isBuildingCompatible(buildingFilter, h.building)) {
-        return;
+        return false;
       }
 
       b.status = status;
       b.matchedHomeId = h.id;
+      b.matchReason = reason || (status === "match" ? "Тулгасан" : "Магадлалтай");
       if ((!b.unit || b.unit === "—") && h.unit && h.unit !== "-") {
         b.unit = h.unit;
       }
@@ -1070,6 +1216,7 @@ export default function BankStatementImportModal({
         }
         likelyCount++;
       }
+      return true;
     };
 
     // TIER 0: Learned Recurring Rules (Previous months' confirmed pairings)
@@ -1096,7 +1243,7 @@ export default function BankStatementImportModal({
         });
 
         if (candidate) {
-          pairMatch(b, candidate, "match");
+          pairMatch(b, candidate, "match", "Өмнөх баталгаажсан дүрмээр тохирсон");
         }
       }
     });
@@ -1117,7 +1264,7 @@ export default function BankStatementImportModal({
       });
 
       if (candidate) {
-        pairMatch(b, candidate, "match");
+        pairMatch(b, candidate, "match", "E-Bill баркод яг тохирсон");
       }
     });
 
@@ -1138,11 +1285,11 @@ export default function BankStatementImportModal({
       });
 
       if (candidates.length >= 1) {
-        pairMatch(b, candidates[0], "match");
+        pairMatch(b, candidates[0], "match", "Байр, тоот, оршин суугчийн нэр тохирсон");
       }
     });
 
-    // TIER 3: Exact Building + Exact Toot (without name match -> likely or match if single)
+    // TIER 3: Exact Building + Exact Toot (without name match)
     newBanks.forEach((b) => {
       if (b.status !== "open" || b.isExpense || b.isParking) return;
       const bToot = normalizeToot(b.unit);
@@ -1159,17 +1306,17 @@ export default function BankStatementImportModal({
       });
 
       if (candidates.length === 1) {
-        const nameMatches = isNameMatch(b.name, b.description, candidates[0].name, candidates[0].ovog);
-        if (nameMatches) {
-          pairMatch(b, candidates[0], "match");
+        const c = candidates[0];
+        const amtMatches = isAmountCompatible(b.amount, c.amount);
+        if (amtMatches) {
+          pairMatch(b, c, "match", "Байр, тоот болон төлбөрийн дүн тохирсон");
         } else {
-          // Building and toot match, but payer name differs -> Likely (Магадлалтай)
-          pairMatch(b, candidates[0], "likely");
+          pairMatch(b, c, "likely", "Байр, тоот тохирсон (дүн зөрүүтэй)");
         }
       }
     });
 
-    // TIER 4: Toot match alone (only when building matches or was not explicitly given in statement)
+    // TIER 4: Toot match alone (when building was not explicitly given in statement or matches buildingFilter)
     newBanks.forEach((b) => {
       if (b.status !== "open" || b.isExpense || b.isParking) return;
       const bToot = normalizeToot(b.unit);
@@ -1179,7 +1326,6 @@ export default function BankStatementImportModal({
       const candidates = newHomes.filter((h) => {
         if (h.status !== "open") return false;
         const hBld = normalizeBuilding(h.building);
-        // If bank row explicitly has a building, do NOT match a different building!
         if (bBld && hBld && bBld !== hBld) return false;
         if (bBld && !hBld) return false;
         if (normalizeToot(h.unit) !== bToot) return false;
@@ -1190,19 +1336,30 @@ export default function BankStatementImportModal({
       });
 
       if (candidates.length === 1) {
-        const nameMatches = isNameMatch(b.name, b.description, candidates[0].name, candidates[0].ovog);
+        const c = candidates[0];
+        const nameMatches = isNameMatch(b.name, b.description, c.name, c.ovog);
+        const amtMatches = isAmountCompatible(b.amount, c.amount);
         if (nameMatches) {
-          pairMatch(b, candidates[0], "match");
+          pairMatch(b, c, "match", "Тоот болон оршин суугчийн нэр тохирсон");
+        } else if (amtMatches) {
+          pairMatch(b, c, "likely", "Тоот болон төлбөрийн дүн тохирсон");
         } else {
-          pairMatch(b, candidates[0], "likely");
+          pairMatch(b, c, "likely", "Тоот тохирсон");
         }
       } else if (candidates.length > 1) {
-        // Multiple buildings have this toot! Only match if name matches one of them
+        // Multiple buildings have this toot!
+        // 1. Try name match first
         const nameCandidate = candidates.find((h) =>
           isNameMatch(b.name, b.description, h.name, h.ovog)
         );
         if (nameCandidate) {
-          pairMatch(b, nameCandidate, "match");
+          pairMatch(b, nameCandidate, "match", "Тоот болон оршин суугчийн нэрээр ялгасан");
+        } else {
+          // 2. Try amount match if ONLY ONE candidate matches the fee
+          const amtCandidates = candidates.filter((h) => isAmountCompatible(b.amount, h.amount));
+          if (amtCandidates.length === 1) {
+            pairMatch(b, amtCandidates[0], "likely", "Тоот болон төлбөрийн дүнгээр ялгасан");
+          }
         }
       }
     });
@@ -1222,11 +1379,11 @@ export default function BankStatementImportModal({
       });
 
       if (candidates.length === 1) {
-        pairMatch(b, candidates[0], "likely");
+        pairMatch(b, candidates[0], "likely", "Утасны дугаараар тохирсон");
       }
     });
 
-    // TIER 6: Resident Name alone (unique name match across complex)
+    // TIER 6: Resident Name alone (Unique name match across complex) - STRICT: REQUIRES AMOUNT COMPATIBILITY!
     newBanks.forEach((b) => {
       if (b.status !== "open" || b.isExpense || b.isParking) return;
       const bBld = normalizeBuilding(b.building);
@@ -1235,11 +1392,13 @@ export default function BankStatementImportModal({
         const hBld = normalizeBuilding(h.building);
         if (bBld && hBld && bBld !== hBld) return false;
         if (selectedBuilding !== "ALL" && !isBuildingCompatible(selectedBuilding, h.building)) return false;
-        return isNameMatch(b.name, b.description, h.name, h.ovog);
+        const nameMatches = isNameMatch(b.name, b.description, h.name, h.ovog);
+        if (!nameMatches) return false;
+        return isAmountCompatible(b.amount, h.amount);
       });
 
       if (candidates.length === 1) {
-        pairMatch(b, candidates[0], "likely");
+        pairMatch(b, candidates[0], "likely", "Оршин суугчийн нэр болон төлбөрийн дүн тохирсон");
       }
     });
 
@@ -1304,18 +1463,18 @@ export default function BankStatementImportModal({
       prev.map((b) =>
         b.id === bankId
           ? {
-              ...b,
-              status: "match",
-              matchedHomeId: homeId,
-              unit: (b.unit === "—" || !b.unit) && selectedHomeRow.unit ? selectedHomeRow.unit : b.unit,
-              building:
-                (b.building === "Байр" || !b.building) && selectedHomeRow.building && selectedHomeRow.building !== "Байр"
-                  ? selectedHomeRow.building
-                  : b.building,
-            }
+            ...b,
+            status: "match",
+            matchedHomeId: homeId,
+            unit: (b.unit === "—" || !b.unit) && selectedHomeRow.unit ? selectedHomeRow.unit : b.unit,
+            building:
+              (b.building === "Байр" || !b.building) && selectedHomeRow.building && selectedHomeRow.building !== "Байр"
+                ? selectedHomeRow.building
+                : b.building,
+          }
           : b.matchedHomeId === homeId
-          ? { ...b, status: "open", matchedHomeId: null }
-          : b
+            ? { ...b, status: "open", matchedHomeId: null }
+            : b
       )
     );
 
@@ -1324,8 +1483,8 @@ export default function BankStatementImportModal({
         h.id === homeId
           ? { ...h, status: "match", matchedBankId: bankId }
           : h.matchedBankId === bankId
-          ? { ...h, status: "open", matchedBankId: null }
-          : h
+            ? { ...h, status: "open", matchedBankId: null }
+            : h
       )
     );
 
@@ -1398,10 +1557,10 @@ export default function BankStatementImportModal({
           (b.matchedHomeId ? homes.find((h) => String(h.id) === String(b.matchedHomeId)) : null) ||
           (b.unit && b.unit !== "—"
             ? homes.find(
-                (h) =>
-                  normalizeToot(h.unit) === normalizeToot(b.unit) &&
-                  isBuildingCompatible(b.building, h.building)
-              )
+              (h) =>
+                normalizeToot(h.unit) === normalizeToot(b.unit) &&
+                isBuildingCompatible(b.building, h.building)
+            )
             : null);
         let fullDate = b.rawDate || b.date;
         if (fullDate && !/^\d{4}/.test(fullDate)) {
@@ -1513,10 +1672,12 @@ export default function BankStatementImportModal({
         }
       }
       if (selectedMonth !== "ALL") {
-        const bMonths = Array.isArray(x.targetMonths) && x.targetMonths.length > 0
-          ? x.targetMonths
-          : [x.month || ""];
-        if (!bMonths.includes(selectedMonth)) return false;
+        const bMonths = new Set<string>();
+        if (x.month) bMonths.add(x.month);
+        if (Array.isArray(x.targetMonths)) {
+          x.targetMonths.forEach((m) => bMonths.add(m));
+        }
+        if (!bMonths.has(selectedMonth)) return false;
       }
       if (tab !== "all" && x.status !== tab) return false;
       if (bankSearch.trim()) {
@@ -1567,7 +1728,7 @@ export default function BankStatementImportModal({
       if ((b.status === "match" || b.status === "done" || b.status === "likely") && b.matchedHomeId != null) {
         const matchedHome =
           filteredHomes.find((h) => h.id === b.matchedHomeId) ||
-          (selectedBuilding === "ALL" ? homes.find((h) => h.id === b.matchedHomeId) : null);
+          homes.find((h) => h.id === b.matchedHomeId);
         if (matchedHome) {
           const pairedHome = {
             ...matchedHome,
@@ -1635,10 +1796,12 @@ export default function BankStatementImportModal({
         }
       }
       if (selectedMonth !== "ALL") {
-        const bMonths = Array.isArray(x.targetMonths) && x.targetMonths.length > 0
-          ? x.targetMonths
-          : [x.month || ""];
-        if (!bMonths.includes(selectedMonth)) return false;
+        const bMonths = new Set<string>();
+        if (x.month) bMonths.add(x.month);
+        if (Array.isArray(x.targetMonths)) {
+          x.targetMonths.forEach((m) => bMonths.add(m));
+        }
+        if (!bMonths.has(selectedMonth)) return false;
       }
       return true;
     });
@@ -1735,26 +1898,7 @@ export default function BankStatementImportModal({
                         onChange={(e) => {
                           const nextBld = e.target.value;
                           setSelectedBuilding(nextBld);
-                          setBanks((prevBanks) => {
-                            const resetBanks = prevBanks.map((b) => {
-                              if (b.status === "done") return b;
-                              if (b.status === "likely") {
-                                return { ...b, status: "open" as const, matchedHomeId: undefined };
-                              }
-                              return b;
-                            });
-                            const resetHomes = homes.map((h) => {
-                              if (h.status === "done") return h;
-                              if (h.status === "likely") {
-                                return { ...h, status: "open" as const, matchedBankId: undefined };
-                              }
-                              return h;
-                            });
-                            setTimeout(() => {
-                              autoMatch(resetBanks, resetHomes, nextBld);
-                            }, 50);
-                            return resetBanks;
-                          });
+                          autoMatch(banks, homes, nextBld);
                         }}
                         className="bg-transparent border-none text-xs font-bold text-[#203a35] dark:text-zinc-100 focus:outline-none cursor-pointer pr-1"
                       >
@@ -1824,7 +1968,7 @@ export default function BankStatementImportModal({
                   </button>
 
                   <button
-                    onClick={onClose}
+                    onClick={handleClose}
                     className="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-zinc-800 transition cursor-pointer"
                     title="Хаах"
                   >
@@ -1925,11 +2069,10 @@ export default function BankStatementImportModal({
                           <button
                             key={key}
                             onClick={() => setTab(key)}
-                            className={`px-3 py-1 rounded-lg text-xs transition cursor-pointer ${
-                              active
-                                ? "bg-[#eaf5ef] text-[#087f64] font-bold"
-                                : "text-[#87928c] hover:bg-gray-100 dark:hover:bg-zinc-800"
-                            }`}
+                            className={`px-3 py-1 rounded-lg text-xs transition cursor-pointer ${active
+                              ? "bg-[#eaf5ef] text-[#087f64] font-bold"
+                              : "text-[#87928c] hover:bg-gray-100 dark:hover:bg-zinc-800"
+                              }`}
                           >
                             {label}
                           </button>
@@ -1953,7 +2096,7 @@ export default function BankStatementImportModal({
                       )}
 
                       <button
-                        onClick={() => autoMatch(banks, homes)}
+                        onClick={() => autoMatch(banks, homes, selectedBuilding)}
                         disabled={banks.length === 0 || homes.length === 0}
                         className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg bg-[#087f64] hover:bg-[#05694f] text-white text-xs font-semibold shadow-sm transition disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
                       >
@@ -1986,11 +2129,10 @@ export default function BankStatementImportModal({
                         <div className="flex items-center gap-2">
                           <button
                             onClick={() => setSelectedMonth("ALL")}
-                            className={`px-2.5 py-1 rounded-md text-xs font-semibold transition cursor-pointer ${
-                              selectedMonth === "ALL"
-                                ? "bg-[#087f64] text-white shadow-xs"
-                                : "border border-[#e7ece9] dark:border-zinc-700 text-[#819089] hover:bg-gray-100 dark:hover:bg-zinc-800"
-                            }`}
+                            className={`px-2.5 py-1 rounded-md text-xs font-semibold transition cursor-pointer ${selectedMonth === "ALL"
+                              ? "bg-[#087f64] text-white shadow-xs"
+                              : "border border-[#e7ece9] dark:border-zinc-700 text-[#819089] hover:bg-gray-100 dark:hover:bg-zinc-800"
+                              }`}
                             title="Бүх гүйлгээг харах"
                           >
                             Бүх гүйлгээ ({banks.length})
@@ -2043,6 +2185,27 @@ export default function BankStatementImportModal({
                     </div>
                   </div>
 
+                  {/* Drag and Drop Instruction Banner */}
+                  {banks.length > 0 && (
+                    <div className="px-4 py-2 bg-emerald-50/90 dark:bg-emerald-950/40 border-b border-emerald-200/80 dark:border-emerald-900/40 text-xs text-emerald-800 dark:text-emerald-300 flex items-center justify-between shrink-0">
+                      <div className="flex items-center gap-2">
+                        <span className="font-bold">💡 Чирч тулгах:</span>
+                        <span>Аль ч мөрийг чирч (гүйлгээ эсвэл айлын төлбөр) нөгөө талын харгалзах мөр рүү тавин шууд холбож тулгана уу.</span>
+                      </div>
+                      <div className="hidden sm:flex items-center gap-3 text-[11px]">
+                        <span className="flex items-center gap-1 font-semibold text-emerald-700 dark:text-emerald-400">
+                          <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block" /> Тулгасан
+                        </span>
+                        <span className="flex items-center gap-1 font-semibold text-amber-700 dark:text-amber-400">
+                          <span className="w-2 h-2 rounded-full bg-amber-500 inline-block" /> Магадлалтай
+                        </span>
+                        <span className="flex items-center gap-1 font-semibold text-rose-700 dark:text-rose-400">
+                          <span className="w-2 h-2 rounded-full bg-rose-500 inline-block" /> Тулгаагүй
+                        </span>
+                      </div>
+                    </div>
+                  )}
+
                   {/* SINGLE SYNCHRONIZED SCROLL CONTAINER - SCROLLS BOTH SIDES AT ONCE */}
                   <div className="flex-1 overflow-y-auto overflow-x-auto min-h-[360px] max-h-[520px]">
                     {banks.length === 0 ? (
@@ -2063,8 +2226,9 @@ export default function BankStatementImportModal({
                         {/* 50 / 50 HALF AND HALF COLUMN SPECIFICATION */}
                         <colgroup>
                           {/* Left (Bank): 50% - 16px */}
-                          <col style={{ width: "95px" }} />
-                          <col style={{ width: "calc(50% - 205px)" }} />
+                          <col style={{ width: "85px" }} />
+                          <col style={{ width: "105px" }} />
+                          <col style={{ width: "calc(50% - 301px)" }} />
                           <col style={{ width: "95px" }} />
 
                           {/* Center Divider: 32px (Strictly centered at 50%) */}
@@ -2072,16 +2236,19 @@ export default function BankStatementImportModal({
 
                           {/* Right (Home): 50% - 16px */}
                           <col style={{ width: "105px" }} />
-                          <col style={{ width: "calc(50% - 215px)" }} />
+                          <col style={{ width: "calc(50% - 216px)" }} />
                           <col style={{ width: "95px" }} />
                         </colgroup>
 
-                        {/* UNIFIED THEAD: EXACT 50 / 50 HALF AND HALF & 100% OPAQUE SHIELD (HIDES SCROLLING ROW COLORS) */}
+                        {/* UNIFIED THEAD: EXACT 50 / 50 HALF AND HALF */}
                         <thead className="sticky top-0 z-30 select-none">
                           <tr className="h-10">
                             {/* Left Table Headers: Дансны хуулга (50%) */}
                             <th className="sticky top-0 z-30 h-10 py-0 px-3 text-left align-middle font-semibold text-xs whitespace-nowrap bg-[#f4f7f5] dark:bg-zinc-800 text-zinc-700 dark:text-zinc-200 border-b border-zinc-200 dark:border-zinc-700 shadow-xs">
                               Огноо
+                            </th>
+                            <th className="sticky top-0 z-30 h-10 py-0 px-3 text-left align-middle font-semibold text-xs whitespace-nowrap bg-[#f4f7f5] dark:bg-zinc-800 text-zinc-700 dark:text-zinc-200 border-b border-zinc-200 dark:border-zinc-700 shadow-xs">
+                              Байр, тоот
                             </th>
                             <th className="sticky top-0 z-30 h-10 py-0 px-3 text-left align-middle font-semibold text-xs truncate bg-[#f4f7f5] dark:bg-zinc-800 text-zinc-700 dark:text-zinc-200 border-b border-zinc-200 dark:border-zinc-700 shadow-xs">
                               Гүйлгээний утга
@@ -2110,7 +2277,7 @@ export default function BankStatementImportModal({
                         <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
                           {displayRows.length === 0 ? (
                             <tr>
-                              <td colSpan={7} className="py-12 text-center text-zinc-500 dark:text-zinc-400">
+                              <td colSpan={8} className="py-12 text-center text-zinc-500 dark:text-zinc-400">
                                 Илэрц олдсонгүй
                               </td>
                             </tr>
@@ -2129,26 +2296,35 @@ export default function BankStatementImportModal({
                               const isBankLikely = Boolean(b && b.status === "likely");
                               const isHomeLikely = Boolean(h && h.status === "likely");
 
-                              // Distinct cell colors: Green for matched, Amber for likely, Red for unmatched, Sky for selected
-                              const bankBg = isPairSelectedBank
-                                ? "bg-[#e0f2fe] dark:bg-sky-950/50"
-                                : !b
-                                ? "bg-zinc-50 dark:bg-zinc-900/30"
-                                : isBankMatched
-                                ? "bg-[#eaf5ef] dark:bg-emerald-950/30 hover:bg-[#e1f0e7]"
-                                : isBankLikely
-                                ? "bg-[#fefce8] dark:bg-amber-950/30 hover:bg-[#fef9c3]"
-                                : "bg-[#fef2f2] dark:bg-rose-950/30 hover:bg-[#fde8e8]";
+                              // Drag and Drop active target indicators
+                              const isDragTargetBank = Boolean(draggedHomeId && b && dragOverBankId === b.id);
+                              const isDragTargetHome = Boolean(draggedBankId && h && dragOverHomeId === h.id);
+                              const isDragConnecting = (draggedBankId && dragOverHomeId === h?.id) || (draggedHomeId && dragOverBankId === b?.id);
 
-                              const homeBg = isPairSelectedHome
-                                ? "bg-[#e0f2fe] dark:bg-sky-950/50"
-                                : !h
-                                ? "bg-zinc-50 dark:bg-zinc-900/30"
-                                : isHomeMatched
-                                ? "bg-[#eaf5ef] dark:bg-emerald-950/30 hover:bg-[#e1f0e7]"
-                                : isHomeLikely
-                                ? "bg-[#fefce8] dark:bg-amber-950/30 hover:bg-[#fef9c3]"
-                                : "bg-[#fef2f2] dark:bg-rose-950/30 hover:bg-[#fde8e8]";
+                              // Distinct cell colors
+                              const bankBg = isDragTargetBank
+                                ? "bg-emerald-100 dark:bg-emerald-950/70 ring-2 ring-emerald-500 shadow-md"
+                                : isPairSelectedBank
+                                  ? "bg-[#e0f2fe] dark:bg-sky-950/50"
+                                  : !b
+                                    ? "bg-zinc-50 dark:bg-zinc-900/30"
+                                    : isBankMatched
+                                      ? "bg-[#eaf5ef] dark:bg-emerald-950/30 hover:bg-[#e1f0e7]"
+                                      : isBankLikely
+                                        ? "bg-[#fefce8] dark:bg-amber-950/30 hover:bg-[#fef9c3]"
+                                        : "bg-[#fef2f2] dark:bg-rose-950/30 hover:bg-[#fde8e8]";
+
+                              const homeBg = isDragTargetHome
+                                ? "bg-emerald-100 dark:bg-emerald-950/70 ring-2 ring-emerald-500 shadow-md"
+                                : isPairSelectedHome
+                                  ? "bg-[#e0f2fe] dark:bg-sky-950/50"
+                                  : !h
+                                    ? "bg-zinc-50 dark:bg-zinc-900/30"
+                                    : isHomeMatched
+                                      ? "bg-[#eaf5ef] dark:bg-emerald-950/30 hover:bg-[#e1f0e7]"
+                                      : isHomeLikely
+                                        ? "bg-[#fefce8] dark:bg-amber-950/30 hover:bg-[#fef9c3]"
+                                        : "bg-[#fef2f2] dark:bg-rose-950/30 hover:bg-[#fde8e8]";
 
                               // Foolproof Date & Time converter for Bank Statement
                               const { date: displayDate, time: displayTime } = (() => {
@@ -2157,7 +2333,6 @@ export default function BankStatementImportModal({
                                 const raw = String(b.date || b.rawDate || "").trim();
                                 const rawTime = String(b.time || "").trim();
 
-                                // 1. Excel serial number (e.g. 46315.01180555556, 46315)
                                 const num = parseFloat(raw);
                                 if (!isNaN(num) && num >= 30000 && num <= 65000) {
                                   const wholeDays = Math.floor(num);
@@ -2182,7 +2357,6 @@ export default function BankStatementImportModal({
                                   return { date: `${yyyy}.${mm}.${dd}`, time };
                                 }
 
-                                // 2. Decimal time fraction (e.g. .01180555556)
                                 if (!isNaN(num) && num > 0 && num < 1) {
                                   const totalSec = Math.round(num * 86400);
                                   const hh = String(Math.floor(totalSec / 3600)).padStart(2, "0");
@@ -2190,7 +2364,6 @@ export default function BankStatementImportModal({
                                   return { date: "2026.10.20", time: `${hh}:${min}` };
                                 }
 
-                                // 3. Standard date string (e.g. 2026-10-20, 2026.10.20)
                                 const m = raw.match(/(\d{4})[-/.](\d{1,2})[-/.](\d{1,2})/);
                                 if (m) {
                                   const timeM = (raw + " " + rawTime).match(/(\d{1,2}):(\d{1,2})/);
@@ -2200,7 +2373,6 @@ export default function BankStatementImportModal({
                                   };
                                 }
 
-                                // Fallback
                                 if (/^\.?\d+/.test(raw) || raw.length > 10) {
                                   return { date: "2026.10.20", time: rawTime && /^\d{1,2}:\d{2}/.test(rawTime) ? rawTime : "12:00" };
                                 }
@@ -2209,32 +2381,160 @@ export default function BankStatementImportModal({
                               })();
 
                               return (
-                                <tr key={`row-${idx}`} className="h-[60px] transition select-none">
-                                  {/* LEFT 3 CELLS: BANK TRANSACTION (50% OF ROW) */}
+                                <tr
+                                  key={`row-${idx}`}
+                                  className={`h-[60px] transition select-none group ${
+                                    (draggedBankId === b?.id || draggedHomeId === h?.id) ? "opacity-60" : ""
+                                  }`}
+                                >
+                                  {/* LEFT 4 CELLS: BANK TRANSACTION (50% OF ROW) */}
                                   {b ? (
                                     <>
-                                      {/* ONLY START of Bank gets the colored line */}
+                                      {/* Cell 1: Огноо */}
                                       <td
+                                        draggable={b.status !== "done"}
+                                        onDragStart={(e) => {
+                                          if (b.status === "done") return;
+                                          e.dataTransfer.setData("text/plain", JSON.stringify({ type: "bank", id: b.id }));
+                                          e.dataTransfer.effectAllowed = "move";
+                                          setDraggedBankId(b.id);
+                                        }}
+                                        onDragEnd={() => {
+                                          setDraggedBankId(null);
+                                          setDragOverHomeId(null);
+                                          setDragOverBankId(null);
+                                        }}
+                                        onDragOver={(e) => {
+                                          if (draggedHomeId && b.status !== "done") {
+                                            e.preventDefault();
+                                            e.dataTransfer.dropEffect = "move";
+                                            if (dragOverBankId !== b.id) setDragOverBankId(b.id);
+                                          }
+                                        }}
+                                        onDragLeave={() => {
+                                          if (dragOverBankId === b.id) setDragOverBankId(null);
+                                        }}
+                                        onDrop={(e) => {
+                                          e.preventDefault();
+                                          if (draggedHomeId && b.status !== "done") {
+                                            handleDirectMatch(b.id, draggedHomeId);
+                                          }
+                                          setDraggedHomeId(null);
+                                          setDragOverBankId(null);
+                                        }}
+                                        onClick={() => setPairBankId((prev) => (prev === b.id ? null : b.id))}
+                                        className={`py-2 px-3 cursor-pointer overflow-hidden ${bankBg}`}
+                                      >
+                                        <div className="flex items-center gap-1.5">
+                                          {b.status !== "done" && (
+                                            <span title="Чирч айлын төлбөртэй холбох" className="cursor-grab shrink-0">
+                                              <GripVertical className="w-3.5 h-3.5 text-zinc-400 group-hover:text-emerald-600 transition-colors" />
+                                            </span>
+                                          )}
+                                          <div>
+                                            <div className="text-xs text-zinc-900 dark:text-zinc-100 font-semibold tracking-tight whitespace-nowrap">
+                                              {displayDate}
+                                            </div>
+                                            <div className="text-[11px] text-zinc-500 dark:text-zinc-400 mt-0.5 whitespace-nowrap font-normal">
+                                              {displayTime}
+                                            </div>
+                                          </div>
+                                        </div>
+                                      </td>
+
+                                      {/* Cell 2: Байр, тоот (Dedicated Bank Column matching Home side) */}
+                                      <td
+                                        draggable={b.status !== "done"}
+                                        onDragStart={(e) => {
+                                          if (b.status === "done") return;
+                                          e.dataTransfer.setData("text/plain", JSON.stringify({ type: "bank", id: b.id }));
+                                          e.dataTransfer.effectAllowed = "move";
+                                          setDraggedBankId(b.id);
+                                        }}
+                                        onDragEnd={() => {
+                                          setDraggedBankId(null);
+                                          setDragOverHomeId(null);
+                                          setDragOverBankId(null);
+                                        }}
+                                        onDragOver={(e) => {
+                                          if (draggedHomeId && b.status !== "done") {
+                                            e.preventDefault();
+                                            e.dataTransfer.dropEffect = "move";
+                                            if (dragOverBankId !== b.id) setDragOverBankId(b.id);
+                                          }
+                                        }}
+                                        onDragLeave={() => {
+                                          if (dragOverBankId === b.id) setDragOverBankId(null);
+                                        }}
+                                        onDrop={(e) => {
+                                          e.preventDefault();
+                                          if (draggedHomeId && b.status !== "done") {
+                                            handleDirectMatch(b.id, draggedHomeId);
+                                          }
+                                          setDraggedHomeId(null);
+                                          setDragOverBankId(null);
+                                        }}
                                         onClick={() => setPairBankId((prev) => (prev === b.id ? null : b.id))}
                                         className={`py-2 px-3 cursor-pointer overflow-hidden ${bankBg}`}
                                       >
                                         <div className="text-xs text-zinc-900 dark:text-zinc-100 font-semibold tracking-tight whitespace-nowrap">
-                                          {displayDate}
+                                          {b.unit && b.unit !== "—" ? (
+                                            `${b.unit} тоот`
+                                          ) : (
+                                            <span className="text-zinc-400 font-normal italic text-[11px]">Тоотгүй</span>
+                                          )}
                                         </div>
-                                        <div className="text-[11px] text-zinc-500 dark:text-zinc-400 mt-0.5 whitespace-nowrap font-normal">
-                                          {displayTime}
+                                        <div
+                                          className="text-[11px] font-semibold text-emerald-800 dark:text-emerald-400 mt-0.5 truncate"
+                                          title={b.building || ""}
+                                        >
+                                          {b.building && b.building !== "Байр" && b.building !== "—" ? (
+                                            formatBuildingShort(b.building)
+                                          ) : (
+                                            <span className="text-zinc-400 font-normal text-[10px]">Байр заагаагүй</span>
+                                          )}
                                         </div>
                                       </td>
-                                      {/* MID of Bank: FIXED POSITION FOR BADGE & САЛГАХ BEFORE AMOUNT */}
+
+                                      {/* Cell 3: Гүйлгээний утга */}
                                       <td
+                                        draggable={b.status !== "done"}
+                                        onDragStart={(e) => {
+                                          if (b.status === "done") return;
+                                          e.dataTransfer.setData("text/plain", JSON.stringify({ type: "bank", id: b.id }));
+                                          e.dataTransfer.effectAllowed = "move";
+                                          setDraggedBankId(b.id);
+                                        }}
+                                        onDragEnd={() => {
+                                          setDraggedBankId(null);
+                                          setDragOverHomeId(null);
+                                          setDragOverBankId(null);
+                                        }}
+                                        onDragOver={(e) => {
+                                          if (draggedHomeId && b.status !== "done") {
+                                            e.preventDefault();
+                                            e.dataTransfer.dropEffect = "move";
+                                            if (dragOverBankId !== b.id) setDragOverBankId(b.id);
+                                          }
+                                        }}
+                                        onDragLeave={() => {
+                                          if (dragOverBankId === b.id) setDragOverBankId(null);
+                                        }}
+                                        onDrop={(e) => {
+                                          e.preventDefault();
+                                          if (draggedHomeId && b.status !== "done") {
+                                            handleDirectMatch(b.id, draggedHomeId);
+                                          }
+                                          setDraggedHomeId(null);
+                                          setDragOverBankId(null);
+                                        }}
                                         onClick={() => setPairBankId((prev) => (prev === b.id ? null : b.id))}
                                         className={`py-2 px-3 cursor-pointer overflow-hidden ${bankBg}`}
                                       >
                                         <div className="flex items-center justify-between gap-2 h-full">
-                                          {/* Name & description */}
                                           <div className="min-w-0 flex-1">
                                             <div className="text-xs text-zinc-900 dark:text-zinc-100 font-semibold truncate" title={b.name}>
-                                              {b.name}
+                                              {b.name || "Гүйлгээ"}
                                             </div>
                                             <div className="text-[11px] text-zinc-500 dark:text-zinc-400 mt-0.5 truncate flex items-center gap-1.5" title={b.description}>
                                               {b.isExpense && (
@@ -2247,11 +2547,15 @@ export default function BankStatementImportModal({
                                                   Зогсоол QPay
                                                 </span>
                                               )}
-                                              <span>{b.building} байр, {b.unit} тоот · {b.description}</span>
+                                              {b.targetPeriod && (
+                                                <span className="inline-flex items-center text-[10px] font-medium px-1.5 py-0.2 rounded bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-300 shrink-0">
+                                                  {b.targetPeriod}
+                                                </span>
+                                              )}
+                                              <span className="truncate">{b.description}</span>
                                             </div>
                                           </div>
 
-                                          {/* FIXED POSITION BADGE & САЛГАХ (RIGHT ALIGNED, JUST BEFORE ORLOGO AMOUNT) */}
                                           <div className="shrink-0 flex items-center justify-end gap-1.5 ml-1">
                                             {b.status === "match" && (
                                               <>
@@ -2269,7 +2573,10 @@ export default function BankStatementImportModal({
                                             )}
                                             {b.status === "likely" && (
                                               <>
-                                                <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-50 dark:bg-amber-950/50 text-amber-800 dark:text-amber-200 border border-amber-300 dark:border-amber-700 whitespace-nowrap shrink-0">
+                                                <span
+                                                  className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-50 dark:bg-amber-950/50 text-amber-800 dark:text-amber-200 border border-amber-300 dark:border-amber-700 whitespace-nowrap shrink-0"
+                                                  title={b.matchReason}
+                                                >
                                                   <Zap className="w-2.5 h-2.5 text-amber-600" /> Магадлалтай
                                                 </span>
                                                 {b.matchedHomeId && (
@@ -2306,7 +2613,8 @@ export default function BankStatementImportModal({
                                           </div>
                                         </div>
                                       </td>
-                                      {/* END of Bank: NO colored line */}
+
+                                      {/* Cell 4: Орлого ₮ */}
                                       <td
                                         onClick={() => setPairBankId((prev) => (prev === b.id ? null : b.id))}
                                         className={`py-2 px-4 text-right whitespace-nowrap cursor-pointer ${bankBg}`}
@@ -2318,16 +2626,24 @@ export default function BankStatementImportModal({
                                       </td>
                                     </>
                                   ) : (
-                                    <td colSpan={3} className={`py-2 px-3 text-center text-[11px] text-zinc-400 dark:text-zinc-600 italic ${bankBg}`}>
+                                    <td colSpan={4} className={`py-2 px-3 text-center text-[11px] text-zinc-400 dark:text-zinc-600 italic ${bankBg}`}>
                                       —
                                     </td>
                                   )}
 
-                                  {/* CENTER CELL: BETWEEN THE TWO TABLES AT 50% LINE - CLEAN NEUTRAL DIVIDER */}
-                                  <td className="py-0 px-0 text-center align-middle border-x border-zinc-200/80 dark:border-zinc-800 bg-zinc-50/70 dark:bg-zinc-900/60 select-none">
-                                    {isBothMatched || isBothDone ? (
-                                      <div className="flex items-center justify-center" title="Тулгагдсан холбоос">
-                                        <span className="text-emerald-600 dark:text-emerald-400 font-bold text-base leading-none">→</span>
+                                  {/* CENTER CELL: BETWEEN THE TWO TABLES AT 50% LINE - VISUAL CONNECTING ROW LINE */}
+                                  <td className={`py-0 px-0 text-center align-middle border-x border-zinc-200/80 dark:border-zinc-800 select-none transition-colors ${
+                                    isDragConnecting ? "bg-emerald-100 dark:bg-emerald-950" : "bg-zinc-50/70 dark:bg-zinc-900/60"
+                                  }`}>
+                                    {isDragConnecting ? (
+                                      <div className="flex items-center justify-center w-full px-0.5" title="Чирч холбох холбоос">
+                                        <div className="h-1 w-full bg-emerald-500 rounded-full animate-pulse shadow-sm shadow-emerald-400" />
+                                      </div>
+                                    ) : (isBothMatched || isBothDone) ? (
+                                      <div className="flex items-center justify-center gap-0.5" title="Тулгагдсан холбоос">
+                                        <div className="w-1.5 h-0.5 bg-emerald-500 rounded-full" />
+                                        <span className="text-emerald-600 dark:text-emerald-400 font-extrabold text-xs mx-0.5 leading-none">→</span>
+                                        <div className="w-1.5 h-0.5 bg-emerald-500 rounded-full" />
                                       </div>
                                     ) : (b?.status === "likely" || h?.status === "likely") ? (
                                       <div className="flex items-center justify-center" title="Магадлалтай холбоос">
@@ -2345,28 +2661,97 @@ export default function BankStatementImportModal({
                                   {/* RIGHT 3 CELLS: RESIDENT / HOME (50% OF ROW) */}
                                   {h ? (
                                     <>
-                                      {/* ONLY START of Home gets the colored line */}
+                                      {/* Cell 6: Байр, тоот */}
                                       <td
+                                        draggable={h.status !== "done"}
+                                        onDragStart={(e) => {
+                                          if (h.status === "done") return;
+                                          e.dataTransfer.setData("text/plain", JSON.stringify({ type: "home", id: h.id }));
+                                          e.dataTransfer.effectAllowed = "move";
+                                          setDraggedHomeId(h.id);
+                                        }}
+                                        onDragEnd={() => {
+                                          setDraggedHomeId(null);
+                                          setDragOverBankId(null);
+                                          setDragOverHomeId(null);
+                                        }}
+                                        onDragOver={(e) => {
+                                          if (draggedBankId && h.status !== "done") {
+                                            e.preventDefault();
+                                            e.dataTransfer.dropEffect = "move";
+                                            if (dragOverHomeId !== h.id) setDragOverHomeId(h.id);
+                                          }
+                                        }}
+                                        onDragLeave={() => {
+                                          if (dragOverHomeId === h.id) setDragOverHomeId(null);
+                                        }}
+                                        onDrop={(e) => {
+                                          e.preventDefault();
+                                          if (draggedBankId && h.status !== "done") {
+                                            handleDirectMatch(draggedBankId, h.id);
+                                          }
+                                          setDraggedBankId(null);
+                                          setDragOverHomeId(null);
+                                        }}
                                         onClick={() => toggleHomeRow(h.id)}
                                         className={`py-2 px-3 cursor-pointer overflow-hidden ${homeBg}`}
                                       >
-                                        <div className="text-xs text-zinc-900 dark:text-zinc-100 font-semibold tracking-tight whitespace-nowrap">
-                                          {h.unit} тоот
+                                        <div className="flex items-center gap-1.5">
+                                          {h.status !== "done" && (
+                                            <span title="Чирч банкны гүйлгээтэй холбох" className="cursor-grab shrink-0">
+                                              <GripVertical className="w-3.5 h-3.5 text-zinc-400 group-hover:text-emerald-600 transition-colors" />
+                                            </span>
+                                          )}
+                                          <div>
+                                            <div className="text-xs text-zinc-900 dark:text-zinc-100 font-semibold tracking-tight whitespace-nowrap">
+                                              {h.unit} тоот
+                                            </div>
+                                            <div
+                                              className="text-[11px] font-semibold text-emerald-800 dark:text-emerald-400 mt-0.5 truncate"
+                                              title={h.building || baiguullaga?.ner || ""}
+                                            >
+                                              {formatBuildingShort(h.building)}
+                                            </div>
+                                          </div>
                                         </div>
-                                         <div
-                                           className="text-[11px] font-semibold text-emerald-800 dark:text-emerald-400 mt-0.5 truncate"
-                                           title={h.building || baiguullaga?.ner || ""}
-                                         >
-                                           {formatBuildingShort(h.building)}
-                                         </div>
                                       </td>
-                                      {/* MID of Home: FIXED POSITION FOR BADGE & САЛГАХ BEFORE NEHEMJLEH AMOUNT */}
+
+                                      {/* Cell 7: Оршин суугч */}
                                       <td
+                                        draggable={h.status !== "done"}
+                                        onDragStart={(e) => {
+                                          if (h.status === "done") return;
+                                          e.dataTransfer.setData("text/plain", JSON.stringify({ type: "home", id: h.id }));
+                                          e.dataTransfer.effectAllowed = "move";
+                                          setDraggedHomeId(h.id);
+                                        }}
+                                        onDragEnd={() => {
+                                          setDraggedHomeId(null);
+                                          setDragOverBankId(null);
+                                          setDragOverHomeId(null);
+                                        }}
+                                        onDragOver={(e) => {
+                                          if (draggedBankId && h.status !== "done") {
+                                            e.preventDefault();
+                                            e.dataTransfer.dropEffect = "move";
+                                            if (dragOverHomeId !== h.id) setDragOverHomeId(h.id);
+                                          }
+                                        }}
+                                        onDragLeave={() => {
+                                          if (dragOverHomeId === h.id) setDragOverHomeId(null);
+                                        }}
+                                        onDrop={(e) => {
+                                          e.preventDefault();
+                                          if (draggedBankId && h.status !== "done") {
+                                            handleDirectMatch(draggedBankId, h.id);
+                                          }
+                                          setDraggedBankId(null);
+                                          setDragOverHomeId(null);
+                                        }}
                                         onClick={() => toggleHomeRow(h.id)}
                                         className={`py-2 px-3 cursor-pointer overflow-hidden ${homeBg}`}
                                       >
                                         <div className="flex items-center justify-between gap-2 h-full">
-                                          {/* Name & Note */}
                                           <div className="min-w-0 flex-1">
                                             <div className="text-xs text-zinc-900 dark:text-zinc-100 font-semibold truncate" title={h.name}>
                                               {h.name}
@@ -2376,7 +2761,6 @@ export default function BankStatementImportModal({
                                             </div>
                                           </div>
 
-                                          {/* FIXED POSITION BADGE & САЛГАХ (RIGHT ALIGNED, JUST BEFORE NEHEMJLEH AMOUNT) */}
                                           <div className="shrink-0 flex items-center justify-end gap-1.5 ml-1">
                                             {h.status === "match" && (
                                               <>
@@ -2419,7 +2803,8 @@ export default function BankStatementImportModal({
                                           </div>
                                         </div>
                                       </td>
-                                      {/* END of Home: NO colored line */}
+
+                                      {/* Cell 8: Төлбөр ₮ */}
                                       <td
                                         onClick={() => toggleHomeRow(h.id)}
                                         className={`py-2 px-4 text-right whitespace-nowrap cursor-pointer ${homeBg}`}
@@ -2510,7 +2895,7 @@ export default function BankStatementImportModal({
                   </button>
 
                   <button
-                    onClick={onClose}
+                    onClick={handleClose}
                     className="px-4 py-2 rounded-xl border border-[#dce5e0] dark:border-zinc-700 bg-white dark:bg-zinc-800 text-xs font-semibold text-[#203a35] dark:text-zinc-200 hover:bg-[#edf5f1] transition cursor-pointer"
                   >
                     Болих
