@@ -18,6 +18,11 @@ import {
   Zap,
   GripVertical,
   Layers,
+  Wallet,
+  RotateCcw,
+  Calculator,
+  Coins,
+  Info,
 } from "lucide-react";
 import * as XLSX from "xlsx";
 import { useModalHotkeys } from "@/lib/useModalHotkeys";
@@ -39,6 +44,10 @@ type ExistingRecord = {
   relatedAccount?: string;
   accName?: string;
   matchedGereeId?: string | null;
+  gereeniiDugaar?: string;
+  toot?: string;
+  bank?: string;
+  isQPay?: boolean;
   status?: string;
 };
 
@@ -78,6 +87,9 @@ export type BankRow = {
   isFee?: boolean;
   isAldangi?: boolean;
   isManual?: boolean;
+  isQPay?: boolean;
+  qpayPaymentId?: string;
+  gdNumber?: string;
   allocation?: {
     months: { [monthKey: string]: number };
     totalAllocated: number;
@@ -98,8 +110,10 @@ export type HomeRow = {
   status: MatchStatus;
   matchedBankId?: number | null;
   gereeId?: string;
+  gereeniiDugaar?: string;
   barilgiinId?: string;
   isManual?: boolean;
+  qpayPaid?: boolean;
 };
 
 interface BankStatementImportModalProps {
@@ -367,6 +381,7 @@ export default function BankStatementImportModal({
               note: "СӨХ-ийн төлбөр",
               status: "open",
               gereeId: c._id,
+              gereeniiDugaar: String(c.gereeniiDugaar || c.dugaar || "").trim(),
               barilgiinId: matchedBarilga?._id || c.barilgiinId?._id || c.barilgiinId || "",
             });
           });
@@ -863,12 +878,29 @@ export default function BankStatementImportModal({
         // Skip expense rows (Зарлага): only import income (Орлого) as requested
         if (orlogoRaw <= 0) continue;
 
-        const amount = orlogoRaw;
+        const descClean = descStr.trim();
         const parsed = parseTransactionDescription(descStr, accName);
+
+        // Skip parking (Зогсоол / QRGADAA) transactions completely as requested
+        const isParking = Boolean(descClean.match(/qrgadaa|зогсоол|автомашин|улсын дугаар/i)) || parsed.isParking;
+        if (isParking) {
+          continue;
+        }
+
+        const amount = orlogoRaw;
         const { dateFormatted, fullDate, timeStr, rowMonth } = formatExcelDate(rawDateVal, rawTimeVal);
         const targetMonths = getEffectiveMonths(descStr, fullDate);
         detectedMonths.add(rowMonth);
         targetMonths.forEach((tm) => detectedMonths.add(tm));
+
+        // ONLY block OUR SYSTEM's QPay that has contract number (ГД / GD)
+        const hasQPay = /qpay\b/i.test(descClean);
+        const hasGD = /(?:гд|gd|гэрээ)[-:\s]?\d+/i.test(descClean);
+        const isSystemQPay = hasQPay && hasGD;
+        const qpMatch = descClean.match(/qpay\s*[:#\-]?\s*(\d+)/i);
+        const qpayPaymentId = qpMatch ? qpMatch[1] : undefined;
+        const gdMatch = descClean.match(/(?:гд|gd)[-:\s]?(\d+)/i);
+        const gdNumber = gdMatch ? gdMatch[1] : undefined;
 
         extractedBanks.push({
           id: extractedBanks.length,
@@ -894,6 +926,9 @@ export default function BankStatementImportModal({
           isParking: parsed.isParking,
           isFee: parsed.isFee,
           isAldangi: parsed.isAldangi,
+          isQPay: isSystemQPay,
+          qpayPaymentId,
+          gdNumber,
         });
       }
 
@@ -927,6 +962,14 @@ export default function BankStatementImportModal({
         const bDateClean = String(b.date || b.rawDate || "").replace(/[-./]/g, "");
         const bDescClean = String(b.description || "").trim().toLowerCase().replace(/[\s\-_.,/()]/g, "");
         const bRelAccClean = String(b.relatedAccount || "").trim().toLowerCase().replace(/[\s\-_.,/()]/g, "");
+
+        // Block ONLY our system QPay transactions (those with ГД) from re-registration
+        if (b.isQPay) {
+          b.status = "done";
+          b.matchReason = "Системийн QPay төлбөр (ГД бүртгэгдсэн тул дахин бүртгэх шаардлагагүй)";
+          alreadyDoneCount++;
+          return;
+        }
 
         const existingMatch = currentExisting.find((ex) => {
           // 1. Direct journal / record match (must be a valid unique transaction identifier)
@@ -980,6 +1023,8 @@ export default function BankStatementImportModal({
           }
         }
       });
+
+
 
       setHomes(updatedHomes);
       setBanks(extractedBanks);
@@ -1278,6 +1323,24 @@ export default function BankStatementImportModal({
     });
   };
 
+  // Toggle all months in allocation modal
+  const handleToggleAllMonths = () => {
+    const yr = allocationModal.year;
+    const allKeys = Array.from({ length: 12 }, (_, i) => `${yr}.${String(i + 1).padStart(2, "0")}`);
+    const isAllChecked = allKeys.every((k) => (allocationModal.months[k] || 0) > 0);
+
+    setAllocationModal((prev) => {
+      if (isAllChecked) {
+        return { ...prev, months: {} };
+      }
+      const nextMonths: { [k: string]: number } = {};
+      allKeys.forEach((k) => {
+        nextMonths[k] = prev.baseAmount;
+      });
+      return { ...prev, months: nextMonths };
+    });
+  };
+
   // Toggle single month in allocation modal
   const handleToggleAllocationMonth = (monthKey: string, checked: boolean) => {
     setAllocationModal((prev) => {
@@ -1402,6 +1465,10 @@ export default function BankStatementImportModal({
       status: "match" | "likely" = "match",
       reason?: string
     ) => {
+      if (b.isQPay || b.status === "done" || h.status === "done") {
+        return false;
+      }
+
       const bBld = normalizeBuilding(b.building);
       const hBld = normalizeBuilding(h.building);
 
@@ -1804,7 +1871,7 @@ export default function BankStatementImportModal({
   };
 
   const handleRegisterConfirm = async () => {
-    const targetBanks = banks.filter((b) => b.status === "match");
+    const targetBanks = banks.filter((b) => b.status === "match" && !b.isQPay);
 
     if (targetBanks.length === 0) {
       toast.error("Бүртгэх тулгасан гүйлгээ байхгүй байна");
@@ -1920,14 +1987,15 @@ export default function BankStatementImportModal({
   // Filtered rows by selected building, selected month, tab, and search
   const filteredBanks = useMemo(() => {
     return banks.filter((x) => {
+      // Completely skip parking (Зогсоол) transactions
+      if (x.isParking || /qrgadaa|зогсоол|автомашин/i.test(x.description)) return false;
+
       if (selectedBuilding !== "ALL") {
         const normSel = normalizeBuilding(selectedBuilding);
         const normBank = normalizeBuilding(x.building);
-        // If bank row explicitly states a building, it MUST match selectedBuilding
         if (normBank) {
           if (normBank !== normSel) return false;
         } else {
-          // If bank row has no building, check if linked home matches
           const linkedHome = x.matchedHomeId ? homes.find((h) => h.id === x.matchedHomeId) : null;
           const normHome = linkedHome ? normalizeBuilding(linkedHome.building) : "";
           if (normHome && normHome !== normSel) return false;
@@ -1939,7 +2007,8 @@ export default function BankStatementImportModal({
           : [x.month || ""];
         if (!bMonths.includes(selectedMonth)) return false;
       }
-      if (tab !== "all" && x.status !== tab) return false;
+      // If user is in "open" tab, keep manually matched rows visible so dragging doesn't jump them to another tab!
+      if (tab !== "all" && x.status !== tab && !(tab === "open" && (x as any).isManual)) return false;
       if (bankSearch.trim()) {
         const q = bankSearch.toLowerCase().trim();
         const str = [x.name, x.unit, x.building, x.amount, x.description, x.targetPeriod].join(" ").toLowerCase();
@@ -1955,7 +2024,7 @@ export default function BankStatementImportModal({
         if (!isBuildingCompatible(x.building, selectedBuilding)) return false;
       }
       if (selectedMonth !== "ALL" && x.month && x.month !== selectedMonth) return false;
-      if (tab !== "all" && x.status !== tab) return false;
+      if (tab !== "all" && x.status !== tab && !(tab === "open" && (x as any).isManual)) return false;
       if (homeSearch.trim()) {
         const q = homeSearch.toLowerCase().trim();
         const str = [x.name, x.unit, x.building, x.amount, x.note].join(" ").toLowerCase();
@@ -1970,12 +2039,11 @@ export default function BankStatementImportModal({
     const isHomeSearchActive = Boolean(homeSearch.trim());
     const isBankSearchActive = Boolean(bankSearch.trim());
 
-    // 1. Get banks that pass bank filters
+    // 1. Get banks that pass bank filters (preserve natural order so dragging stays in place!)
     const sBanks = [...filteredBanks].sort((a, b) => {
-      const aPrior = a.status === "match" || a.status === "done" || a.status === "likely";
-      const bPrior = b.status === "match" || b.status === "done" || b.status === "likely";
-      if (aPrior && !bPrior) return -1;
-      if (!aPrior && bPrior) return 1;
+      if (tab === "match") {
+        return a.id - b.id;
+      }
       return a.id - b.id;
     });
 
@@ -2093,6 +2161,7 @@ export default function BankStatementImportModal({
   // Statistics calculation
   const stats = useMemo(() => {
     const list = banks.filter((x) => {
+      if (x.isParking || /qrgadaa|зогсоол/i.test(x.description)) return false;
       if (selectedBuilding !== "ALL") {
         const normSel = normalizeBuilding(selectedBuilding);
         const normBank = normalizeBuilding(x.building);
@@ -2218,6 +2287,8 @@ export default function BankStatementImportModal({
                       </select>
                     </div>
                   )}
+
+
 
                   {/* File Upload / Replace Pill */}
                   <input
@@ -2833,6 +2904,11 @@ export default function BankStatementImportModal({
                                                   Зогсоол QPay
                                                 </span>
                                               )}
+                                              {b.isQPay && (
+                                                <span className="inline-flex items-center text-[10px] font-bold px-1.5 py-0.2 rounded bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-200 border border-blue-300 dark:border-blue-700 shrink-0">
+                                                  QPay бүртгэгдсэн
+                                                </span>
+                                              )}
                                               {b.targetPeriod && (
                                                 <span className="inline-flex items-center text-[10px] font-medium px-1.5 py-0.2 rounded bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-300 shrink-0">
                                                   {b.targetPeriod}
@@ -2898,8 +2974,15 @@ export default function BankStatementImportModal({
                                               </span>
                                             )}
                                             {b.status === "done" && (
-                                              <span className="inline-flex items-center text-[10px] font-medium px-2 py-0.5 rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-700 shrink-0">
-                                                Бүртгэсэн
+                                              <span
+                                                className={`inline-flex items-center text-[10px] font-medium px-2 py-0.5 rounded-full ${
+                                                  b.isQPay
+                                                    ? "bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800"
+                                                    : "bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-700"
+                                                } shrink-0`}
+                                                title={b.matchReason}
+                                              >
+                                                {b.isQPay ? "QPay бүртгэгдсэн" : "Бүртгэсэн"}
                                               </span>
                                             )}
                                           </div>
@@ -3112,8 +3195,14 @@ export default function BankStatementImportModal({
                                               </span>
                                             )}
                                             {h.status === "done" && (
-                                              <span className="inline-flex items-center text-[10px] font-medium px-2 py-0.5 rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-700 shrink-0">
-                                                Бүртгэсэн
+                                              <span
+                                                className={`inline-flex items-center text-[10px] font-medium px-2 py-0.5 rounded-full ${
+                                                  h.qpayPaid
+                                                    ? "bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800"
+                                                    : "bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-700"
+                                                } shrink-0`}
+                                              >
+                                                {h.qpayPaid ? "QPay төлсөн" : "Бүртгэсэн"}
                                               </span>
                                             )}
                                           </div>
@@ -3126,9 +3215,11 @@ export default function BankStatementImportModal({
                                         className={`py-2 px-4 text-right whitespace-nowrap cursor-pointer ${homeBg}`}
                                       >
                                         <div className="text-xs text-zinc-900 dark:text-zinc-100 tabular-nums font-semibold">
-                                          {formatNumber(h.amount)} ₮
+                                          {h.qpayPaid ? 0 : formatNumber(h.amount)} ₮
                                         </div>
-                                        <div className="text-[11px] text-zinc-400 dark:text-zinc-500 mt-0.5">Нэхэмжлэх</div>
+                                        <div className="text-[11px] text-zinc-400 dark:text-zinc-500 mt-0.5">
+                                          {h.qpayPaid ? "QPay төлөгдсөн" : "Нэхэмжлэх"}
+                                        </div>
                                         {b && (b.status === "match" || b.status === "likely") && (
                                           <div className="mt-1 flex justify-end">
                                             <button
@@ -3457,111 +3548,136 @@ export default function BankStatementImportModal({
           );
           const remaining = allocBank.amount - totalAllocated;
           const isOverAllocated = totalAllocated > allocBank.amount;
+          const allKeys = Array.from({ length: 12 }, (_, i) => `${allocationModal.year}.${String(i + 1).padStart(2, "0")}`);
+          const allSelected = allKeys.every((k) => (allocationModal.months[k] || 0) > 0);
+          const maxCoverMonths = Math.min(12, Math.floor(allocBank.amount / (allocationModal.baseAmount || 1)));
 
           return (
             <div className="fixed inset-0 z-[12020] flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
               <motion.div
-                initial={{ opacity: 0, scale: 0.95, y: 10 }}
+                initial={{ opacity: 0, scale: 0.96, y: 8 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.95, y: 10 }}
-                className="bg-white dark:bg-zinc-900 rounded-2xl max-w-2xl w-full shadow-2xl border border-zinc-200 dark:border-zinc-800 overflow-hidden flex flex-col max-h-[90vh]"
+                exit={{ opacity: 0, scale: 0.96, y: 8 }}
+                className="bg-white dark:bg-zinc-900 rounded-3xl max-w-3xl w-full shadow-2xl border border-zinc-200/80 dark:border-zinc-800 overflow-hidden flex flex-col max-h-[92vh]"
               >
                 {/* Header */}
-                <div className="flex items-center justify-between px-6 py-4 border-b border-zinc-200 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-900/50">
-                  <div className="flex items-center gap-2.5">
-                    <div className="p-2 rounded-xl bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
-                      <Layers className="w-5 h-5" />
+                <div className="flex items-center justify-between px-7 py-5 border-b border-zinc-100 dark:border-zinc-800 bg-white dark:bg-zinc-900">
+                  <div className="flex items-center gap-3.5">
+                    <div className="p-3 rounded-2xl bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 border border-emerald-100/60 dark:border-emerald-900/40 shadow-xs">
+                      <Layers className="w-6 h-6 stroke-[2.2]" />
                     </div>
                     <div>
-                      <h3 className="text-base font-bold text-zinc-900 dark:text-zinc-100 leading-tight">
+                      <h3 className="text-xl font-extrabold text-zinc-900 dark:text-zinc-100 tracking-tight leading-snug">
                         Төлбөр хуваарилалт
                       </h3>
                       <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
-                        Өндөр дүнтэй төлөлтийг ашиглалтын зардлаар саруудад хуваарилах
+                        Өндөр дүнтэй төлөлтийг ашиглалтын зардлаар саруудаа хуваарилах
                       </p>
                     </div>
                   </div>
                   <button
                     onClick={() => setAllocationModal((prev) => ({ ...prev, isOpen: false }))}
-                    className="p-1.5 rounded-lg text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition cursor-pointer"
+                    className="p-2 rounded-xl text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition cursor-pointer"
                   >
-                    <X className="w-5 h-5" />
+                    <X className="w-5 h-5 stroke-[2.5]" />
                   </button>
                 </div>
 
                 {/* Body Content */}
                 <div className="p-6 overflow-y-auto space-y-4 flex-1">
-                  {/* Contract Info Card */}
-                  <div className="p-3.5 rounded-xl bg-zinc-50 dark:bg-zinc-800/60 border border-zinc-200/80 dark:border-zinc-700/80 space-y-2.5">
-                    <div className="flex items-center justify-between text-xs font-bold text-zinc-900 dark:text-zinc-100">
-                      <span>
-                        {allocHome?.unit ? `${allocHome.unit} тоот` : "Тоотгүй"} — {formatBuildingShort(allocHome?.building)} — {allocHome?.name || "Оршин суугч"}
-                      </span>
-                      <span className="text-[11px] font-semibold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950 px-2 py-0.5 rounded-md border border-emerald-200 dark:border-emerald-800">
-                        Гүйлгээ: {formatNumber(allocBank.amount)} ₮
-                      </span>
+                  {/* Apartment & Resident Info Card */}
+                  <div className="p-4 rounded-2xl bg-[#f0f7ff] dark:bg-sky-950/25 border border-sky-100 dark:border-sky-900/40 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-2xs">
+                    {/* Left: Building icon + details */}
+                    <div className="flex items-start gap-3.5 min-w-0">
+                      <div className="p-3.5 rounded-2xl bg-blue-100/80 dark:bg-blue-900/50 text-blue-600 dark:text-blue-400 shrink-0 shadow-2xs">
+                        <Building2 className="w-6 h-6 stroke-[2]" />
+                      </div>
+                      <div className="min-w-0">
+                        <div className="text-base font-extrabold text-zinc-900 dark:text-zinc-100 truncate">
+                          {allocHome?.unit ? `${allocHome.unit} тоот` : "Тоотгүй"} — {formatBuildingShort(allocHome?.building)} — {allocHome?.name || "Оршин суугч"}
+                        </div>
+                        <div className="text-[11px] text-zinc-400 mt-1">
+                          Гүйцэтгэлийн утга:
+                        </div>
+                        <div className="text-xs font-medium text-zinc-600 dark:text-zinc-300 truncate max-w-sm sm:max-w-md mt-0.5" title={allocBank.description}>
+                          {allocBank.description}
+                        </div>
+                      </div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-3 pt-1 text-xs">
-                      <div>
-                        <span className="text-zinc-400 block text-[11px]">Гүйлгээний утга:</span>
-                        <span className="font-medium text-zinc-700 dark:text-zinc-300 truncate block mt-0.5" title={allocBank.description}>
-                          {allocBank.description}
-                        </span>
+                    {/* Right: Transaction amount badge & monthly rate */}
+                    <div className="flex flex-col items-start sm:items-end gap-2 shrink-0">
+                      <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-100/90 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 font-bold text-xs shadow-2xs">
+                        <Check className="w-3.5 h-3.5 stroke-[3]" />
+                        <span>Гүйлгээ: {formatNumber(allocBank.amount)} ₮</span>
                       </div>
-                      <div>
-                        <div className="flex items-center justify-between">
-                          <span className="text-zinc-400 text-[11px]">Сарын тогтмол төлбөр (Ашиглалтын зардал):</span>
+
+                      <div className="flex items-center gap-2.5">
+                        <div className="p-2 rounded-xl bg-blue-100/70 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 shadow-2xs">
+                          <Wallet className="w-4 h-4 stroke-[2]" />
                         </div>
-                        <div className="flex items-center gap-1.5 mt-0.5">
-                          <input
-                            type="number"
-                            min="0"
-                            value={allocationModal.baseAmount}
-                            onChange={(e) => {
-                              const val = parseFloat(e.target.value) || 0;
-                              setAllocationModal((prev) => ({ ...prev, baseAmount: val }));
-                            }}
-                            className="w-28 px-2 py-0.5 text-right text-xs font-bold text-zinc-900 dark:text-zinc-100 bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 rounded-md focus:outline-none focus:ring-1 focus:ring-emerald-500 tabular-nums"
-                          />
-                          <span className="text-xs font-semibold text-zinc-500">₮ / сар</span>
+                        <div className="text-left sm:text-right">
+                          <div className="text-[11px] text-zinc-500 dark:text-zinc-400 leading-tight">
+                            Сарын тогтмол төлбөр
+                          </div>
+                          <div className="text-[10px] text-zinc-400 leading-tight">
+                            (Ашиглалтын зардал):
+                          </div>
+                          <div className="flex items-center justify-start sm:justify-end gap-1 mt-0.5">
+                            <input
+                              type="number"
+                              min="0"
+                              value={allocationModal.baseAmount}
+                              onChange={(e) => {
+                                const val = parseFloat(e.target.value) || 0;
+                                setAllocationModal((prev) => ({ ...prev, baseAmount: val }));
+                              }}
+                              className="w-20 px-1 py-0.5 text-left sm:text-right text-sm font-extrabold text-zinc-900 dark:text-zinc-100 bg-transparent border-b border-transparent hover:border-zinc-300 focus:border-blue-500 focus:outline-none tabular-nums"
+                              title="Дарж сарын суурь дүнг өөрчлөх боломжтой"
+                            />
+                            <span className="text-sm font-extrabold text-zinc-900 dark:text-zinc-100">₮ / сар</span>
+                          </div>
                         </div>
                       </div>
                     </div>
                   </div>
 
                   {/* Quick Action Helpers */}
-                  <div className="flex flex-wrap items-center justify-between gap-2 p-3 bg-zinc-50 dark:bg-zinc-800/40 rounded-xl border border-zinc-200/80 dark:border-zinc-700/80 text-xs">
+                  <div className="flex flex-wrap items-center justify-between gap-2.5 pt-1">
                     <div className="flex items-center gap-2">
-                      <span className="text-[11px] text-zinc-500 font-medium">Он:</span>
-                      <select
-                        value={allocationModal.year}
-                        onChange={(e) => setAllocationModal((prev) => ({ ...prev, year: parseInt(e.target.value, 10) }))}
-                        className="px-2 py-1 bg-white dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 rounded-lg text-xs font-bold text-zinc-800 dark:text-zinc-200 cursor-pointer focus:outline-none"
-                      >
-                        {[2024, 2025, 2026, 2027].map((y) => (
-                          <option key={y} value={y}>
-                            {y} он
-                          </option>
-                        ))}
-                      </select>
+                      <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 shadow-2xs">
+                        <Calendar className="w-3.5 h-3.5 text-blue-500" />
+                        <span className="text-xs text-zinc-500 font-medium">Он:</span>
+                        <select
+                          value={allocationModal.year}
+                          onChange={(e) => setAllocationModal((prev) => ({ ...prev, year: parseInt(e.target.value, 10) }))}
+                          className="bg-transparent text-xs font-bold text-zinc-800 dark:text-zinc-200 cursor-pointer focus:outline-none pr-1"
+                        >
+                          {[2024, 2025, 2026, 2027].map((y) => (
+                            <option key={y} value={y} className="bg-white dark:bg-zinc-800">
+                              {y} он
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
                       <button
                         type="button"
-                        onClick={() => autoAllocateByCount(Math.min(12, Math.floor(allocBank.amount / (allocationModal.baseAmount || 1))))}
-                        className="px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[11px] shadow-xs cursor-pointer flex items-center gap-1 transition"
+                        onClick={() => autoAllocateByCount(maxCoverMonths)}
+                        className="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-xs cursor-pointer flex items-center gap-1.5 transition active:scale-95"
                       >
-                        <Zap className="w-3 h-3" />
-                        Бүх дүнгээр ({Math.min(12, Math.floor(allocBank.amount / (allocationModal.baseAmount || 1)))} сар)
+                        <Zap className="w-3.5 h-3.5 fill-white" />
+                        Бүх дүнгээр ({maxCoverMonths} сар)
                       </button>
                     </div>
 
-                    <div className="flex items-center gap-1">
+                    <div className="flex items-center gap-1.5">
                       {[1, 3, 6, 9, 12].map((cnt) => (
                         <button
                           key={cnt}
                           type="button"
                           onClick={() => autoAllocateByCount(cnt)}
-                          className="px-2 py-1 rounded-md bg-white dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-700 text-[11px] font-semibold cursor-pointer transition"
+                          className="px-3 py-1.5 rounded-xl bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-700 text-xs font-semibold cursor-pointer shadow-2xs transition"
                         >
                           {cnt} сар
                         </button>
@@ -3569,23 +3685,35 @@ export default function BankStatementImportModal({
                       <button
                         type="button"
                         onClick={() => setAllocationModal((prev) => ({ ...prev, months: {} }))}
-                        className="px-2 py-1 rounded-md text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-[11px] font-semibold cursor-pointer transition"
+                        className="px-3 py-1.5 rounded-xl text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-xs font-bold cursor-pointer transition flex items-center gap-1 border border-transparent hover:border-rose-200"
                       >
+                        <RotateCcw className="w-3.5 h-3.5" />
                         Цэвэрлэх
                       </button>
                     </div>
                   </div>
 
-                  {/* Section: ТӨЛБӨР ХУВААРИЛАЛТ (Styled identically to Screenshot 2) */}
-                  <div className="rounded-xl border border-zinc-200 dark:border-zinc-800 overflow-hidden bg-white dark:bg-zinc-900 shadow-xs">
-                    <div className="px-4 py-2.5 bg-zinc-50 dark:bg-zinc-800/60 border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-between text-xs font-bold text-zinc-700 dark:text-zinc-300 tracking-wider uppercase">
-                      <span>ТӨЛБӨР ХУВААРИЛАЛТ</span>
-                      <span className="text-[11px] normal-case font-normal text-zinc-400">
-                        Сар тус бүрийн төлөх дүнг засах боломжтой
-                      </span>
+                  {/* Section: ТӨЛБӨР ХУВААРИЛАЛТ Table */}
+                  <div className="rounded-2xl border border-zinc-200 dark:border-zinc-800 overflow-hidden bg-white dark:bg-zinc-900 shadow-2xs">
+                    <div className="px-5 py-3.5 bg-white dark:bg-zinc-900 border-b border-zinc-100 dark:border-zinc-800 flex items-center justify-between">
+                      <label className="flex items-center gap-2.5 cursor-pointer select-none">
+                        <input
+                          type="checkbox"
+                          checked={allSelected}
+                          onChange={handleToggleAllMonths}
+                          className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 cursor-pointer accent-blue-600"
+                        />
+                        <span className="text-sm font-bold text-zinc-900 dark:text-zinc-100">
+                          Төлбөр хуваарилалт
+                        </span>
+                      </label>
+                      <div className="flex items-center gap-1.5 text-xs text-zinc-500 dark:text-zinc-400">
+                        <Info className="w-4 h-4 text-blue-500" />
+                        <span>Сар тус бүрийн төлөх дүнг засах боломжтой</span>
+                      </div>
                     </div>
 
-                    <div className="divide-y divide-zinc-200 dark:divide-zinc-800/80 max-h-72 overflow-y-auto">
+                    <div className="divide-y divide-zinc-100 dark:divide-zinc-800/80 max-h-72 overflow-y-auto">
                       {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => {
                         const monthKey = `${allocationModal.year}.${String(m).padStart(2, "0")}`;
                         const isAllocated = Boolean(allocationModal.months[monthKey] > 0);
@@ -3595,38 +3723,35 @@ export default function BankStatementImportModal({
                         return (
                           <div
                             key={monthKey}
-                            className={`p-3 transition-colors flex items-center justify-between gap-3 ${
+                            className={`px-5 py-3 transition-colors flex items-center justify-between gap-4 ${
                               isAllocated
-                                ? "bg-emerald-50/40 dark:bg-emerald-950/20"
-                                : "hover:bg-zinc-50/50 dark:hover:bg-zinc-800/30"
+                                ? "bg-blue-50/20 dark:bg-blue-950/15"
+                                : "hover:bg-zinc-50/50 dark:hover:bg-zinc-800/20"
                             }`}
                           >
-                            <div className="flex items-center gap-3 flex-1 min-w-0">
+                            <div className="flex items-center gap-3.5 flex-1 min-w-0">
                               <input
                                 type="checkbox"
                                 checked={isAllocated}
                                 onChange={(e) => handleToggleAllocationMonth(monthKey, e.target.checked)}
-                                className="w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500 cursor-pointer accent-emerald-600"
+                                className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 cursor-pointer accent-blue-600"
                               />
                               <div className="min-w-0 flex-1">
-                                <div className="text-xs font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
-                                  <span>{allocationModal.year}-{String(m).padStart(2, "0")} (Сарын нийт)</span>
-                                  {isAllocated && (
-                                    <span className="text-[10px] font-semibold text-emerald-700 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-950/60 px-1.5 py-0.2 rounded">
-                                      Сонгосон
-                                    </span>
-                                  )}
+                                <div className="text-sm font-bold text-zinc-900 dark:text-zinc-100">
+                                  {allocationModal.year}-{String(m).padStart(2, "0")} (Сарын нийт)
                                 </div>
-                                <div className="text-[11px] text-zinc-500 dark:text-zinc-400 mt-0.5 flex flex-wrap items-center gap-2">
+                                <div className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5 flex flex-wrap items-center gap-2">
                                   <span>
-                                    Хуримтлагдсан өр: <strong className="text-zinc-700 dark:text-zinc-300">{formatNumber(allocationModal.baseAmount)} ₮</strong>
+                                    Хуримтлагдсан өр: <strong className="text-zinc-700 dark:text-zinc-300 font-semibold">{formatNumber(allocationModal.baseAmount)} ₮</strong>
                                   </span>
                                   <span className="text-zinc-300 dark:text-zinc-600">|</span>
-                                  <span>Төлөх: <strong className="text-emerald-600 dark:text-emerald-400">{formatNumber(currentVal)} ₮</strong></span>
+                                  <span>
+                                    Төлөх: <strong className="text-emerald-600 dark:text-emerald-400 font-semibold">{formatNumber(currentVal)} ₮</strong>
+                                  </span>
                                   <span className="text-zinc-300 dark:text-zinc-600">|</span>
                                   <span>
                                     Үлдэгдэл:{" "}
-                                    <strong className={uldegdel > 0 ? "text-rose-600 dark:text-rose-400" : "text-emerald-600 dark:text-emerald-400"}>
+                                    <strong className={uldegdel > 0 ? "text-rose-600 dark:text-rose-400 font-semibold" : "text-emerald-600 font-semibold"}>
                                       {formatNumber(uldegdel)} ₮
                                     </strong>
                                   </span>
@@ -3634,22 +3759,28 @@ export default function BankStatementImportModal({
                               </div>
                             </div>
 
-                            <div className="flex items-center gap-2 shrink-0">
-                              <span className="text-[11px] font-medium text-zinc-400">Төлөх дүн:</span>
-                              <input
-                                type="number"
-                                min="0"
-                                value={currentVal || ""}
-                                placeholder="0"
-                                onChange={(e) => handleAllocationAmountChange(monthKey, parseFloat(e.target.value) || 0)}
-                                className="w-28 px-2.5 py-1 text-right text-xs font-bold text-emerald-700 dark:text-emerald-300 bg-white dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 rounded-lg focus:outline-none focus:ring-1 focus:ring-emerald-500 tabular-nums shadow-2xs"
-                              />
+                            <div className="flex items-center gap-2.5 shrink-0">
+                              <span className="text-xs font-medium text-zinc-600 dark:text-zinc-300">Төлөх дүн:</span>
+                              <div className="relative">
+                                <input
+                                  type="number"
+                                  min="0"
+                                  value={currentVal || ""}
+                                  placeholder="0"
+                                  onChange={(e) => handleAllocationAmountChange(monthKey, parseFloat(e.target.value) || 0)}
+                                  className="w-28 pl-2 pr-6 py-1.5 text-right text-xs font-bold text-zinc-900 dark:text-zinc-100 bg-white dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 rounded-xl focus:outline-none focus:ring-1 focus:ring-blue-500 tabular-nums shadow-2xs"
+                                />
+                                <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs font-semibold text-zinc-400 pointer-events-none">
+                                  ₮
+                                </span>
+                              </div>
                               <button
                                 type="button"
                                 onClick={() => handleAllocationAmountChange(monthKey, allocationModal.baseAmount)}
-                                className="text-[10px] font-semibold px-2 py-1 rounded-md bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-200 transition cursor-pointer"
+                                className="px-3 py-1.5 rounded-xl border border-blue-200 dark:border-blue-800 bg-blue-50/70 hover:bg-blue-100 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 font-bold text-xs flex items-center gap-1.5 transition cursor-pointer shadow-2xs"
                                 title="Суурь төлбөрөөр автоматаар дүүргэх"
                               >
+                                <Calculator className="w-3.5 h-3.5" />
                                 Дүүргэх
                               </button>
                             </div>
@@ -3661,54 +3792,74 @@ export default function BankStatementImportModal({
 
                   {/* Over-allocation warning banner */}
                   {isOverAllocated && (
-                    <div className="p-3 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 flex items-center gap-2 text-xs text-rose-800 dark:text-rose-200">
+                    <div className="p-3.5 rounded-2xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 flex items-center gap-2.5 text-xs text-rose-800 dark:text-rose-200 shadow-2xs">
                       <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0" />
                       <span>
                         <strong>Анхааруулга:</strong> Хуваарилсан дүн ({formatNumber(totalAllocated)} ₮) гүйлгээний орлогоос ({formatNumber(allocBank.amount)} ₮) давсан байна ({formatNumber(totalAllocated - allocBank.amount)} ₮ илүү)!
                       </span>
                     </div>
                   )}
+
+                  {/* Bottom Summary Bar */}
+                  <div className="flex items-center justify-between px-6 py-4 bg-zinc-50/80 dark:bg-zinc-950/40 rounded-2xl border border-zinc-100 dark:border-zinc-800 shadow-2xs">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2.5 rounded-xl bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400 shadow-2xs">
+                        <Calculator className="w-5 h-5 stroke-[2.2]" />
+                      </div>
+                      <div className="flex items-baseline gap-2">
+                        <span className="text-sm font-semibold text-zinc-600 dark:text-zinc-400">Холбосон дүн:</span>
+                        <span className="text-2xl font-black text-emerald-600 dark:text-emerald-400 tabular-nums tracking-tight">
+                          {formatNumber(totalAllocated)} ₮
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="h-8 w-px bg-zinc-300 dark:bg-zinc-700" />
+
+                    <div className="flex items-center gap-3">
+                      <div className="p-2.5 rounded-xl bg-amber-100 text-amber-700 dark:bg-amber-950/60 dark:text-amber-400 shadow-2xs">
+                        <Coins className="w-5 h-5 stroke-[2.2]" />
+                      </div>
+                      <div className="flex items-baseline gap-2">
+                        <span className="text-sm font-semibold text-zinc-600 dark:text-zinc-400">Холбоогүй дүн:</span>
+                        <span
+                          className={`text-2xl font-black tabular-nums tracking-tight ${
+                            remaining > 0
+                              ? "text-rose-600 dark:text-rose-400"
+                              : "text-emerald-600 dark:text-emerald-400"
+                          }`}
+                        >
+                          {formatNumber(Math.max(0, remaining))} ₮
+                        </span>
+                      </div>
+                    </div>
+                  </div>
                 </div>
 
-                {/* Bottom Allocation Bar (Exact match to Screenshot 2) */}
-                <div className="grid grid-cols-2 divide-x divide-zinc-200 dark:divide-zinc-800 bg-zinc-50 dark:bg-zinc-950/60 px-6 py-3.5 border-t border-zinc-200 dark:border-zinc-800">
-                  <div className="flex items-center justify-between pr-4">
-                    <span className="text-xs font-semibold text-zinc-600 dark:text-zinc-400">Холбосон дүн:</span>
-                    <span className="text-base font-extrabold text-emerald-600 dark:text-emerald-400 tabular-nums">
-                      {formatNumber(totalAllocated)} ₮
-                    </span>
+                {/* Footer Bar */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-7 py-4 bg-white dark:bg-zinc-900 border-t border-zinc-100 dark:border-zinc-800">
+                  <div className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-blue-50/70 dark:bg-blue-950/30 text-blue-700 dark:text-blue-300 text-xs font-medium">
+                    <Info className="w-4 h-4 text-blue-600 shrink-0" />
+                    <span>Төлбөрийн хуваарилалт нь ашиглалтын зардалд үндэслэн хийгдэнэ.</span>
                   </div>
-                  <div className="flex items-center justify-between pl-4">
-                    <span className="text-xs font-semibold text-zinc-600 dark:text-zinc-400">Холбоогүй дүн:</span>
-                    <span
-                      className={`text-base font-extrabold tabular-nums ${
-                        remaining > 0
-                          ? "text-rose-600 dark:text-rose-400"
-                          : "text-emerald-600 dark:text-emerald-400"
-                      }`}
+
+                  <div className="flex items-center justify-end gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setAllocationModal((prev) => ({ ...prev, isOpen: false }))}
+                      className="px-6 py-2.5 rounded-xl border border-zinc-200 dark:border-zinc-700 font-bold text-sm text-zinc-700 dark:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition cursor-pointer shadow-2xs"
                     >
-                      {formatNumber(Math.max(0, remaining))} ₮
-                    </span>
+                      Хаах
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleSaveAllocation}
+                      className="px-7 py-2.5 rounded-xl bg-[#087f64] hover:bg-[#066a53] text-white font-bold text-sm shadow-md transition cursor-pointer flex items-center gap-2 active:scale-95"
+                    >
+                      <Check className="w-4 h-4 stroke-[2.8]" />
+                      Хадгалах
+                    </button>
                   </div>
-                </div>
-
-                {/* Footer Buttons */}
-                <div className="flex items-center justify-end gap-3 px-6 py-3.5 bg-white dark:bg-zinc-900 border-t border-zinc-200 dark:border-zinc-800">
-                  <button
-                    type="button"
-                    onClick={() => setAllocationModal((prev) => ({ ...prev, isOpen: false }))}
-                    className="px-4 py-2 rounded-xl border border-zinc-300 dark:border-zinc-700 text-xs font-bold text-zinc-700 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition cursor-pointer"
-                  >
-                    Хаах
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleSaveAllocation}
-                    className="px-5 py-2 rounded-xl bg-[#087f64] hover:bg-[#066a53] text-white text-xs font-bold shadow-sm transition cursor-pointer flex items-center gap-1.5"
-                  >
-                    <Check className="w-3.5 h-3.5" />
-                    Хадгалах
-                  </button>
                 </div>
               </motion.div>
             </div>

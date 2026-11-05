@@ -378,6 +378,7 @@ export default function DansniiKhuulga() {
           { gereeniiDugaar: { $regex: searchVal.trim(), $options: "i" } },
           { register: { $regex: searchVal.trim(), $options: "i" } },
           { toot: { $regex: searchVal.trim(), $options: "i" } },
+          { "nemeltTootnuud.toot": { $regex: searchVal.trim(), $options: "i" } },
         ];
       }
       const resp = await uilchilgee(token).get("/geree", {
@@ -1011,20 +1012,32 @@ export default function DansniiKhuulga() {
                     ) : contractsList.length === 0 ? (
                       <div className="p-3 text-center text-[color:var(--muted-text)]">Үр дүн олдсонгүй</div>
                     ) : (
-                      contractsList.map((geree: any) => (
-                        <div
-                          key={geree._id}
-                          className="grid cursor-pointer grid-cols-3 gap-2 rounded-md border border-transparent p-2 hover:bg-[color:var(--surface-hover)] text-[color:var(--panel-text)]"
-                          onMouseDown={() => {
-                            setSelectedContract(geree);
-                            setShowDropdown(false);
-                          }}
-                        >
-                          <div className="font-medium truncate">{geree.toot ? `${geree.toot} тоот` : "-"}</div>
-                          <div className="truncate">{geree.ner || `${geree.ovog || ""} ${geree.ner || ""}`}</div>
-                          <div className="truncate text-[color:var(--muted-text)]">{geree.gereeniiDugaar || "-"}</div>
-                        </div>
-                      ))
+                      contractsList.map((geree: any) => {
+                        const garageUnits = (geree.nemeltTootnuud || [])
+                          .filter((nt: any) => String(nt.turul || "").toLowerCase().includes("гараж") || String(nt.turul || "").toLowerCase().includes("garage"))
+                          .map((nt: any) => nt.toot);
+                        return (
+                          <div
+                            key={geree._id}
+                            className="grid cursor-pointer grid-cols-3 gap-2 rounded-md border border-transparent p-2 hover:bg-[color:var(--surface-hover)] text-[color:var(--panel-text)] items-center"
+                            onMouseDown={() => {
+                              setSelectedContract(geree);
+                              setShowDropdown(false);
+                            }}
+                          >
+                            <div className="font-medium truncate flex items-center gap-1.5">
+                              <span>{geree.toot ? `${geree.toot} тоот` : "-"}</span>
+                              {garageUnits.length > 0 && (
+                                <span className="px-1.5 py-0.2 rounded text-[10px] font-bold bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-200">
+                                  Гараж: {garageUnits.join(", ")}
+                                </span>
+                              )}
+                            </div>
+                            <div className="truncate">{geree.ner || `${geree.ovog || ""} ${geree.ner || ""}`}</div>
+                            <div className="truncate text-[color:var(--muted-text)]">{geree.gereeniiDugaar || "-"}</div>
+                          </div>
+                        );
+                      })
                     )}
                   </div>
                 )}
@@ -1035,8 +1048,19 @@ export default function DansniiKhuulga() {
               {selectedContract && (
                 <div className="space-y-2 rounded-md border border-[color:var(--surface-border)] p-2">
                   <div className="flex w-full justify-between items-center text-sm font-medium">
-                    <span>
-                      {selectedContract.toot ? `${selectedContract.toot} тоот` : "-"} -- {selectedContract.ner || `${selectedContract.ovog || ""} ${selectedContract.ner || ""}`} -- {selectedContract.gereeniiDugaar || "-"}
+                    <span className="flex items-center gap-2 flex-wrap">
+                      <span>{selectedContract.toot ? `${selectedContract.toot} тоот` : "-"} -- {selectedContract.ner || `${selectedContract.ovog || ""} ${selectedContract.ner || ""}`} -- {selectedContract.gereeniiDugaar || "-"}</span>
+                      {(() => {
+                        const gList = (selectedContract.nemeltTootnuud || [])
+                          .filter((nt: any) => String(nt.turul || "").toLowerCase().includes("гараж") || String(nt.turul || "").toLowerCase().includes("garage"))
+                          .map((nt: any) => nt.toot);
+                        if (gList.length === 0) return null;
+                        return (
+                          <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-200 border border-amber-300 dark:border-amber-700">
+                            Гараж ({gList.length}): {gList.join(", ")}
+                          </span>
+                        );
+                      })()}
                     </span>
                     <button
                       type="button"
@@ -1050,7 +1074,20 @@ export default function DansniiKhuulga() {
 
                   {/* Төлбөрийн үлдэгдэл box */}
                   <div className="box grid w-full grid-cols-3 rounded-md border border-[color:var(--surface-border)] bg-[color:var(--surface-hover)] p-2 text-xs">
-                    <div className="col-span-3 font-medium mb-1">Төлбөрийн үлдэгдэл</div>
+                    <div className="col-span-3 font-medium mb-1 flex items-center justify-between">
+                      <span>Төлбөрийн үлдэгдэл</span>
+                      {(() => {
+                        const gList = (selectedContract.nemeltTootnuud || [])
+                          .filter((nt: any) => String(nt.turul || "").toLowerCase().includes("гараж") || String(nt.turul || "").toLowerCase().includes("garage"))
+                          .map((nt: any) => nt.toot);
+                        if (gList.length === 0) return null;
+                        return (
+                          <span className="text-[11px] text-amber-700 dark:text-amber-300 font-semibold">
+                            Холбоотой гараж: {gList.length} ({gList.join(", ")})
+                          </span>
+                        );
+                      })()}
+                    </div>
                     <div className="text-danger font-medium">
                       {formatNumber(selectedContract.uldegdel || 0, 2)}
                     </div>
