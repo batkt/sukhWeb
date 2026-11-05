@@ -880,10 +880,13 @@ export default function BankStatementImportModal({
         detectedMonths.add(rowMonth);
         targetMonths.forEach((tm) => detectedMonths.add(tm));
 
-        // ONLY block OUR SYSTEM's QPay that has contract number (ГД / GD)
-        const hasQPay = /qpay\b/i.test(descClean);
-        const hasGD = /(?:гд|gd|гэрээ)[-:\s]?\d+/i.test(descClean);
+        // Completely skip OUR SYSTEM's QPay that has contract number (ГД / GD) - already handled by system
+        const hasQPay = /qpay/i.test(descStr);
+        const hasGD = /(?:гд|gd|гэрээ|гэрээний\s*дугаар)[-:\s#_]?\d+/i.test(descStr);
         const isSystemQPay = hasQPay && hasGD;
+        if (isSystemQPay) {
+          continue;
+        }
         const qpMatch = descClean.match(/qpay\s*[:#\-]?\s*(\d+)/i);
         const qpayPaymentId = qpMatch ? qpMatch[1] : undefined;
         const gdMatch = descClean.match(/(?:гд|gd)[-:\s]?(\d+)/i);
@@ -1775,6 +1778,13 @@ export default function BankStatementImportModal({
         const resolvedBuilding = b.building && b.building !== "Байр" ? b.building : linkedHome?.building || "";
         const resolvedBarilgaId = linkedHome?.barilgiinId || barilgiinId;
 
+        const allocatedDun = (b.allocation && Number(b.allocation.totalAllocated) > 0)
+          ? Number(b.allocation.totalAllocated)
+          : null;
+        const effectivePayAmount = allocatedDun !== null
+          ? allocatedDun
+          : b.amount;
+
         return {
           journal: b.journal && !b.journal.startsWith("J-") ? b.journal : `EXCEL-${Date.now()}-${b.id}`,
           date: fullDate,
@@ -1783,6 +1793,8 @@ export default function BankStatementImportModal({
           orlogo: b.amount,
           zarlaga: 0,
           amount: b.amount,
+          payAmount: effectivePayAmount,
+          allocatedAmount: allocatedDun,
           relatedAccount: b.relatedAccount || "",
           accName: b.accName || b.name,
           bank: "Банк",
@@ -1864,6 +1876,9 @@ export default function BankStatementImportModal({
     return banks.filter((x) => {
       // Completely skip parking (Зогсоол) transactions
       if (x.isParking || /qrgadaa|зогсоол|автомашин/i.test(x.description)) return false;
+
+      // Completely skip our system's QPay transactions (has QPay and ГД / GD)
+      if (x.isQPay || (/qpay/i.test(x.description) && /(?:гд|gd|гэрээ|гэрээний\s*дугаар)[-:\s#_]?\d+/i.test(x.description))) return false;
 
       if (selectedBuilding !== "ALL") {
         const normSel = normalizeBuilding(selectedBuilding);
@@ -2005,6 +2020,7 @@ export default function BankStatementImportModal({
   const stats = useMemo(() => {
     const list = banks.filter((x) => {
       if (x.isParking || /qrgadaa|зогсоол/i.test(x.description)) return false;
+      if (x.isQPay || (/qpay/i.test(x.description) && /(?:гд|gd|гэрээ|гэрээний\s*дугаар)[-:\s#_]?\d+/i.test(x.description))) return false;
       if (selectedBuilding !== "ALL") {
         const normSel = normalizeBuilding(selectedBuilding);
         const normBank = normalizeBuilding(x.building);
