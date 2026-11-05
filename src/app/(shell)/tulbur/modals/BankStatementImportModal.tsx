@@ -1158,6 +1158,16 @@ export default function BankStatementImportModal({
     return true;
   };
 
+  // Helper to determine if a bank row should be completely excluded (Parking or system QPay)
+  const isExcludedBankRow = (b: { description?: string; isParking?: boolean; isQPay?: boolean }): boolean => {
+    if (b.isParking) return true;
+    if (b.isQPay) return true;
+    const desc = b.description || "";
+    if (/qrgadaa|зогсоол|автомашин/i.test(desc)) return true;
+    if (/qpay/i.test(desc) && /(?:гд|gd|гэрээ|гэрээний\s*дугаар)[-:\s#_]?\d+/i.test(desc)) return true;
+    return false;
+  };
+
   // Save learned recurring payer rule
   const savePayerRule = async (bank: BankRow, home: HomeRow) => {
     try {
@@ -1317,8 +1327,11 @@ export default function BankStatementImportModal({
     let matchCount = 0;
     let likelyCount = 0;
 
+    // Filter out parking and system QPay completely
+    const validBanks = currentBanks.filter((b) => !isExcludedBankRow(b));
+
     // Reset open & likely rows deterministically; preserve "done" and user-manual confirmed matches
-    const newBanks: BankRow[] = currentBanks.map((b) => {
+    const newBanks: BankRow[] = validBanks.map((b) => {
       if (b.status === "done" || (b.status === "match" && (b as any).isManual)) return { ...b };
       return {
         ...b,
@@ -1329,7 +1342,12 @@ export default function BankStatementImportModal({
     });
 
     const newHomes: HomeRow[] = currentHomes.map((h) => {
-      if (h.status === "done" || (h.status === "match" && (h as any).isManual)) return { ...h };
+      if ((h as any).isManual && h.matchedBankId && validBanks.some((b) => b.id === h.matchedBankId)) {
+        return { ...h };
+      }
+      if (h.status === "done" && h.matchedBankId && validBanks.some((b) => b.id === h.matchedBankId)) {
+        return { ...h };
+      }
       return {
         ...h,
         status: "open" as const,
@@ -1343,7 +1361,7 @@ export default function BankStatementImportModal({
       status: "match" | "likely" = "match",
       reason?: string
     ) => {
-      if (b.isQPay || b.status === "done" || h.status === "done") {
+      if (isExcludedBankRow(b) || b.status === "done" || h.status === "done") {
         return false;
       }
 
@@ -1633,6 +1651,15 @@ export default function BankStatementImportModal({
     }
   };
 
+  // Auto-clean any residual system QPay or parking rows from banks state
+  useEffect(() => {
+    if (banks.some(isExcludedBankRow)) {
+      const sanitized = banks.filter((b) => !isExcludedBankRow(b));
+      setBanks(sanitized);
+      autoMatch(sanitized, homes, selectedBuilding);
+    }
+  }, [banks, homes, selectedBuilding]);
+
   // Toggle bank row checkbox (check / uncheck for registration)
   const toggleBankRow = (id: number) => {
     setSelB((prev) => {
@@ -1874,11 +1901,8 @@ export default function BankStatementImportModal({
   // Filtered rows by selected building, selected month, tab, and search
   const filteredBanks = useMemo(() => {
     return banks.filter((x) => {
-      // Completely skip parking (Зогсоол) transactions
-      if (x.isParking || /qrgadaa|зогсоол|автомашин/i.test(x.description)) return false;
-
-      // Completely skip our system's QPay transactions (has QPay and ГД / GD)
-      if (x.isQPay || (/qpay/i.test(x.description) && /(?:гд|gd|гэрээ|гэрээний\s*дугаар)[-:\s#_]?\d+/i.test(x.description))) return false;
+      // Completely skip parking and system QPay
+      if (isExcludedBankRow(x)) return false;
 
       if (selectedBuilding !== "ALL") {
         const normSel = normalizeBuilding(selectedBuilding);
@@ -1979,13 +2003,18 @@ export default function BankStatementImportModal({
     });
 
     // 2. Unmatched homes from filteredHomes (preserve user reordered sequence)
-    const unmatchedHomes = filteredHomes.filter((h) => !usedHomeIds.has(h.id));
-
-    // If viewing "Тулгасан" tab, show matched pairs plus any remaining matched homes
-    if (tab === "match") {
-      unmatchedHomes.forEach((h) => {
-        rows.push({ bank: null, home: h });
+    const unmatchedHomes = filteredHomes
+      .filter((h) => !usedHomeIds.has(h.id))
+      .map((h) => {
+        // If a home has no paired bank in current filtered banks, it must show as open!
+        if (h.status === "match" || h.status === "likely") {
+          return { ...h, status: "open" as const, matchedBankId: null };
+        }
+        return h;
       });
+
+    // If viewing "Тулгасан" tab, show matched pairs only (never phantom unmatched homes!)
+    if (tab === "match") {
       return rows;
     }
 
@@ -2014,13 +2043,12 @@ export default function BankStatementImportModal({
     }
 
     return rows;
-  }, [filteredBanks, filteredHomes, homes, selectedBuilding, bankSearch, homeSearch]);
+  }, [filteredBanks, filteredHomes, homes, selectedBuilding, bankSearch, homeSearch, tab]);
 
   // Statistics calculation
   const stats = useMemo(() => {
     const list = banks.filter((x) => {
-      if (x.isParking || /qrgadaa|зогсоол/i.test(x.description)) return false;
-      if (x.isQPay || (/qpay/i.test(x.description) && /(?:гд|gd|гэрээ|гэрээний\s*дугаар)[-:\s#_]?\d+/i.test(x.description))) return false;
+      if (isExcludedBankRow(x)) return false;
       if (selectedBuilding !== "ALL") {
         const normSel = normalizeBuilding(selectedBuilding);
         const normBank = normalizeBuilding(x.building);
@@ -3094,11 +3122,11 @@ export default function BankStatementImportModal({
                       </span>
                       <span className="text-zinc-400">·</span>
                       <span className="text-emerald-800 dark:text-emerald-300">
-                        Тулгасан: {displayRows.filter((r) => r.home && (r.home.status === "match" || r.home.status === "done")).length}
+                        Тулгасан: {displayRows.filter((r) => r.bank && r.home && (r.home.status === "match" || r.home.status === "done")).length}
                       </span>
                       <span className="text-zinc-400">·</span>
                       <span className="text-rose-700 dark:text-rose-400">
-                        Тулгаагүй: {displayRows.filter((r) => r.home && r.home.status === "open").length}
+                        Тулгаагүй: {filteredHomes.length - displayRows.filter((r) => r.bank && r.home && (r.home.status === "match" || r.home.status === "done")).length}
                       </span>
                     </div>
                   </div>
