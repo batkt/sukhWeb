@@ -620,26 +620,22 @@ export default function BankStatementImportModal({
     }
 
     // 6. Building & Toot pattern matching:
-    // Supports: "217-101", "218.78", "216/56", "218 байр 105 тоот", "12-р байр 45 тоот", "12-45", "12/45", "45 тоот", "45т", "45-т"
+    // Supports: "216-БАЙР. 125-ТООТ.", "216 BAIR 43 TOOT", "216-80 ТООТ", "216-26", "218.52", "217/45", "216 dugar bair 4 toot"
     if (!unit) {
-      const mBairToot = clean.match(
-        /(?:байр|баир|bair)?\s*(\d{1,4})\s*(?:-?[рrR]\s*байр|\s*ба[йи]р|\s*bair|\s*iin|\s*ийн|\s*н|\*|[-./])\s*(?:тоот|toot|-?[тtT]\b)?\s*(\d{1,4}(?:[-/]\d{1,2}|[А-Яа-яA-Za-z])?)\s*(?:-?[рrR]\s*)?(?:тоот|toot|-?[тtT]\b)?/i
+      const mBldToot = clean.match(
+        /\b(21[6-9]|\d{1,4})\s*[-/.]*(?:-?[рrR]?\s*(?:дугаар|dugaar)?\s*байр[.]*|\s*ба[йи]р[.]*|\s*bair[.]*)?\s*[-/.:\s]*(\d{1,4})\s*(?:[nн]\s*)?(?:тоот|toot|торт|-?[тtT]\b)?/i
       );
-      if (mBairToot) {
-        const bCandidate = mBairToot[1].trim();
-        const uCandidate = mBairToot[2].trim();
-        if (!bCandidate.startsWith("202") && !uCandidate.startsWith("202")) {
-          building = bCandidate;
-          unit = uCandidate.replace(/^0+/, "") || uCandidate;
-        }
+      if (mBldToot && !mBldToot[1].startsWith("202") && !mBldToot[2].startsWith("202")) {
+        building = mBldToot[1].trim();
+        unit = mBldToot[2].replace(/^0+/, "") || mBldToot[2].trim();
       }
     }
 
     // 7. Explicit Toot Word if not matched above (support тоот, toot, -т, т, -р тоот):
     if (!unit) {
-      const mToot = clean.match(/\b(\d{1,4}(?:[-/]\d{1,2}|[А-Яа-яA-Za-z])?)\s*(?:-?[рrR]\s*)?(?:тоот|toot|-?[тtT]\b)\b/i) ||
+      const mToot = clean.match(/\b(\d{1,4}(?:[-/]\d{1,2}|[А-Яа-яA-Za-z])?)\s*(?:-?[рrR]\s*)?(?:[nн]\s*)?(?:тоот|toot|торт|-?[тtT]\b)\b/i) ||
                     clean.match(/(?:тоот|toot|-?[тtT]\b)\s*[:.-]?\s*(\d{1,4}(?:[-/]\d{1,2}|[А-Яа-яA-Za-z])?)\b/i);
-      if (mToot) {
+      if (mToot && !mToot[1].startsWith("202")) {
         unit = mToot[1].replace(/^0+/, "") || mToot[1];
       }
     }
@@ -880,9 +876,9 @@ export default function BankStatementImportModal({
         detectedMonths.add(rowMonth);
         targetMonths.forEach((tm) => detectedMonths.add(tm));
 
-        // Completely skip OUR SYSTEM's QPay that has contract number (ГД / GD) - already handled by system
+        // Completely skip OUR SYSTEM's QPay that has contract number (ГД / GD / нэхэмжлэх) - already handled by system
         const hasQPay = /qpay/i.test(descStr);
-        const hasGD = /(?:гд|gd|гэрээ|гэрээний\s*дугаар)[-:\s#_]?\d+/i.test(descStr);
+        const hasGD = /(?:гд|gd|гэрээ|гэрээний\s*дугаар|нэхэмжлэх|nekhemjlekh)[-:\s#_]?\d*/i.test(descStr);
         const isSystemQPay = hasQPay && hasGD;
         if (isSystemQPay) {
           continue;
@@ -1164,7 +1160,7 @@ export default function BankStatementImportModal({
     if (b.isQPay) return true;
     const desc = b.description || "";
     if (/qrgadaa|зогсоол|автомашин/i.test(desc)) return true;
-    if (/qpay/i.test(desc) && /(?:гд|gd|гэрээ|гэрээний\s*дугаар)[-:\s#_]?\d+/i.test(desc)) return true;
+    if (/qpay/i.test(desc) && /(?:гд|gd|гэрээ|гэрээний\s*дугаар|нэхэмжлэх|nekhemjlekh)[-:\s#_]?\d*/i.test(desc)) return true;
     return false;
   };
 
