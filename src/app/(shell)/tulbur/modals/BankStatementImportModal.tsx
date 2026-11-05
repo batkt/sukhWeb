@@ -102,6 +102,7 @@ export type HomeRow = {
   unit: string;
   amount: number;
   note: string;
+  ekhlekhOgnoo?: string | Date;
   month?: string;
   status: MatchStatus;
   matchedBankId?: number | null;
@@ -128,6 +129,38 @@ export const isExcludedBankRow = (b: { description?: string; isParking?: boolean
   const isOurSystemQPay = /qpay/i.test(desc) && /(?:гд|gd|гэрээний\s*дугаар)[-:\s#_]?\d+/i.test(desc);
   if (isOurSystemQPay) return true;
   return false;
+};
+
+// Pure natural comparison for apartment/unit numbers (e.g. 1, 2, ..., 47, 100, 115, 125, 125a)
+export const compareToot = (a?: string, b?: string): number => {
+  const sa = String(a || "").trim();
+  const sb = String(b || "").trim();
+  if (!sa && !sb) return 0;
+  if (!sa) return 1;
+  if (!sb) return -1;
+
+  const matchA = sa.match(/\d+/);
+  const matchB = sb.match(/\d+/);
+  if (matchA && matchB) {
+    const numA = parseInt(matchA[0], 10);
+    const numB = parseInt(matchB[0], 10);
+    if (numA !== numB) {
+      return numA - numB;
+    }
+  }
+  return sa.localeCompare(sb, "mn", { numeric: true, sensitivity: "base" });
+};
+
+// Pure timestamp extractor for bank rows
+export const getBankDateTimestamp = (b: BankRow): number => {
+  if (!b.date) return 0;
+  const dClean = b.date.replace(/\./g, "-").trim();
+  const tClean = (b.time || "00:00:00").trim();
+  const full = `${dClean}T${tClean.length === 5 ? tClean + ":00" : tClean}`;
+  const parsed = new Date(full).getTime();
+  if (!isNaN(parsed)) return parsed;
+  const simple = new Date(dClean).getTime();
+  return isNaN(simple) ? 0 : simple;
 };
 
 export default function BankStatementImportModal({
@@ -174,6 +207,58 @@ export default function BankStatementImportModal({
   const [bankSearch, setBankSearch] = useState("");
   const [homeSearch, setHomeSearch] = useState("");
 
+  // Sort state for Left (Bank) and Right (Home) tables
+  const [bankSortField, setBankSortField] = useState<"date" | "toot" | "amount" | null>(null);
+  const [bankSortOrder, setBankSortOrder] = useState<"asc" | "desc">("desc");
+
+  const [homeSortField, setHomeSortField] = useState<"toot" | "name" | "amount" | null>(null);
+  const [homeSortOrder, setHomeSortOrder] = useState<"asc" | "desc">("asc");
+
+  const handleSortBank = (field: "date" | "toot" | "amount") => {
+    if (bankSortField === field) {
+      const nextOrder = bankSortOrder === "asc" ? "desc" : "asc";
+      setBankSortOrder(nextOrder);
+      if (field === "toot") {
+        setHomeSortField("toot");
+        setHomeSortOrder(nextOrder);
+      }
+    } else {
+      setBankSortField(field);
+      const initialOrder = field === "toot" ? "asc" : "desc";
+      setBankSortOrder(initialOrder);
+      if (field === "toot") {
+        setHomeSortField("toot");
+        setHomeSortOrder(initialOrder);
+      }
+    }
+  };
+
+  const handleSortHome = (field: "toot" | "name" | "amount") => {
+    if (homeSortField === field) {
+      const nextOrder = homeSortOrder === "asc" ? "desc" : "asc";
+      setHomeSortOrder(nextOrder);
+      if (field === "toot") {
+        setBankSortField("toot");
+        setBankSortOrder(nextOrder);
+      }
+    } else {
+      setHomeSortField(field);
+      const initialOrder = field === "amount" ? "desc" : "asc";
+      setHomeSortOrder(initialOrder);
+      if (field === "toot") {
+        setBankSortField("toot");
+        setBankSortOrder(initialOrder);
+      }
+    }
+  };
+
+  const handleResetSort = () => {
+    setBankSortField(null);
+    setBankSortOrder("desc");
+    setHomeSortField(null);
+    setHomeSortOrder("asc");
+  };
+
   // Sub-dialogs
   const [showHelpModal, setShowHelpModal] = useState(false);
   const [showRegisterConfirm, setShowRegisterConfirm] = useState(false);
@@ -215,6 +300,10 @@ export default function BankStatementImportModal({
     setSelectedBuilding("ALL");
     setBankSearch("");
     setHomeSearch("");
+    setBankSortField(null);
+    setBankSortOrder("desc");
+    setHomeSortField(null);
+    setHomeSortOrder("asc");
     setDraggedBankId(null);
     setDraggedHomeId(null);
     setDragOverHomeId(null);
@@ -422,6 +511,10 @@ export default function BankStatementImportModal({
               gereeId: c._id,
               gereeniiDugaar: String(c.gereeniiDugaar || c.dugaar || "").trim(),
               barilgiinId: matchedBarilga?._id || c.barilgiinId?._id || c.barilgiinId || "",
+              ekhlekhOgnoo: c.ekhlekhOgnoo || c.gereeniiOgnoo || c.nekhemjlekhiinOgnoo,
+              month: c.ekhlekhOgnoo
+                ? new Date(c.ekhlekhOgnoo).toISOString().slice(0, 7)
+                : (c.month || undefined),
             });
           });
           setHomes(loadedHomes);
@@ -2014,16 +2107,62 @@ export default function BankStatementImportModal({
     });
   }, [homes, tab, homeSearch, selectedMonth, selectedBuilding]);
 
-  // Aligned side-by-side row display with separate, independent search support:
+  // Aligned side-by-side row display with separate, independent search and sort support:
   const displayRows = useMemo(() => {
     const sBanks = [...filteredBanks];
     const sHomes = [...filteredHomes];
+
+    // Helper to resolve effective toot for a bank row (uses paired home if available)
+    const getBankUnit = (b: BankRow) => {
+      if (b.unit) return b.unit;
+      if (b.matchedHomeId) {
+        const found = homes.find((h) => h.id === b.matchedHomeId);
+        if (found?.unit) return found.unit;
+      }
+      return "";
+    };
+
+    // 1. Sort bank list if sort field selected
+    if (bankSortField === "date") {
+      sBanks.sort((a, b) => {
+        const diff = getBankDateTimestamp(a) - getBankDateTimestamp(b);
+        return bankSortOrder === "asc" ? diff : -diff;
+      });
+    } else if (bankSortField === "toot") {
+      sBanks.sort((a, b) => {
+        const diff = compareToot(getBankUnit(a), getBankUnit(b));
+        return bankSortOrder === "asc" ? diff : -diff;
+      });
+    } else if (bankSortField === "amount") {
+      sBanks.sort((a, b) => {
+        const diff = (a.amount || 0) - (b.amount || 0);
+        return bankSortOrder === "asc" ? diff : -diff;
+      });
+    }
+
+    // 2. Sort home list if sort field selected
+    if (homeSortField === "toot") {
+      sHomes.sort((a, b) => {
+        const diff = compareToot(a.unit, b.unit);
+        return homeSortOrder === "asc" ? diff : -diff;
+      });
+    } else if (homeSortField === "name") {
+      sHomes.sort((a, b) => {
+        const diff = (a.name || "").localeCompare(b.name || "", "mn");
+        return homeSortOrder === "asc" ? diff : -diff;
+      });
+    } else if (homeSortField === "amount") {
+      sHomes.sort((a, b) => {
+        const diff = (a.amount || 0) - (b.amount || 0);
+        return homeSortOrder === "asc" ? diff : -diff;
+      });
+    }
 
     const rows: { bank: BankRow | null; home: HomeRow | null }[] = [];
     const usedHomeIds = new Set<string | number>();
     const usedBankIds = new Set<number>();
 
-    // 1. Paired rows: bank in filteredBanks matched to home in filteredHomes
+    // 3. Paired rows: bank in filteredBanks matched to home in filteredHomes
     sBanks.forEach((b) => {
       if ((b.status === "match" || b.status === "done" || b.status === "likely") && b.matchedHomeId != null) {
         const matchedHome = sHomes.find((h) => h.id === b.matchedHomeId);
@@ -2045,7 +2184,7 @@ export default function BankStatementImportModal({
       return rows;
     }
 
-    // 2. Remaining unmatched banks and homes (independent for both sides)
+    // 4. Remaining unmatched banks and homes (independent for both sides)
     const unmatchedBanks = sBanks.filter((b) => !usedBankIds.has(b.id));
     const unmatchedHomes = sHomes
       .filter((h) => !usedHomeIds.has(h.id))
@@ -2066,7 +2205,7 @@ export default function BankStatementImportModal({
     }
 
     return rows;
-  }, [filteredBanks, filteredHomes, tab]);
+  }, [filteredBanks, filteredHomes, tab, bankSortField, bankSortOrder, homeSortField, homeSortOrder, homes]);
 
   // Sequential row numbering for both Left (Bank) and Right (Home) tables
   const displayRowsWithNumbers = useMemo(() => {
@@ -2529,34 +2668,120 @@ export default function BankStatementImportModal({
                         <thead className="sticky top-0 z-30 select-none">
                           <tr className="h-10">
                             {/* Left Table Headers: Дансны хуулга (50%) */}
-                            <th className="sticky top-0 z-30 h-10 py-0 px-2 text-center align-middle font-semibold text-xs whitespace-nowrap bg-[#f4f7f5] dark:bg-zinc-800 text-zinc-700 dark:text-zinc-200 border-b border-zinc-200 dark:border-zinc-700 shadow-xs">
+                            <th
+                              onClick={handleResetSort}
+                              className="sticky top-0 z-30 h-10 py-0 px-2 text-center align-middle font-semibold text-xs whitespace-nowrap bg-[#f4f7f5] dark:bg-zinc-800 text-zinc-700 dark:text-zinc-200 border-b border-zinc-200 dark:border-zinc-700 shadow-xs cursor-pointer hover:bg-zinc-200/70 dark:hover:bg-zinc-700 transition-colors"
+                              title="Анхны дараалал руу шилжүүлэх (Эрэмбэ арилгах)"
+                            >
                               №
                             </th>
-                            <th className="sticky top-0 z-30 h-10 py-0 px-3 text-left align-middle font-semibold text-xs whitespace-nowrap bg-[#f4f7f5] dark:bg-zinc-800 text-zinc-700 dark:text-zinc-200 border-b border-zinc-200 dark:border-zinc-700 shadow-xs">
-                              Огноо
+                            <th
+                              onClick={() => handleSortBank("date")}
+                              className="sticky top-0 z-30 h-10 py-0 px-3 text-left align-middle font-semibold text-xs whitespace-nowrap bg-[#f4f7f5] dark:bg-zinc-800 text-zinc-700 dark:text-zinc-200 border-b border-zinc-200 dark:border-zinc-700 shadow-xs cursor-pointer hover:bg-zinc-200/70 dark:hover:bg-zinc-700 transition-colors group"
+                              title="Огноогоор эрэмбэлэх"
+                            >
+                              <div className="inline-flex items-center gap-1.5">
+                                <span>Огноо</span>
+                                {bankSortField === "date" ? (
+                                  <span className="text-emerald-700 dark:text-emerald-400 font-bold text-xs">
+                                    {bankSortOrder === "asc" ? "▲" : "▼"}
+                                  </span>
+                                ) : (
+                                  <span className="text-zinc-400 opacity-40 group-hover:opacity-100 text-[10px] transition-opacity">⇅</span>
+                                )}
+                              </div>
                             </th>
-                            <th className="sticky top-0 z-30 h-10 py-0 px-3 text-left align-middle font-semibold text-xs whitespace-nowrap bg-[#f4f7f5] dark:bg-zinc-800 text-zinc-700 dark:text-zinc-200 border-b border-zinc-200 dark:border-zinc-700 shadow-xs">
-                              Байр, тоот
+                            <th
+                              onClick={() => handleSortBank("toot")}
+                              className="sticky top-0 z-30 h-10 py-0 px-3 text-left align-middle font-semibold text-xs whitespace-nowrap bg-[#f4f7f5] dark:bg-zinc-800 text-zinc-700 dark:text-zinc-200 border-b border-zinc-200 dark:border-zinc-700 shadow-xs cursor-pointer hover:bg-zinc-200/70 dark:hover:bg-zinc-700 transition-colors group"
+                              title="Тоотоор эрэмбэлэх (хоёр талыг хамтад нь эрэмбэлнэ)"
+                            >
+                              <div className="inline-flex items-center gap-1.5">
+                                <span>Байр, тоот</span>
+                                {bankSortField === "toot" ? (
+                                  <span className="text-emerald-700 dark:text-emerald-400 font-bold text-xs">
+                                    {bankSortOrder === "asc" ? "▲" : "▼"}
+                                  </span>
+                                ) : (
+                                  <span className="text-zinc-400 opacity-40 group-hover:opacity-100 text-[10px] transition-opacity">⇅</span>
+                                )}
+                              </div>
                             </th>
                             <th className="sticky top-0 z-30 h-10 py-0 px-3 text-left align-middle font-semibold text-xs truncate bg-[#f4f7f5] dark:bg-zinc-800 text-zinc-700 dark:text-zinc-200 border-b border-zinc-200 dark:border-zinc-700 shadow-xs">
                               Гүйлгээний утга
                             </th>
-                            <th className="sticky top-0 z-30 h-10 py-0 px-4 text-right align-middle font-semibold text-xs whitespace-nowrap bg-[#f4f7f5] dark:bg-zinc-800 text-zinc-700 dark:text-zinc-200 border-b border-r border-zinc-200 dark:border-zinc-700 shadow-xs">
-                              Орлого ₮
+                            <th
+                              onClick={() => handleSortBank("amount")}
+                              className="sticky top-0 z-30 h-10 py-0 px-4 text-right align-middle font-semibold text-xs whitespace-nowrap bg-[#f4f7f5] dark:bg-zinc-800 text-zinc-700 dark:text-zinc-200 border-b border-r border-zinc-200 dark:border-zinc-700 shadow-xs cursor-pointer hover:bg-zinc-200/70 dark:hover:bg-zinc-700 transition-colors group"
+                              title="Орлогын дүнгээр эрэмбэлэх"
+                            >
+                              <div className="inline-flex items-center justify-end gap-1.5 w-full">
+                                <span>Орлого ₮</span>
+                                {bankSortField === "amount" ? (
+                                  <span className="text-emerald-700 dark:text-emerald-400 font-bold text-xs">
+                                    {bankSortOrder === "asc" ? "▲" : "▼"}
+                                  </span>
+                                ) : (
+                                  <span className="text-zinc-400 opacity-40 group-hover:opacity-100 text-[10px] transition-opacity">⇅</span>
+                                )}
+                              </div>
                             </th>
 
                             {/* Right Table Headers: Айлын төлбөр (50%) */}
-                            <th className="sticky top-0 z-30 h-10 py-0 px-2 text-center align-middle font-semibold text-xs whitespace-nowrap bg-[#f4f7f5] dark:bg-zinc-800 text-zinc-700 dark:text-zinc-200 border-b border-zinc-200 dark:border-zinc-700 shadow-xs">
+                            <th
+                              onClick={handleResetSort}
+                              className="sticky top-0 z-30 h-10 py-0 px-2 text-center align-middle font-semibold text-xs whitespace-nowrap bg-[#f4f7f5] dark:bg-zinc-800 text-zinc-700 dark:text-zinc-200 border-b border-zinc-200 dark:border-zinc-700 shadow-xs cursor-pointer hover:bg-zinc-200/70 dark:hover:bg-zinc-700 transition-colors"
+                              title="Анхны дараалал руу шилжүүлэх (Эрэмбэ арилгах)"
+                            >
                               №
                             </th>
-                            <th className="sticky top-0 z-30 h-10 py-0 px-3 text-left align-middle font-semibold text-xs whitespace-nowrap bg-[#f4f7f5] dark:bg-zinc-800 text-zinc-700 dark:text-zinc-200 border-b border-zinc-200 dark:border-zinc-700 shadow-xs">
-                              Байр, тоот
+                            <th
+                              onClick={() => handleSortHome("toot")}
+                              className="sticky top-0 z-30 h-10 py-0 px-3 text-left align-middle font-semibold text-xs whitespace-nowrap bg-[#f4f7f5] dark:bg-zinc-800 text-zinc-700 dark:text-zinc-200 border-b border-zinc-200 dark:border-zinc-700 shadow-xs cursor-pointer hover:bg-zinc-200/70 dark:hover:bg-zinc-700 transition-colors group"
+                              title="Тоотоор эрэмбэлэх (хоёр талыг хамтад нь эрэмбэлнэ)"
+                            >
+                              <div className="inline-flex items-center gap-1.5">
+                                <span>Байр, тоот</span>
+                                {homeSortField === "toot" ? (
+                                  <span className="text-emerald-700 dark:text-emerald-400 font-bold text-xs">
+                                    {homeSortOrder === "asc" ? "▲" : "▼"}
+                                  </span>
+                                ) : (
+                                  <span className="text-zinc-400 opacity-40 group-hover:opacity-100 text-[10px] transition-opacity">⇅</span>
+                                )}
+                              </div>
                             </th>
-                            <th className="sticky top-0 z-30 h-10 py-0 px-3 text-left align-middle font-semibold text-xs truncate bg-[#f4f7f5] dark:bg-zinc-800 text-zinc-700 dark:text-zinc-200 border-b border-zinc-200 dark:border-zinc-700 shadow-xs">
-                              Оршин суугч
+                            <th
+                              onClick={() => handleSortHome("name")}
+                              className="sticky top-0 z-30 h-10 py-0 px-3 text-left align-middle font-semibold text-xs truncate bg-[#f4f7f5] dark:bg-zinc-800 text-zinc-700 dark:text-zinc-200 border-b border-zinc-200 dark:border-zinc-700 shadow-xs cursor-pointer hover:bg-zinc-200/70 dark:hover:bg-zinc-700 transition-colors group"
+                              title="Оршин суугчийн нэрээр эрэмбэлэх"
+                            >
+                              <div className="inline-flex items-center gap-1.5">
+                                <span>Оршин суугч</span>
+                                {homeSortField === "name" ? (
+                                  <span className="text-emerald-700 dark:text-emerald-400 font-bold text-xs">
+                                    {homeSortOrder === "asc" ? "▲" : "▼"}
+                                  </span>
+                                ) : (
+                                  <span className="text-zinc-400 opacity-40 group-hover:opacity-100 text-[10px] transition-opacity">⇅</span>
+                                )}
+                              </div>
                             </th>
-                            <th className="sticky top-0 z-30 h-10 py-0 px-4 text-right align-middle font-semibold text-xs whitespace-nowrap bg-[#f4f7f5] dark:bg-zinc-800 text-zinc-700 dark:text-zinc-200 border-b border-zinc-200 dark:border-zinc-700 shadow-xs">
-                              Төлбөр ₮
+                            <th
+                              onClick={() => handleSortHome("amount")}
+                              className="sticky top-0 z-30 h-10 py-0 px-4 text-right align-middle font-semibold text-xs whitespace-nowrap bg-[#f4f7f5] dark:bg-zinc-800 text-zinc-700 dark:text-zinc-200 border-b border-zinc-200 dark:border-zinc-700 shadow-xs cursor-pointer hover:bg-zinc-200/70 dark:hover:bg-zinc-700 transition-colors group"
+                              title="Нэхэмжлэлийн дүнгээр эрэмбэлэх"
+                            >
+                              <div className="inline-flex items-center justify-end gap-1.5 w-full">
+                                <span>Төлбөр ₮</span>
+                                {homeSortField === "amount" ? (
+                                  <span className="text-emerald-700 dark:text-emerald-400 font-bold text-xs">
+                                    {homeSortOrder === "asc" ? "▲" : "▼"}
+                                  </span>
+                                ) : (
+                                  <span className="text-zinc-400 opacity-40 group-hover:opacity-100 text-[10px] transition-opacity">⇅</span>
+                                )}
+                              </div>
                             </th>
                           </tr>
                         </thead>
