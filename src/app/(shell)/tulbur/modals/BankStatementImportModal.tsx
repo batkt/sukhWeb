@@ -1949,62 +1949,40 @@ export default function BankStatementImportModal({
     });
   }, [homes, tab, homeSearch, selectedMonth, selectedBuilding]);
 
-  // Aligned side-by-side row display with proper search support:
+  // Aligned side-by-side row display with separate, independent search support:
   const displayRows = useMemo(() => {
-    const isHomeSearchActive = Boolean(homeSearch.trim());
-    const isBankSearchActive = Boolean(bankSearch.trim());
-
-    // 1. Get banks that pass bank filters (preserve user reordered sequence)
     const sBanks = [...filteredBanks];
+    const sHomes = [...filteredHomes];
 
     const rows: { bank: BankRow | null; home: HomeRow | null }[] = [];
     const usedHomeIds = new Set<string | number>();
-    const unmatchedBanks: BankRow[] = [];
+    const usedBankIds = new Set<number>();
 
-    // Matched / likely / done pairings
+    // 1. Paired rows: bank in filteredBanks matched to home in filteredHomes
     sBanks.forEach((b) => {
       if ((b.status === "match" || b.status === "done" || b.status === "likely") && b.matchedHomeId != null) {
-        // If homeSearch is active, matched home MUST match homeSearch!
-        if (isHomeSearchActive) {
-          const matchedHome = filteredHomes.find((h) => h.id === b.matchedHomeId);
-          if (matchedHome) {
-            const pairedHome = {
-              ...matchedHome,
-              status: matchedHome.status === "open" ? b.status : matchedHome.status,
-              matchedBankId: matchedHome.matchedBankId || b.id,
-            };
-            rows.push({ bank: b, home: pairedHome });
-            usedHomeIds.add(matchedHome.id);
-            return;
-          } else {
-            // Matched home did not match search query, skip this row
-            return;
-          }
-        } else {
-          const matchedHome =
-            filteredHomes.find((h) => h.id === b.matchedHomeId) ||
-            homes.find((h) => h.id === b.matchedHomeId);
-          if (matchedHome) {
-            const pairedHome = {
-              ...matchedHome,
-              status: matchedHome.status === "open" ? b.status : matchedHome.status,
-              matchedBankId: matchedHome.matchedBankId || b.id,
-            };
-            rows.push({ bank: b, home: pairedHome });
-            usedHomeIds.add(matchedHome.id);
-            return;
-          }
+        const matchedHome = sHomes.find((h) => h.id === b.matchedHomeId);
+        if (matchedHome) {
+          const pairedHome = {
+            ...matchedHome,
+            status: matchedHome.status === "open" ? b.status : matchedHome.status,
+            matchedBankId: matchedHome.matchedBankId || b.id,
+          };
+          rows.push({ bank: b, home: pairedHome });
+          usedHomeIds.add(matchedHome.id);
+          usedBankIds.add(b.id);
         }
-      }
-
-      // If bank is unmatched (open):
-      if (!isHomeSearchActive) {
-        unmatchedBanks.push(b);
       }
     });
 
-    // 2. Unmatched homes from filteredHomes (preserve user reordered sequence)
-    const unmatchedHomes = filteredHomes
+    // If viewing "Тулгасан" tab, show only the matched pairs
+    if (tab === "match") {
+      return rows;
+    }
+
+    // 2. Remaining unmatched banks and homes (independent for both sides)
+    const unmatchedBanks = sBanks.filter((b) => !usedBankIds.has(b.id));
+    const unmatchedHomes = sHomes
       .filter((h) => !usedHomeIds.has(h.id))
       .map((h) => {
         // If a home has no paired bank in current filtered banks, it must show as open!
@@ -2013,27 +1991,6 @@ export default function BankStatementImportModal({
         }
         return h;
       });
-
-    // If viewing "Тулгасан" tab, show matched pairs only (never phantom unmatched homes!)
-    if (tab === "match") {
-      return rows;
-    }
-
-    // When bankSearch is active, show only the searched bank transactions
-    if (isBankSearchActive) {
-      unmatchedBanks.forEach((b) => {
-        rows.push({ bank: b, home: null });
-      });
-      return rows;
-    }
-
-    // When homeSearch is active, show remaining searched homes
-    if (isHomeSearchActive) {
-      unmatchedHomes.forEach((h) => {
-        rows.push({ bank: null, home: h });
-      });
-      return rows;
-    }
 
     const maxUnmatched = Math.max(unmatchedBanks.length, unmatchedHomes.length);
     for (let i = 0; i < maxUnmatched; i++) {
@@ -2044,7 +2001,7 @@ export default function BankStatementImportModal({
     }
 
     return rows;
-  }, [filteredBanks, filteredHomes, homes, selectedBuilding, bankSearch, homeSearch, tab]);
+  }, [filteredBanks, filteredHomes, tab]);
 
   // Statistics calculation
   const stats = useMemo(() => {
