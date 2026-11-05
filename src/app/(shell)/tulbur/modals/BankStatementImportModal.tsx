@@ -17,6 +17,7 @@ import {
   Building2,
   Zap,
   GripVertical,
+  Layers,
 } from "lucide-react";
 import * as XLSX from "xlsx";
 import { useModalHotkeys } from "@/lib/useModalHotkeys";
@@ -77,6 +78,11 @@ export type BankRow = {
   isFee?: boolean;
   isAldangi?: boolean;
   isManual?: boolean;
+  allocation?: {
+    months: { [monthKey: string]: number };
+    totalAllocated: number;
+    remaining: number;
+  };
 };
 
 export type HomeRow = {
@@ -153,6 +159,23 @@ export default function BankStatementImportModal({
   const [showRegisterConfirm, setShowRegisterConfirm] = useState(false);
   const [showManualMatchModal, setShowManualMatchModal] = useState(false);
 
+  // Payment Allocation Modal state (Төлбөр хуваарилалт)
+  const [allocationModal, setAllocationModal] = useState<{
+    isOpen: boolean;
+    bankId: number | null;
+    homeId: string | number | null;
+    year: number;
+    baseAmount: number;
+    months: { [monthKey: string]: number };
+  }>({
+    isOpen: false,
+    bankId: null,
+    homeId: null,
+    year: new Date().getFullYear(),
+    baseAmount: 0,
+    months: {},
+  });
+
   const resetModalState = () => {
     setFile(null);
     if (fileInputRef.current) {
@@ -171,6 +194,14 @@ export default function BankStatementImportModal({
     setDraggedHomeId(null);
     setDragOverHomeId(null);
     setDragOverBankId(null);
+    setAllocationModal({
+      isOpen: false,
+      bankId: null,
+      homeId: null,
+      year: new Date().getFullYear(),
+      baseAmount: 0,
+      months: {},
+    });
   };
 
   const handleClose = () => {
@@ -404,7 +435,7 @@ export default function BankStatementImportModal({
     const months = new Set<string>();
 
     // 1. E-Bill barcode period: e.g. _СӨХ_2026/7 or _СӨХ_2026/8 or _СӨХ_2026/10
-    const ebill = orig.match(/(?:сөх|cox)_(\d{4})\/(\d{1,2})/i);
+    const ebill = orig.match(/(?:сөх|cox)[_.\s]+(\d{4})\/(\d{1,2})/i);
     if (ebill) {
       const y = ebill[1];
       const m = ebill[2].padStart(2, "0");
@@ -413,17 +444,19 @@ export default function BankStatementImportModal({
     }
 
     // 2. Year-month e.g. 2026.07, 2026-08, 2026/7, 202606
-    const ymMatches = orig.matchAll(/\b(202\d)[./-](\d{1,2})\b/g);
+    const ymMatches = orig.matchAll(/(?:^|[^0-9])(202\d)[./-](0?[1-9]|1[0-2])(?=[^0-9]|$)/g);
     for (const m of ymMatches) {
       months.add(`${m[1]}.${m[2].padStart(2, "0")}`);
     }
-    const compactYm = orig.matchAll(/\b(202\d)(0[1-9]|1[0-2])\b/g);
+    const compactYm = orig.matchAll(/(?:^|[^0-9])(202\d)(0[1-9]|1[0-2])(?=[^0-9]|$)/g);
     for (const m of compactYm) {
       months.add(`${m[1]}.${m[2]}`);
     }
 
-    // 3. Month ranges e.g. 1-7 SAR, 2026 1-10 SAR, 6-12 сар
-    const rangeMatch = orig.match(/\b(\d{1,2})\s*[-~]\s*(\d{1,2})\s*(?:-[рrR]\s*)?(?:сар|sar)\b/i);
+    // 3. Month ranges e.g. 1-7 SAR, 1-9 SAR, 6-12 сар, 6-8 sar (strict 1-12 months only!)
+    const rangeMatch = orig.match(
+      /(?:^|[^0-9a-zа-яөүё])([1-9]|1[0-2])\s*[-~]\s*([1-9]|1[0-2])\s*(?:-[рrR]\s*)?(?:сар|sar)[а-яөүёa-z]*(?=[^0-9a-zа-яөүё]|$)/i
+    );
     if (rangeMatch) {
       const startM = parseInt(rangeMatch[1], 10);
       const endM = parseInt(rangeMatch[2], 10);
@@ -434,8 +467,10 @@ export default function BankStatementImportModal({
       }
     }
 
-    // 4. Comma / semicolon / slash list e.g. 4,5,6,7SAR, 6,7,8 SAR, 6;7;8;9-САР
-    const listMatch = orig.match(/\b(\d{1,2}(?:\s*[,;/]\s*\d{1,2})+)\s*(?:-[рrR]\s*)?(?:сар|sar)\b/i);
+    // 4. Comma / semicolon / slash list e.g. 6,7,8 SARIIN, 4,5,6,7SAR (strict 1-12 months only!)
+    const listMatch = orig.match(
+      /(?:^|[^0-9a-zа-яөүё])((?:[1-9]|1[0-2])(?:\s*[,;/]\s*(?:[1-9]|1[0-2]))+)\s*(?:-[рrR]\s*)?(?:сар|sar)[а-яөүёa-z]*(?=[^0-9a-zа-яөүё]|$)/i
+    );
     if (listMatch) {
       const digits = listMatch[1].match(/\d{1,2}/g) || [];
       for (const d of digits) {
@@ -446,9 +481,11 @@ export default function BankStatementImportModal({
       }
     }
 
-    // 5. Single month e.g. 8-r sar, 8 sar, 6 sar, 7 сарын төлбөр
+    // 5. Single month e.g. 8-r sar, 8 sar, 8 САР, 6 sar, 7 сарын төлбөр, 216-62-8 САР
     if (!rangeMatch && !listMatch) {
-      const singleMatch = orig.match(/\b(\d{1,2})\s*(?:-[рrR]\s*)?(?:сар|sar)\b/i);
+      const singleMatch = orig.match(
+        /(?:^|[^0-9a-zа-яөүё])([1-9]|1[0-2])\s*(?:-[рrR]\s*)?(?:сар|sar)[а-яөүёa-z]*(?=[^0-9a-zа-яөүё]|$)/i
+      );
       if (singleMatch) {
         const num = parseInt(singleMatch[1], 10);
         if (num >= 1 && num <= 12) {
@@ -457,7 +494,7 @@ export default function BankStatementImportModal({
       }
     }
 
-    // If no explicit month in text, fall back to transaction month
+    // If no explicit month in text, fall back to transaction execution month
     if (months.size === 0) {
       const parts = (txDateStr || "").split(".");
       if (parts.length >= 2) {
@@ -524,8 +561,17 @@ export default function BankStatementImportModal({
 
     // 2. Extract periods (target months) before cleaning
     const periodMatches: string[] = [];
-    const mMulti = orig.match(/\b(\d{1,2}(?:\s*,\s*\d{1,2})+|\d{1,2}\s*-\s*\d{1,2})\s*(?:-[рrR]\s*)?(?:сар|sar)\b/i);
-    if (mMulti) periodMatches.push(mMulti[0]);
+    const mMulti = orig.match(
+      /(?:^|[^0-9a-zа-яөүё])((?:[1-9]|1[0-2])(?:\s*[,;/]\s*(?:[1-9]|1[0-2]))+|[1-9]|1[0-2]\s*[-~]\s*(?:[1-9]|1[0-2]))\s*(?:-[рrR]\s*)?(?:сар|sar)[а-яөүёa-z]*(?=[^0-9a-zа-яөүё]|$)/i
+    );
+    if (mMulti) {
+      periodMatches.push(mMulti[0].trim());
+    } else {
+      const mSingle = orig.match(
+        /(?:^|[^0-9a-zа-яөүё])([1-9]|1[0-2])\s*(?:-[рrR]\s*)?(?:сар|sar)[а-яөүёa-z]*(?=[^0-9a-zа-яөүё]|$)/i
+      );
+      if (mSingle) periodMatches.push(mSingle[0].trim());
+    }
     const mYm = orig.match(/\b(202[4-9][./-](?:0?[1-9]|1[0-2]))\b/);
     if (mYm) periodMatches.push(mYm[1]);
     const mNiit = orig.match(/niit\s*(\d{1,2})\s*n?\s*sar/i);
@@ -547,9 +593,10 @@ export default function BankStatementImportModal({
     clean = clean.replace(/\b202[0-9](?:0[1-9]|1[0-2])\b/g, " ");
     // Remove standalone years e.g. 2025, 2026
     clean = clean.replace(/\b202[0-9]\b/g, " ");
-    // Remove months e.g. 4,5,6,7sar, 6 sar, 8-r sar, niit6nsar
-    clean = clean.replace(/\b(?:\d{1,2}(?:\s*,\s*\d{1,2})*|\d{1,2}\s*-\s*\d{1,2})\s*(?:-[рrR]\s*)?(?:сар|sar)[а-яөүёa-z]*/gi, " ");
-    clean = clean.replace(/\b\d{1,2}\s*(?:-[рrR]\s*)?(?:сар|sar)[а-яөүёa-z]*/gi, " ");
+    // Remove months e.g. 4,5,6,7sar, 6 sar, 8-r sar, niit6nsar (strict 1-12 months only! Do not eat toot like 62-8!)
+    clean = clean.replace(/(?:^|[-_.\s])(?:[1-9]|1[0-2])\s*[-~]\s*(?:[1-9]|1[0-2])\s*(?:-[рrR]\s*)?(?:сар|sar)[а-яөүёa-z]*/gi, " ");
+    clean = clean.replace(/(?:^|[-_.\s])(?:[1-9]|1[0-2])(?:\s*[,;/]\s*(?:[1-9]|1[0-2]))+\s*(?:-[рrR]\s*)?(?:сар|sar)[а-яөүёa-z]*/gi, " ");
+    clean = clean.replace(/(?:^|[-_.\s])(?:[1-9]|1[0-2])\s*(?:-[рrR]\s*)?(?:сар|sar)[а-яөүёa-z]*/gi, " ");
     clean = clean.replace(/niit\s*\d+\s*n?\s*sar/gi, " ");
     // Remove entrance numbers (орц, orts, ortz) so entrance number e.g. "1-р орц" is NEVER confused for building or toot!
     clean = clean.replace(/\b\d{1,2}\s*(?:-?[рrR]\s*)?(?:орц|orts|ortz)\b/gi, " ");
@@ -1193,6 +1240,137 @@ export default function BankStatementImportModal({
     toast.success(`${targetHome.unit} тоот амжилттай баталгаажлаа!`);
   };
 
+  // Open Payment Allocation Modal (Төлбөр хуваарилалт)
+  const openAllocationModal = (bank: BankRow, home: HomeRow) => {
+    let yr = new Date().getFullYear();
+    const dateMatch = String(bank.rawDate || bank.date || "").match(/^(\d{4})/);
+    if (dateMatch) {
+      yr = parseInt(dateMatch[1], 10);
+    } else if (bank.month) {
+      const ym = bank.month.match(/^(\d{4})/);
+      if (ym) yr = parseInt(ym[1], 10);
+    }
+
+    const baseAmt = Number(home.amount || 0) > 0 ? Number(home.amount) : 48600;
+    const initialMonths: { [monthKey: string]: number } = {};
+
+    if (bank.allocation && bank.allocation.months && Object.keys(bank.allocation.months).length > 0) {
+      Object.assign(initialMonths, bank.allocation.months);
+    } else if (Array.isArray(bank.targetMonths) && bank.targetMonths.length > 0) {
+      bank.targetMonths.forEach((tm) => {
+        initialMonths[tm] = baseAmt;
+      });
+    } else {
+      const numMonths = Math.max(1, Math.min(12, Math.floor(bank.amount / baseAmt)));
+      for (let i = 1; i <= numMonths; i++) {
+        const key = `${yr}.${String(i).padStart(2, "0")}`;
+        initialMonths[key] = baseAmt;
+      }
+    }
+
+    setAllocationModal({
+      isOpen: true,
+      bankId: bank.id,
+      homeId: home.id,
+      year: yr,
+      baseAmount: baseAmt,
+      months: initialMonths,
+    });
+  };
+
+  // Toggle single month in allocation modal
+  const handleToggleAllocationMonth = (monthKey: string, checked: boolean) => {
+    setAllocationModal((prev) => {
+      const nextMonths = { ...prev.months };
+      if (checked) {
+        nextMonths[monthKey] = prev.baseAmount;
+      } else {
+        delete nextMonths[monthKey];
+      }
+      return { ...prev, months: nextMonths };
+    });
+  };
+
+  // Change amount for a specific month
+  const handleAllocationAmountChange = (monthKey: string, val: number) => {
+    setAllocationModal((prev) => {
+      const nextMonths = { ...prev.months };
+      if (val > 0) {
+        nextMonths[monthKey] = val;
+      } else {
+        delete nextMonths[monthKey];
+      }
+      return { ...prev, months: nextMonths };
+    });
+  };
+
+  // Auto-allocate by a specific number of months (e.g. 1, 3, 6, 9, 12 months)
+  const autoAllocateByCount = (count: number) => {
+    setAllocationModal((prev) => {
+      const nextMonths: { [k: string]: number } = {};
+      const yr = prev.year;
+      const base = prev.baseAmount;
+      const cnt = Math.max(1, Math.min(12, count));
+      for (let m = 1; m <= cnt; m++) {
+        const key = `${yr}.${String(m).padStart(2, "0")}`;
+        nextMonths[key] = base;
+      }
+      return { ...prev, months: nextMonths };
+    });
+  };
+
+  // Save the confirmed allocation to the bank row
+  const handleSaveAllocation = () => {
+    const targetBank = banks.find((b) => b.id === allocationModal.bankId);
+    const targetHome = homes.find((h) => String(h.id) === String(allocationModal.homeId));
+    if (!targetBank) return;
+
+    const activeEntries = Object.entries(allocationModal.months)
+      .filter(([_, amt]) => Number(amt) > 0)
+      .sort(([a], [b]) => a.localeCompare(b));
+
+    const totalAllocated = activeEntries.reduce((s, [_, amt]) => s + amt, 0);
+    const remaining = targetBank.amount - totalAllocated;
+    const monthKeys = activeEntries.map(([k]) => k);
+
+    let periodStr = targetBank.targetPeriod || "";
+    if (monthKeys.length > 0) {
+      const firstM = parseInt(monthKeys[0].split(".")[1], 10);
+      const lastM = parseInt(monthKeys[monthKeys.length - 1].split(".")[1], 10);
+      const yr = monthKeys[0].split(".")[0];
+      if (monthKeys.length === 1) {
+        periodStr = `${yr}/${firstM} (1 сар)`;
+      } else if (lastM - firstM + 1 === monthKeys.length) {
+        periodStr = `${yr}/${firstM}-${lastM} (${monthKeys.length} сар)`;
+      } else {
+        periodStr = `${yr} оны ${monthKeys.length} сар`;
+      }
+    }
+
+    setBanks((prev) =>
+      prev.map((b) =>
+        b.id === targetBank.id
+          ? {
+              ...b,
+              targetMonths: monthKeys.length > 0 ? monthKeys : b.targetMonths,
+              targetPeriod: periodStr,
+              allocation: {
+                months: allocationModal.months,
+                totalAllocated,
+                remaining,
+              },
+            }
+          : b
+      )
+    );
+
+    setAllocationModal((prev) => ({ ...prev, isOpen: false }));
+    toast.success(
+      `${targetHome?.unit || targetBank.unit} тоот: ${monthKeys.length} сарын төлбөр (${formatNumber(totalAllocated)} ₮) амжилттай хуваарилагдлаа!`,
+      { icon: "⚡" }
+    );
+  };
+
   // Intelligent Multi-Tier Auto Matching (Deterministic, Idempotent, High Accuracy)
   const autoMatch = (currentBanks = banks, currentHomes = homes, buildingFilter = selectedBuilding) => {
     let matchCount = 0;
@@ -1671,6 +1849,7 @@ export default function BankStatementImportModal({
           barilgiinId: resolvedBarilgaId,
           building: resolvedBuilding,
           targetPeriod: b.targetPeriod || "",
+          allocation: b.allocation,
           action: targetGereeId || tootStr ? "IMPORT_AND_PAY" : "IMPORT_ONLY",
           tailbar: `Банк тулгалт - ${fullDate}${tootStr ? ` - ${tootStr} тоот` : ""}${b.targetPeriod ? ` (${b.targetPeriod})` : ""}`,
         };
@@ -1847,7 +2026,20 @@ export default function BankStatementImportModal({
     });
 
     // 2. Unmatched homes from filteredHomes
-    const unmatchedHomes = filteredHomes.filter((h) => !usedHomeIds.has(h.id));
+    // A home is unmatched in this view if it was not paired with a visible bank row above.
+    // If it is in unmatchedHomes, it has no linked bank data in this view, so its displayed status MUST be "open" (Тулгаагүй)!
+    const unmatchedHomes = filteredHomes
+      .filter((h) => !usedHomeIds.has(h.id))
+      .map((h) => ({
+        ...h,
+        status: "open" as const,
+        matchedBankId: null,
+      }));
+
+    // If viewing "Тулгасан" tab, show ONLY the verified matched pairs
+    if (tab === "match") {
+      return rows;
+    }
 
     // When bankSearch is active, show only the searched bank transactions
     if (isBankSearchActive) {
@@ -2646,6 +2838,12 @@ export default function BankStatementImportModal({
                                                   {b.targetPeriod}
                                                 </span>
                                               )}
+                                              {b.allocation && Object.keys(b.allocation.months || {}).length > 0 && (
+                                                <span className="inline-flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.2 rounded bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-200 border border-emerald-300 dark:border-emerald-700 shrink-0">
+                                                  <Layers className="w-2.5 h-2.5 text-emerald-600" />
+                                                  {Object.keys(b.allocation.months).length} сар хуваарилсан
+                                                </span>
+                                              )}
                                               <span className="truncate">{b.description}</span>
                                             </div>
                                           </div>
@@ -2717,6 +2915,30 @@ export default function BankStatementImportModal({
                                           {formatNumber(b.amount)} ₮
                                         </div>
                                         <div className="text-[11px] text-zinc-400 dark:text-zinc-500 mt-0.5">Орлого</div>
+                                        {h && (b.status === "match" || b.status === "likely") && (
+                                          <div className="mt-1 flex justify-end">
+                                            <button
+                                              type="button"
+                                              onClick={(e) => {
+                                                e.stopPropagation();
+                                                openAllocationModal(b, h);
+                                              }}
+                                              className={`inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded border transition shadow-xs cursor-pointer ${
+                                                b.allocation && Object.keys(b.allocation.months || {}).length > 0
+                                                  ? "bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-200 border-emerald-300 dark:border-emerald-700 hover:bg-emerald-200"
+                                                  : "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800 hover:bg-emerald-100"
+                                              }`}
+                                              title="Төлбөр хуваарилалт хийх"
+                                            >
+                                              <Layers className="w-2.5 h-2.5 text-emerald-600 dark:text-emerald-400" />
+                                              {b.allocation && Object.keys(b.allocation.months || {}).length > 0
+                                                ? `${Object.keys(b.allocation.months).length} сар (${formatNumber(b.allocation.totalAllocated)}₮)`
+                                                : b.amount > (h.amount || 0)
+                                                ? "Төлбөр хуваарилах"
+                                                : "Хуваарилалт"}
+                                            </button>
+                                          </div>
+                                        )}
                                       </td>
                                     </>
                                   ) : (
@@ -2907,6 +3129,22 @@ export default function BankStatementImportModal({
                                           {formatNumber(h.amount)} ₮
                                         </div>
                                         <div className="text-[11px] text-zinc-400 dark:text-zinc-500 mt-0.5">Нэхэмжлэх</div>
+                                        {b && (b.status === "match" || b.status === "likely") && (
+                                          <div className="mt-1 flex justify-end">
+                                            <button
+                                              type="button"
+                                              onClick={(e) => {
+                                                e.stopPropagation();
+                                                openAllocationModal(b, h);
+                                              }}
+                                              className="inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-700 hover:text-emerald-800 dark:text-emerald-400 hover:underline cursor-pointer"
+                                              title="Төлбөр хуваарилах"
+                                            >
+                                              <Layers className="w-2.5 h-2.5" />
+                                              {b.allocation ? "Засах" : "Хуваарилах"}
+                                            </button>
+                                          </div>
+                                        )}
                                       </td>
                                     </>
                                   ) : (
@@ -2931,11 +3169,11 @@ export default function BankStatementImportModal({
                       </span>
                       <span className="text-zinc-400">·</span>
                       <span className="text-emerald-800 dark:text-emerald-300">
-                        Тулгасан: {filteredHomes.filter((h) => h.status === "match").length}
+                        Тулгасан: {displayRows.filter((r) => r.home && (r.home.status === "match" || r.home.status === "done")).length}
                       </span>
                       <span className="text-zinc-400">·</span>
                       <span className="text-rose-700 dark:text-rose-400">
-                        Тулгаагүй: {filteredHomes.filter((h) => h.status === "open").length}
+                        Тулгаагүй: {displayRows.filter((r) => r.home && r.home.status === "open").length}
                       </span>
                     </div>
                   </div>
@@ -3204,6 +3442,278 @@ export default function BankStatementImportModal({
             </motion.div>
           </div>
         )}
+      </AnimatePresence>
+
+      {/* Payment Allocation Modal (ТӨЛБӨР ХУВААРИЛАЛТ - Identical style to Screenshot 2) */}
+      <AnimatePresence>
+        {allocationModal.isOpen && (() => {
+          const allocBank = banks.find((b) => b.id === allocationModal.bankId);
+          const allocHome = homes.find((h) => String(h.id) === String(allocationModal.homeId));
+          if (!allocBank) return null;
+
+          const totalAllocated = Object.values(allocationModal.months).reduce(
+            (sum, val) => sum + (Number(val) || 0),
+            0
+          );
+          const remaining = allocBank.amount - totalAllocated;
+          const isOverAllocated = totalAllocated > allocBank.amount;
+
+          return (
+            <div className="fixed inset-0 z-[12020] flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95, y: 10 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95, y: 10 }}
+                className="bg-white dark:bg-zinc-900 rounded-2xl max-w-2xl w-full shadow-2xl border border-zinc-200 dark:border-zinc-800 overflow-hidden flex flex-col max-h-[90vh]"
+              >
+                {/* Header */}
+                <div className="flex items-center justify-between px-6 py-4 border-b border-zinc-200 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-900/50">
+                  <div className="flex items-center gap-2.5">
+                    <div className="p-2 rounded-xl bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
+                      <Layers className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h3 className="text-base font-bold text-zinc-900 dark:text-zinc-100 leading-tight">
+                        Төлбөр хуваарилалт
+                      </h3>
+                      <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
+                        Өндөр дүнтэй төлөлтийг ашиглалтын зардлаар саруудад хуваарилах
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setAllocationModal((prev) => ({ ...prev, isOpen: false }))}
+                    className="p-1.5 rounded-lg text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition cursor-pointer"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+
+                {/* Body Content */}
+                <div className="p-6 overflow-y-auto space-y-4 flex-1">
+                  {/* Contract Info Card */}
+                  <div className="p-3.5 rounded-xl bg-zinc-50 dark:bg-zinc-800/60 border border-zinc-200/80 dark:border-zinc-700/80 space-y-2.5">
+                    <div className="flex items-center justify-between text-xs font-bold text-zinc-900 dark:text-zinc-100">
+                      <span>
+                        {allocHome?.unit ? `${allocHome.unit} тоот` : "Тоотгүй"} — {formatBuildingShort(allocHome?.building)} — {allocHome?.name || "Оршин суугч"}
+                      </span>
+                      <span className="text-[11px] font-semibold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950 px-2 py-0.5 rounded-md border border-emerald-200 dark:border-emerald-800">
+                        Гүйлгээ: {formatNumber(allocBank.amount)} ₮
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3 pt-1 text-xs">
+                      <div>
+                        <span className="text-zinc-400 block text-[11px]">Гүйлгээний утга:</span>
+                        <span className="font-medium text-zinc-700 dark:text-zinc-300 truncate block mt-0.5" title={allocBank.description}>
+                          {allocBank.description}
+                        </span>
+                      </div>
+                      <div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-zinc-400 text-[11px]">Сарын тогтмол төлбөр (Ашиглалтын зардал):</span>
+                        </div>
+                        <div className="flex items-center gap-1.5 mt-0.5">
+                          <input
+                            type="number"
+                            min="0"
+                            value={allocationModal.baseAmount}
+                            onChange={(e) => {
+                              const val = parseFloat(e.target.value) || 0;
+                              setAllocationModal((prev) => ({ ...prev, baseAmount: val }));
+                            }}
+                            className="w-28 px-2 py-0.5 text-right text-xs font-bold text-zinc-900 dark:text-zinc-100 bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 rounded-md focus:outline-none focus:ring-1 focus:ring-emerald-500 tabular-nums"
+                          />
+                          <span className="text-xs font-semibold text-zinc-500">₮ / сар</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Quick Action Helpers */}
+                  <div className="flex flex-wrap items-center justify-between gap-2 p-3 bg-zinc-50 dark:bg-zinc-800/40 rounded-xl border border-zinc-200/80 dark:border-zinc-700/80 text-xs">
+                    <div className="flex items-center gap-2">
+                      <span className="text-[11px] text-zinc-500 font-medium">Он:</span>
+                      <select
+                        value={allocationModal.year}
+                        onChange={(e) => setAllocationModal((prev) => ({ ...prev, year: parseInt(e.target.value, 10) }))}
+                        className="px-2 py-1 bg-white dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 rounded-lg text-xs font-bold text-zinc-800 dark:text-zinc-200 cursor-pointer focus:outline-none"
+                      >
+                        {[2024, 2025, 2026, 2027].map((y) => (
+                          <option key={y} value={y}>
+                            {y} он
+                          </option>
+                        ))}
+                      </select>
+                      <button
+                        type="button"
+                        onClick={() => autoAllocateByCount(Math.min(12, Math.floor(allocBank.amount / (allocationModal.baseAmount || 1))))}
+                        className="px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[11px] shadow-xs cursor-pointer flex items-center gap-1 transition"
+                      >
+                        <Zap className="w-3 h-3" />
+                        Бүх дүнгээр ({Math.min(12, Math.floor(allocBank.amount / (allocationModal.baseAmount || 1)))} сар)
+                      </button>
+                    </div>
+
+                    <div className="flex items-center gap-1">
+                      {[1, 3, 6, 9, 12].map((cnt) => (
+                        <button
+                          key={cnt}
+                          type="button"
+                          onClick={() => autoAllocateByCount(cnt)}
+                          className="px-2 py-1 rounded-md bg-white dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-700 text-[11px] font-semibold cursor-pointer transition"
+                        >
+                          {cnt} сар
+                        </button>
+                      ))}
+                      <button
+                        type="button"
+                        onClick={() => setAllocationModal((prev) => ({ ...prev, months: {} }))}
+                        className="px-2 py-1 rounded-md text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-[11px] font-semibold cursor-pointer transition"
+                      >
+                        Цэвэрлэх
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Section: ТӨЛБӨР ХУВААРИЛАЛТ (Styled identically to Screenshot 2) */}
+                  <div className="rounded-xl border border-zinc-200 dark:border-zinc-800 overflow-hidden bg-white dark:bg-zinc-900 shadow-xs">
+                    <div className="px-4 py-2.5 bg-zinc-50 dark:bg-zinc-800/60 border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-between text-xs font-bold text-zinc-700 dark:text-zinc-300 tracking-wider uppercase">
+                      <span>ТӨЛБӨР ХУВААРИЛАЛТ</span>
+                      <span className="text-[11px] normal-case font-normal text-zinc-400">
+                        Сар тус бүрийн төлөх дүнг засах боломжтой
+                      </span>
+                    </div>
+
+                    <div className="divide-y divide-zinc-200 dark:divide-zinc-800/80 max-h-72 overflow-y-auto">
+                      {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => {
+                        const monthKey = `${allocationModal.year}.${String(m).padStart(2, "0")}`;
+                        const isAllocated = Boolean(allocationModal.months[monthKey] > 0);
+                        const currentVal = allocationModal.months[monthKey] || 0;
+                        const uldegdel = Math.max(0, allocationModal.baseAmount - currentVal);
+
+                        return (
+                          <div
+                            key={monthKey}
+                            className={`p-3 transition-colors flex items-center justify-between gap-3 ${
+                              isAllocated
+                                ? "bg-emerald-50/40 dark:bg-emerald-950/20"
+                                : "hover:bg-zinc-50/50 dark:hover:bg-zinc-800/30"
+                            }`}
+                          >
+                            <div className="flex items-center gap-3 flex-1 min-w-0">
+                              <input
+                                type="checkbox"
+                                checked={isAllocated}
+                                onChange={(e) => handleToggleAllocationMonth(monthKey, e.target.checked)}
+                                className="w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500 cursor-pointer accent-emerald-600"
+                              />
+                              <div className="min-w-0 flex-1">
+                                <div className="text-xs font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
+                                  <span>{allocationModal.year}-{String(m).padStart(2, "0")} (Сарын нийт)</span>
+                                  {isAllocated && (
+                                    <span className="text-[10px] font-semibold text-emerald-700 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-950/60 px-1.5 py-0.2 rounded">
+                                      Сонгосон
+                                    </span>
+                                  )}
+                                </div>
+                                <div className="text-[11px] text-zinc-500 dark:text-zinc-400 mt-0.5 flex flex-wrap items-center gap-2">
+                                  <span>
+                                    Хуримтлагдсан өр: <strong className="text-zinc-700 dark:text-zinc-300">{formatNumber(allocationModal.baseAmount)} ₮</strong>
+                                  </span>
+                                  <span className="text-zinc-300 dark:text-zinc-600">|</span>
+                                  <span>Төлөх: <strong className="text-emerald-600 dark:text-emerald-400">{formatNumber(currentVal)} ₮</strong></span>
+                                  <span className="text-zinc-300 dark:text-zinc-600">|</span>
+                                  <span>
+                                    Үлдэгдэл:{" "}
+                                    <strong className={uldegdel > 0 ? "text-rose-600 dark:text-rose-400" : "text-emerald-600 dark:text-emerald-400"}>
+                                      {formatNumber(uldegdel)} ₮
+                                    </strong>
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+
+                            <div className="flex items-center gap-2 shrink-0">
+                              <span className="text-[11px] font-medium text-zinc-400">Төлөх дүн:</span>
+                              <input
+                                type="number"
+                                min="0"
+                                value={currentVal || ""}
+                                placeholder="0"
+                                onChange={(e) => handleAllocationAmountChange(monthKey, parseFloat(e.target.value) || 0)}
+                                className="w-28 px-2.5 py-1 text-right text-xs font-bold text-emerald-700 dark:text-emerald-300 bg-white dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 rounded-lg focus:outline-none focus:ring-1 focus:ring-emerald-500 tabular-nums shadow-2xs"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => handleAllocationAmountChange(monthKey, allocationModal.baseAmount)}
+                                className="text-[10px] font-semibold px-2 py-1 rounded-md bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-200 transition cursor-pointer"
+                                title="Суурь төлбөрөөр автоматаар дүүргэх"
+                              >
+                                Дүүргэх
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Over-allocation warning banner */}
+                  {isOverAllocated && (
+                    <div className="p-3 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 flex items-center gap-2 text-xs text-rose-800 dark:text-rose-200">
+                      <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0" />
+                      <span>
+                        <strong>Анхааруулга:</strong> Хуваарилсан дүн ({formatNumber(totalAllocated)} ₮) гүйлгээний орлогоос ({formatNumber(allocBank.amount)} ₮) давсан байна ({formatNumber(totalAllocated - allocBank.amount)} ₮ илүү)!
+                      </span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Bottom Allocation Bar (Exact match to Screenshot 2) */}
+                <div className="grid grid-cols-2 divide-x divide-zinc-200 dark:divide-zinc-800 bg-zinc-50 dark:bg-zinc-950/60 px-6 py-3.5 border-t border-zinc-200 dark:border-zinc-800">
+                  <div className="flex items-center justify-between pr-4">
+                    <span className="text-xs font-semibold text-zinc-600 dark:text-zinc-400">Холбосон дүн:</span>
+                    <span className="text-base font-extrabold text-emerald-600 dark:text-emerald-400 tabular-nums">
+                      {formatNumber(totalAllocated)} ₮
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between pl-4">
+                    <span className="text-xs font-semibold text-zinc-600 dark:text-zinc-400">Холбоогүй дүн:</span>
+                    <span
+                      className={`text-base font-extrabold tabular-nums ${
+                        remaining > 0
+                          ? "text-rose-600 dark:text-rose-400"
+                          : "text-emerald-600 dark:text-emerald-400"
+                      }`}
+                    >
+                      {formatNumber(Math.max(0, remaining))} ₮
+                    </span>
+                  </div>
+                </div>
+
+                {/* Footer Buttons */}
+                <div className="flex items-center justify-end gap-3 px-6 py-3.5 bg-white dark:bg-zinc-900 border-t border-zinc-200 dark:border-zinc-800">
+                  <button
+                    type="button"
+                    onClick={() => setAllocationModal((prev) => ({ ...prev, isOpen: false }))}
+                    className="px-4 py-2 rounded-xl border border-zinc-300 dark:border-zinc-700 text-xs font-bold text-zinc-700 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition cursor-pointer"
+                  >
+                    Хаах
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleSaveAllocation}
+                    className="px-5 py-2 rounded-xl bg-[#087f64] hover:bg-[#066a53] text-white text-xs font-bold shadow-sm transition cursor-pointer flex items-center gap-1.5"
+                  >
+                    <Check className="w-3.5 h-3.5" />
+                    Хадгалах
+                  </button>
+                </div>
+              </motion.div>
+            </div>
+          );
+        })()}
       </AnimatePresence>
     </ModalPortal>
   );
