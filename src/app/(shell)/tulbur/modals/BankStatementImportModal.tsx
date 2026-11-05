@@ -631,10 +631,11 @@ export default function BankStatementImportModal({
       }
     }
 
-    // 7. Explicit Toot Word if not matched above (support тоот, toot, -т, т, -р тоот):
+    // 7. Explicit Toot Word if not matched above (support тоот, toot, -т, т, -р тоот, үүслээ: 70 т):
     if (!unit) {
       const mToot = clean.match(/\b(\d{1,4}(?:[-/]\d{1,2}|[А-Яа-яA-Za-z])?)\s*(?:-?[рrR]\s*)?(?:[nн]\s*)?(?:тоот|toot|торт|-?[тtT]\b)\b/i) ||
-                    clean.match(/(?:тоот|toot|-?[тtT]\b)\s*[:.-]?\s*(\d{1,4}(?:[-/]\d{1,2}|[А-Яа-яA-Za-z])?)\b/i);
+                    clean.match(/(?:тоот|toot|-?[тtT]\b)\s*[:.-]?\s*(\d{1,4}(?:[-/]\d{1,2}|[А-Яа-яA-Za-z])?)\b/i) ||
+                    clean.match(/:\s*(\d{1,4})\s*(?:тоот|toot|тоо|-?[тtT]\b)?/i);
       if (mToot && !mToot[1].startsWith("202")) {
         unit = mToot[1].replace(/^0+/, "") || mToot[1];
       }
@@ -876,9 +877,10 @@ export default function BankStatementImportModal({
         detectedMonths.add(rowMonth);
         targetMonths.forEach((tm) => detectedMonths.add(tm));
 
-        // Completely skip OUR SYSTEM's QPay that has contract number (ГД / GD / нэхэмжлэх) - already handled by system
+        // Completely skip OUR SYSTEM's QPay that has contract number (ГД / GD) - already handled by system
+        // External QPay or any payment without ГД MUST show as normal income!
         const hasQPay = /qpay/i.test(descStr);
-        const hasGD = /(?:гд|gd|гэрээ|гэрээний\s*дугаар|нэхэмжлэх|nekhemjlekh)[-:\s#_]?\d*/i.test(descStr);
+        const hasGD = /(?:гд|gd|гэрээний\s*дугаар)[-:\s#_]?\d+/i.test(descStr);
         const isSystemQPay = hasQPay && hasGD;
         if (isSystemQPay) {
           continue;
@@ -1154,13 +1156,16 @@ export default function BankStatementImportModal({
     return true;
   };
 
-  // Helper to determine if a bank row should be completely excluded (Parking or system QPay)
+  // Helper to determine if a bank row should be completely excluded
+  // ONLY exclude:
+  // 1. Parking payments (QRGADAA, зогсоол, автомашин)
+  // 2. OUR SYSTEM's QPay transactions that have contract number (ГД / GD)
+  // Any other QPay or payments without ГД MUST show as normal income!
   const isExcludedBankRow = (b: { description?: string; isParking?: boolean; isQPay?: boolean }): boolean => {
-    if (b.isParking) return true;
-    if (b.isQPay) return true;
     const desc = b.description || "";
-    if (/qrgadaa|зогсоол|автомашин/i.test(desc)) return true;
-    if (/qpay/i.test(desc) && /(?:гд|gd|гэрээ|гэрээний\s*дугаар|нэхэмжлэх|nekhemjlekh)[-:\s#_]?\d*/i.test(desc)) return true;
+    if (b.isParking || /qrgadaa|зогсоол|автомашин/i.test(desc)) return true;
+    const isOurSystemQPay = /qpay/i.test(desc) && /(?:гд|gd|гэрээний\s*дугаар)[-:\s#_]?\d+/i.test(desc);
+    if (isOurSystemQPay) return true;
     return false;
   };
 
