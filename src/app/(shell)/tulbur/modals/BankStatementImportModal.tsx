@@ -168,6 +168,7 @@ export default function BankStatementImportModal({
   const [showHelpModal, setShowHelpModal] = useState(false);
   const [showRegisterConfirm, setShowRegisterConfirm] = useState(false);
   const [showManualMatchModal, setShowManualMatchModal] = useState(false);
+  const [showCloseConfirm, setShowCloseConfirm] = useState(false);
 
   // Payment Allocation Modal state (Төлбөр хуваарилалт)
   const [allocationModal, setAllocationModal] = useState<{
@@ -180,7 +181,17 @@ export default function BankStatementImportModal({
     homeId: null,
   });
 
+  // Check if there are unsaved changes (active imported transactions or matches not yet registered)
+  const hasUnsavedChanges = useMemo(() => {
+    // If no file has been uploaded and bank rows are empty, definitely no changes
+    if (!file && banks.length === 0) return false;
+    // If all bank transactions are already done/registered or excluded -> no unsaved changes
+    const hasUnregistered = banks.some((b) => !isExcludedBankRow(b) && b.status !== "done");
+    return hasUnregistered;
+  }, [file, banks]);
+
   const resetModalState = () => {
+    setShowCloseConfirm(false);
     setFile(null);
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
@@ -205,14 +216,45 @@ export default function BankStatementImportModal({
     });
   };
 
-  const handleClose = () => {
+  const forceClose = () => {
+    setShowCloseConfirm(false);
     resetModalState();
     onClose();
   };
 
+  const handleClose = () => {
+    if (hasUnsavedChanges) {
+      setShowCloseConfirm(true);
+    } else {
+      forceClose();
+    }
+  };
+
   useModalHotkeys({
     isOpen: show,
-    onClose: handleClose,
+    onClose: () => {
+      if (showCloseConfirm) {
+        setShowCloseConfirm(false);
+        return;
+      }
+      if (showHelpModal) {
+        setShowHelpModal(false);
+        return;
+      }
+      if (showRegisterConfirm) {
+        setShowRegisterConfirm(false);
+        return;
+      }
+      if (showManualMatchModal) {
+        setShowManualMatchModal(false);
+        return;
+      }
+      if (allocationModal.isOpen) {
+        setAllocationModal({ isOpen: false, bankId: null, homeId: null });
+        return;
+      }
+      handleClose();
+    },
   });
 
   // Reset internal state whenever modal is opened or closed
@@ -1324,15 +1366,40 @@ export default function BankStatementImportModal({
   };
 
   // Intelligent Multi-Tier Auto Matching (Deterministic, Idempotent, High Accuracy)
-  const autoMatch = (currentBanks = banks, currentHomes = homes, buildingFilter = selectedBuilding) => {
+  const autoMatch = (
+    currentBanks = banks,
+    currentHomes = homes,
+    buildingFilter = selectedBuilding,
+    monthFilter = selectedMonth
+  ) => {
     let matchCount = 0;
     let likelyCount = 0;
 
     // Filter out parking and system QPay completely
     const validBanks = currentBanks.filter((b) => !isExcludedBankRow(b));
 
+    // Prioritize transactions belonging to the filtered/selected month!
+    // This ensures an October transaction (e.g. 125 тоот 48,600₮) matches the October invoice first,
+    // rather than an earlier August/September payment in the same Excel file stealing the only contract.
+    const isBankInMonth = (b: BankRow, m: string) => {
+      if (m === "ALL") return true;
+      if (Array.isArray(b.targetMonths) && b.targetMonths.length > 0) {
+        return b.targetMonths.includes(m);
+      }
+      return b.month === m;
+    };
+
+    const sortedBanks = [...validBanks].sort((a, b) => {
+      if (monthFilter !== "ALL") {
+        const aInMonth = isBankInMonth(a, monthFilter) ? 1 : 0;
+        const bInMonth = isBankInMonth(b, monthFilter) ? 1 : 0;
+        if (aInMonth !== bInMonth) return bInMonth - aInMonth;
+      }
+      return 0;
+    });
+
     // Reset open & likely rows deterministically; preserve "done" and user-manual confirmed matches
-    const newBanks: BankRow[] = validBanks.map((b) => {
+    const newBanks: BankRow[] = sortedBanks.map((b) => {
       if (b.status === "done" || (b.status === "match" && (b as any).isManual)) return { ...b };
       return {
         ...b,
@@ -1627,7 +1694,8 @@ export default function BankStatementImportModal({
       }
     });
 
-    setBanks(newBanks);
+    const orderedBanks = [...newBanks].sort((a, b) => a.id - b.id);
+    setBanks(orderedBanks);
     setHomes(newHomes);
 
     // Auto check all 100% matched transactions (never auto-check "likely" ones)
@@ -2003,6 +2071,21 @@ export default function BankStatementImportModal({
     return rows;
   }, [filteredBanks, filteredHomes, tab]);
 
+  // Sequential row numbering for both Left (Bank) and Right (Home) tables
+  const displayRowsWithNumbers = useMemo(() => {
+    let bankCounter = 0;
+    let homeCounter = 0;
+    return displayRows.map((row) => {
+      const bankNo = row.bank ? ++bankCounter : null;
+      const homeNo = row.home ? ++homeCounter : null;
+      return {
+        ...row,
+        bankNo,
+        homeNo,
+      };
+    });
+  }, [displayRows]);
+
   // Statistics calculation
   const stats = useMemo(() => {
     const list = banks.filter((x) => {
@@ -2098,7 +2181,11 @@ export default function BankStatementImportModal({
                     <span className="text-[11px] text-[#7c8b85] font-normal">Сар:</span>
                     <select
                       value={selectedMonth}
-                      onChange={(e) => setSelectedMonth(e.target.value)}
+                      onChange={(e) => {
+                        const nextMonth = e.target.value;
+                        setSelectedMonth(nextMonth);
+                        autoMatch(banks, homes, selectedBuilding, nextMonth);
+                      }}
                       className="bg-transparent border-none text-xs font-bold text-[#203a35] dark:text-zinc-100 focus:outline-none cursor-pointer pr-1"
                     >
                       <option value="ALL">Бүх хугацаа (Бүх сар)</option>
@@ -2319,7 +2406,7 @@ export default function BankStatementImportModal({
                       )}
 
                       <button
-                        onClick={() => autoMatch(banks, homes, selectedBuilding)}
+                        onClick={() => autoMatch(banks, homes, selectedBuilding, selectedMonth)}
                         disabled={banks.length === 0 || homes.length === 0}
                         className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg bg-[#087f64] hover:bg-[#05694f] text-white text-xs font-semibold shadow-sm transition disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
                       >
@@ -2428,14 +2515,16 @@ export default function BankStatementImportModal({
                         {/* 50 / 50 HALF AND HALF COLUMN SPECIFICATION */}
                         <colgroup>
                           {/* Left (Bank): 50% */}
+                          <col style={{ width: "38px" }} />
                           <col style={{ width: "85px" }} />
-                          <col style={{ width: "105px" }} />
-                          <col style={{ width: "calc(50% - 285px)" }} />
+                          <col style={{ width: "100px" }} />
+                          <col style={{ width: "calc(50% - 318px)" }} />
                           <col style={{ width: "95px" }} />
 
                           {/* Right (Home): 50% */}
-                          <col style={{ width: "105px" }} />
-                          <col style={{ width: "calc(50% - 200px)" }} />
+                          <col style={{ width: "38px" }} />
+                          <col style={{ width: "100px" }} />
+                          <col style={{ width: "calc(50% - 233px)" }} />
                           <col style={{ width: "95px" }} />
                         </colgroup>
 
@@ -2443,6 +2532,9 @@ export default function BankStatementImportModal({
                         <thead className="sticky top-0 z-30 select-none">
                           <tr className="h-10">
                             {/* Left Table Headers: Дансны хуулга (50%) */}
+                            <th className="sticky top-0 z-30 h-10 py-0 px-2 text-center align-middle font-semibold text-xs whitespace-nowrap bg-[#f4f7f5] dark:bg-zinc-800 text-zinc-700 dark:text-zinc-200 border-b border-zinc-200 dark:border-zinc-700 shadow-xs">
+                              №
+                            </th>
                             <th className="sticky top-0 z-30 h-10 py-0 px-3 text-left align-middle font-semibold text-xs whitespace-nowrap bg-[#f4f7f5] dark:bg-zinc-800 text-zinc-700 dark:text-zinc-200 border-b border-zinc-200 dark:border-zinc-700 shadow-xs">
                               Огноо
                             </th>
@@ -2457,6 +2549,9 @@ export default function BankStatementImportModal({
                             </th>
 
                             {/* Right Table Headers: Айлын төлбөр (50%) */}
+                            <th className="sticky top-0 z-30 h-10 py-0 px-2 text-center align-middle font-semibold text-xs whitespace-nowrap bg-[#f4f7f5] dark:bg-zinc-800 text-zinc-700 dark:text-zinc-200 border-b border-zinc-200 dark:border-zinc-700 shadow-xs">
+                              №
+                            </th>
                             <th className="sticky top-0 z-30 h-10 py-0 px-3 text-left align-middle font-semibold text-xs whitespace-nowrap bg-[#f4f7f5] dark:bg-zinc-800 text-zinc-700 dark:text-zinc-200 border-b border-zinc-200 dark:border-zinc-700 shadow-xs">
                               Байр, тоот
                             </th>
@@ -2469,14 +2564,14 @@ export default function BankStatementImportModal({
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
-                          {displayRows.length === 0 ? (
+                          {displayRowsWithNumbers.length === 0 ? (
                             <tr>
-                              <td colSpan={8} className="py-12 text-center text-zinc-500 dark:text-zinc-400">
+                              <td colSpan={9} className="py-12 text-center text-zinc-500 dark:text-zinc-400">
                                 Илэрц олдсонгүй
                               </td>
                             </tr>
                           ) : (
-                            displayRows.map(({ bank: b, home: h }, idx) => {
+                            displayRowsWithNumbers.map(({ bank: b, home: h, bankNo, homeNo }, idx) => {
                               const isPairSelectedBank = b && pairBankId === b.id;
                               const isPairSelectedHome = h && pairHomeId === h.id;
                               const isPairSelected = isPairSelectedBank || isPairSelectedHome;
@@ -2585,9 +2680,17 @@ export default function BankStatementImportModal({
                                     (draggedBankId === b?.id || draggedHomeId === h?.id) ? "opacity-60" : ""
                                   }`}
                                 >
-                                  {/* LEFT 4 CELLS: BANK TRANSACTION (50% OF ROW) */}
+                                  {/* LEFT 5 CELLS: BANK TRANSACTION (50% OF ROW) */}
                                   {b ? (
                                     <>
+                                      {/* Cell 0: № */}
+                                      <td
+                                        onClick={() => setPairBankId((prev) => (prev === b.id ? null : b.id))}
+                                        className={`py-2 px-1 text-center text-xs font-semibold text-zinc-500 dark:text-zinc-400 select-none cursor-pointer ${bankBg}`}
+                                      >
+                                        {bankNo}
+                                      </td>
+
                                       {/* Cell 1: Огноо */}
                                       <td
                                         draggable={true}
@@ -2870,14 +2973,22 @@ export default function BankStatementImportModal({
                                       </td>
                                     </>
                                   ) : (
-                                    <td colSpan={4} className={`py-2 px-3 text-center text-[11px] text-zinc-400 dark:text-zinc-600 italic border-r border-zinc-200 dark:border-zinc-700 ${bankBg}`}>
+                                    <td colSpan={5} className={`py-2 px-3 text-center text-[11px] text-zinc-400 dark:text-zinc-600 italic border-r border-zinc-200 dark:border-zinc-700 ${bankBg}`}>
                                       —
                                     </td>
                                   )}
 
-                                  {/* RIGHT 3 CELLS: RESIDENT / HOME (50% OF ROW) */}
+                                  {/* RIGHT 4 CELLS: RESIDENT / HOME (50% OF ROW) */}
                                   {h ? (
                                     <>
+                                      {/* Cell 5: № */}
+                                      <td
+                                        onClick={() => toggleHomeRow(h.id)}
+                                        className={`py-2 px-1 text-center text-xs font-semibold text-zinc-500 dark:text-zinc-400 select-none cursor-pointer ${homeBg}`}
+                                      >
+                                        {homeNo}
+                                      </td>
+
                                       {/* Cell 6: Байр, тоот */}
                                       <td
                                         draggable={true}
@@ -3059,7 +3170,7 @@ export default function BankStatementImportModal({
                                       </td>
                                     </>
                                   ) : (
-                                    <td colSpan={3} className={`py-2 px-3 text-center text-[11px] text-zinc-400 dark:text-zinc-600 italic ${homeBg}`}>
+                                    <td colSpan={4} className={`py-2 px-3 text-center text-[11px] text-zinc-400 dark:text-zinc-600 italic ${homeBg}`}>
                                       —
                                     </td>
                                   )}
@@ -3384,6 +3495,56 @@ export default function BankStatementImportModal({
               );
             }}
           />
+        )}
+      </AnimatePresence>
+
+      {/* Close Confirmation Dialog Modal */}
+      <AnimatePresence>
+        {showCloseConfirm && (
+          <div className="fixed inset-0 z-[12030] flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 8 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 8 }}
+              transition={{ duration: 0.15 }}
+              className="bg-white dark:bg-zinc-900 rounded-2xl p-6 max-w-md w-full shadow-2xl border border-[#e7ece9] dark:border-zinc-800"
+            >
+              <div className="flex items-center gap-3 mb-3">
+                <div className="w-10 h-10 rounded-xl bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-400 flex items-center justify-center shrink-0 font-bold">
+                  <AlertTriangle className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-[#203a35] dark:text-white leading-tight">
+                    Цонхыг хаах уу?
+                  </h3>
+                  <p className="text-xs text-[#7c8b85] mt-0.5">
+                    Хадгалаагүй тулгалт болон өөрчлөлт устах болно.
+                  </p>
+                </div>
+              </div>
+
+              <p className="text-xs text-zinc-600 dark:text-zinc-300 leading-relaxed bg-[#fbfcfb] dark:bg-zinc-800/50 p-3 rounded-xl border border-zinc-200 dark:border-zinc-700/60">
+                Таны оруулсан банкны хуулга болон хийгдсэн тулгалтууд бүртгэгдээгүй байна. Цонхыг хаавал одоогийн хуулгын өгөгдөл цуцлагдахыг анхаарна уу.
+              </p>
+
+              <div className="mt-5 flex items-center justify-end gap-2.5">
+                <button
+                  type="button"
+                  onClick={() => setShowCloseConfirm(false)}
+                  className="px-4 py-2 rounded-xl border border-[#dce5e0] dark:border-zinc-700 bg-white dark:bg-zinc-800 text-xs font-semibold text-[#203a35] dark:text-zinc-200 hover:bg-[#edf5f1] dark:hover:bg-zinc-800/80 transition cursor-pointer"
+                >
+                  Үргэлжлүүлэх
+                </button>
+                <button
+                  type="button"
+                  onClick={forceClose}
+                  className="px-5 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold transition shadow-sm cursor-pointer"
+                >
+                  Цонхыг хаах
+                </button>
+              </div>
+            </motion.div>
+          </div>
         )}
       </AnimatePresence>
     </ModalPortal>
