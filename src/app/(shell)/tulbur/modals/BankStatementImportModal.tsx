@@ -1047,8 +1047,7 @@ export default function BankStatementImportModal({
               isBuildingCompatible(b.building, linkedHome.building)
             ) {
               b.matchedHomeId = linkedHome.id;
-              linkedHome.status = "done";
-              linkedHome.matchedBankId = b.id;
+              // Do NOT lock linkedHome.status = "done" here so current month payments can still match
             }
           }
         }
@@ -1413,9 +1412,6 @@ export default function BankStatementImportModal({
       if ((h as any).isManual && h.matchedBankId && validBanks.some((b) => b.id === h.matchedBankId)) {
         return { ...h };
       }
-      if (h.status === "done" && h.matchedBankId && validBanks.some((b) => b.id === h.matchedBankId)) {
-        return { ...h };
-      }
       return {
         ...h,
         status: "open" as const,
@@ -1429,7 +1425,7 @@ export default function BankStatementImportModal({
       status: "match" | "likely" = "match",
       reason?: string
     ) => {
-      if (isExcludedBankRow(b) || b.status === "done" || h.status === "done") {
+      if (isExcludedBankRow(b) || b.status === "done") {
         return false;
       }
 
@@ -1520,7 +1516,6 @@ export default function BankStatementImportModal({
       const bBld = normalizeBuilding(b.ebillBuilding || b.building);
 
       const candidate = newHomes.find((h) => {
-        if (h.status !== "open") return false;
         const hBld = normalizeBuilding(h.building);
         if (bBld && hBld && bBld !== hBld) return false;
         if (normalizeToot(h.unit) !== eToot) return false;
@@ -1540,7 +1535,6 @@ export default function BankStatementImportModal({
       const bBld = normalizeBuilding(b.building);
 
       const candidates = newHomes.filter((h) => {
-        if (h.status !== "open") return false;
         const hBld = normalizeBuilding(h.building);
         if (bBld && hBld && bBld !== hBld) return false;
         if (normalizeToot(h.unit) !== bToot) return false;
@@ -1562,7 +1556,6 @@ export default function BankStatementImportModal({
       if (!bBld) return; // only for explicit building specification
 
       const candidates = newHomes.filter((h) => {
-        if (h.status !== "open") return false;
         const hBld = normalizeBuilding(h.building);
         if (bBld && hBld && bBld !== hBld) return false;
         if (normalizeToot(h.unit) !== bToot) return false;
@@ -1592,7 +1585,6 @@ export default function BankStatementImportModal({
       const tootExistsInMultipleBuildings = new Set(allHomesWithThisToot.map((h) => normalizeBuilding(h.building))).size > 1;
 
       const candidates = newHomes.filter((h) => {
-        if (h.status !== "open") return false;
         const hBld = normalizeBuilding(h.building);
         if (bBld && hBld && bBld !== hBld) return false;
         if (bBld && !hBld) return false;
@@ -1720,14 +1712,7 @@ export default function BankStatementImportModal({
     }
   };
 
-  // Auto-clean any residual system QPay or parking rows from banks state
-  useEffect(() => {
-    if (banks.some(isExcludedBankRow)) {
-      const sanitized = banks.filter((b) => !isExcludedBankRow(b));
-      setBanks(sanitized);
-      autoMatch(sanitized, homes, selectedBuilding);
-    }
-  }, [banks, homes, selectedBuilding]);
+
 
   // Toggle bank row checkbox (check / uncheck for registration)
   const toggleBankRow = (id: number) => {
@@ -2085,6 +2070,24 @@ export default function BankStatementImportModal({
       };
     });
   }, [displayRows]);
+
+  // Fast pagination state for high-performance rendering of 1000+ rows
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState<number>(50);
+
+  // Auto-reset page to 1 whenever filters or search query change
+  useEffect(() => {
+    setPage(1);
+  }, [tab, selectedMonth, selectedBuilding, bankSearch, homeSearch]);
+
+  const totalRows = displayRowsWithNumbers.length;
+  const totalPages = pageSize === 0 ? 1 : Math.max(1, Math.ceil(totalRows / pageSize));
+
+  const pagedRows = useMemo(() => {
+    if (pageSize === 0) return displayRowsWithNumbers;
+    const start = (page - 1) * pageSize;
+    return displayRowsWithNumbers.slice(start, start + pageSize);
+  }, [displayRowsWithNumbers, page, pageSize]);
 
   // Statistics calculation
   const stats = useMemo(() => {
@@ -2564,14 +2567,14 @@ export default function BankStatementImportModal({
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
-                          {displayRowsWithNumbers.length === 0 ? (
+                          {pagedRows.length === 0 ? (
                             <tr>
                               <td colSpan={9} className="py-12 text-center text-zinc-500 dark:text-zinc-400">
                                 Илэрц олдсонгүй
                               </td>
                             </tr>
                           ) : (
-                            displayRowsWithNumbers.map(({ bank: b, home: h, bankNo, homeNo }, idx) => {
+                            pagedRows.map(({ bank: b, home: h, bankNo, homeNo }, idx) => {
                               const isPairSelectedBank = b && pairBankId === b.id;
                               const isPairSelectedHome = h && pairHomeId === h.id;
                               const isPairSelected = isPairSelectedBank || isPairSelectedHome;
@@ -3183,8 +3186,74 @@ export default function BankStatementImportModal({
                     )}
                   </div>
 
-                  {/* Panel Footer: Resident Counts */}
-                  <div className="flex items-center justify-end border-t border-[#e7ece9] dark:border-zinc-800 px-5 py-2 text-xs text-black dark:text-zinc-200 shrink-0 bg-[#fbfcfb] dark:bg-zinc-900 relative z-20">
+                  {/* Panel Footer: Fast Pagination & Resident Counts */}
+                  <div className="flex items-center justify-between border-t border-[#e7ece9] dark:border-zinc-800 px-5 py-2 text-xs text-black dark:text-zinc-200 shrink-0 bg-[#fbfcfb] dark:bg-zinc-900 relative z-20">
+                    {/* Left: High-Performance Pagination Controls */}
+                    <div className="flex items-center gap-2">
+                      <span className="text-[11px] font-medium text-zinc-600 dark:text-zinc-400">
+                        Нийт {totalRows} мөр (Хуудас {page} / {totalPages})
+                      </span>
+                      <div className="flex items-center gap-1 ml-2">
+                        <button
+                          type="button"
+                          onClick={() => setPage(1)}
+                          disabled={page <= 1}
+                          className="px-2 py-0.5 rounded border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-[11px] font-medium disabled:opacity-40 disabled:cursor-not-allowed hover:bg-zinc-50 dark:hover:bg-zinc-700 transition cursor-pointer"
+                          title="Эхний хуудас"
+                        >
+                          «
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setPage((p) => Math.max(1, p - 1))}
+                          disabled={page <= 1}
+                          className="px-2.5 py-0.5 rounded border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-[11px] font-medium disabled:opacity-40 disabled:cursor-not-allowed hover:bg-zinc-50 dark:hover:bg-zinc-700 transition cursor-pointer"
+                        >
+                          ‹ Өмнөх
+                        </button>
+                        <span className="px-2.5 py-0.5 text-[11px] font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 rounded border border-emerald-200 dark:border-emerald-800">
+                          {page}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                          disabled={page >= totalPages}
+                          className="px-2.5 py-0.5 rounded border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-[11px] font-medium disabled:opacity-40 disabled:cursor-not-allowed hover:bg-zinc-50 dark:hover:bg-zinc-700 transition cursor-pointer"
+                        >
+                          Дараах ›
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setPage(totalPages)}
+                          disabled={page >= totalPages}
+                          className="px-2 py-0.5 rounded border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-[11px] font-medium disabled:opacity-40 disabled:cursor-not-allowed hover:bg-zinc-50 dark:hover:bg-zinc-700 transition cursor-pointer"
+                          title="Сүүлийн хуудас"
+                        >
+                          »
+                        </button>
+                      </div>
+
+                      {/* Rows per page selector */}
+                      <div className="flex items-center gap-1 ml-3 text-[11px] text-zinc-500">
+                        <span>Мөр:</span>
+                        <select
+                          value={pageSize}
+                          onChange={(e) => {
+                            setPageSize(Number(e.target.value));
+                            setPage(1);
+                          }}
+                          className="px-1.5 py-0.5 rounded border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-[11px] font-semibold text-zinc-700 dark:text-zinc-200 cursor-pointer"
+                        >
+                          <option value={30}>30</option>
+                          <option value={50}>50</option>
+                          <option value={100}>100</option>
+                          <option value={200}>200</option>
+                          <option value={0}>Бүгд ({totalRows})</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    {/* Right: Resident Counts */}
                     <div className="flex items-center gap-1.5 flex-wrap justify-end">
                       <span className="text-black dark:text-white">
                         Нийт: {filteredHomes.length} айл

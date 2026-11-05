@@ -10,8 +10,18 @@ import { getPaymentStatusLabel } from "@/lib/utils";
 import { pickMonthSlice } from "./guilgeeMonthMatrix";
 import { negjiinTurul } from "@/lib/negjiinTurul";
 
-const formatDate = (d?: string) =>
-  d ? new Date(d).toLocaleDateString("mn-MN") : "-";
+const formatDate = (d?: any) => {
+  if (!d) return "-";
+  try {
+    const dt = new Date(d);
+    if (isNaN(dt.getTime())) return String(d);
+    return dt.toLocaleDateString("mn-MN");
+  } catch {
+    return "-";
+  }
+};
+
+
 
 /** Мөнгөн дүнтэй баганууд — хөл мөрөнд нийлбэр гарна */
 const MONEY_KEYS = new Set([
@@ -146,7 +156,7 @@ export default function GuilgeeTable({
           if (monthSlice != null) return toDisplayAmount(monthSlice.uldegdel ?? 0);
           return toDisplayAmount(
             Number(record?._totalTulburMonth || 0) -
-              Number(record?._totalTulsunMonth || 0),
+            Number(record?._totalTulsunMonth || 0),
           );
         }
         default:
@@ -339,11 +349,10 @@ export default function GuilgeeTable({
                 : "!text-center",
             }),
             onCell: () => ({
-              className: `!text-center ${
-                isCheckboxVisible
+              className: `!text-center ${isCheckboxVisible
                   ? "!border-l !border-[hsl(var(--zt-border))]"
                   : ""
-              }`,
+                }`,
             }),
             render: (_: any, __: any, index: number) =>
               (page - 1) * rowsPerPage + index + 1,
@@ -571,9 +580,8 @@ export default function GuilgeeTable({
                   type="button"
                   onClick={() => onViewHistory(murniiMedeelel(record).residentData)}
                   title="Хуулга харах"
-                  className={`cursor-pointer rounded px-1 underline-offset-2 hover:underline ${
-                    balance < 0.01 ? "!text-success" : "!text-danger"
-                  }`}
+                  className={`cursor-pointer rounded px-1 underline-offset-2 hover:underline ${balance < 0.01 ? "!text-success" : "!text-danger"
+                    }`}
                 >
                   {formatNumber(balance, 2)}
                 </button>
@@ -791,11 +799,10 @@ export default function GuilgeeTable({
               colSpan={labelSpan > 1 ? labelSpan : undefined}
               fixed="left"
               leafIndex={0}
-              className={`text-left ${
-                isCheckboxVisible && dataCols[0]?.key === "index"
+              className={`text-left ${isCheckboxVisible && dataCols[0]?.key === "index"
                   ? "!border-l !border-[hsl(var(--zt-border))]"
                   : ""
-              }`}
+                }`}
             >
               Нийт
             </Table.Summary.Cell>
@@ -827,7 +834,7 @@ export default function GuilgeeTable({
           dataSource={data}
           loading={loading}
           pagination={false}
-          rowKey={(record: any) => record._id || Math.random().toString()}
+          rowKey={(record: any) => record._id || record.id || record.gereeniiId || `${record.ner || ""}|${record.toot || ""}`}
           rowSelection={
             isCheckboxVisible
               ? {
