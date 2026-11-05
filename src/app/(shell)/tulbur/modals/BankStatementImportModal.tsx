@@ -194,9 +194,10 @@ export default function BankStatementImportModal({
   const availableMonths = useMemo(() => {
     const set = new Set<string>();
     banks.forEach((b) => {
-      if (b.month) set.add(b.month);
-      if (Array.isArray(b.targetMonths)) {
+      if (Array.isArray(b.targetMonths) && b.targetMonths.length > 0) {
         b.targetMonths.forEach((tm) => set.add(tm));
+      } else if (b.month) {
+        set.add(b.month);
       }
     });
     homes.forEach((h) => {
@@ -550,26 +551,42 @@ export default function BankStatementImportModal({
     clean = clean.replace(/\b(?:\d{1,2}(?:\s*,\s*\d{1,2})*|\d{1,2}\s*-\s*\d{1,2})\s*(?:-[рrR]\s*)?(?:сар|sar)[а-яөүёa-z]*/gi, " ");
     clean = clean.replace(/\b\d{1,2}\s*(?:-[рrR]\s*)?(?:сар|sar)[а-яөүёa-z]*/gi, " ");
     clean = clean.replace(/niit\s*\d+\s*n?\s*sar/gi, " ");
+    // Remove entrance numbers (орц, orts, ortz) so entrance number e.g. "1-р орц" is NEVER confused for building or toot!
+    clean = clean.replace(/\b\d{1,2}\s*(?:-?[рrR]\s*)?(?:орц|orts|ortz)\b/gi, " ");
+    clean = clean.replace(/(?:орц|orts|ortz)\s*[:.-]?\s*\d{1,2}\b/gi, " ");
     if (phone) clean = clean.replace(phone, " ");
 
     let building = "";
     let unit = "";
 
-    // 5. Building & Toot pattern matching:
-    // Supports: "217-101", "218.78", "216/56", "218 байр 105 тоот", "12-р байр 45 тоот", "12-45", "12/45", "45 тоот", "45т", "45-т"
-    const mBairToot = clean.match(
-      /(?:байр|баир|bair)?\s*(\d{1,4})\s*(?:-?[рrR]\s*байр|\s*ба[йи]р|\s*bair|\s*iin|\s*ийн|\s*н|\*|[-./])\s*(?:тоот|toot|-?[тtT]\b)?\s*(\d{1,4}(?:[-/]\d{1,2}|[А-Яа-яA-Za-z])?)\s*(?:-?[рrR]\s*)?(?:тоот|toot|-?[тtT]\b)?/i
-    );
-    if (mBairToot) {
-      const bCandidate = mBairToot[1].trim();
-      const uCandidate = mBairToot[2].trim();
-      if (!bCandidate.startsWith("202") && !uCandidate.startsWith("202")) {
-        building = bCandidate;
-        unit = uCandidate.replace(/^0+/, "") || uCandidate;
+    // 5. 3-part pattern e.g. "217-1-45" or "217/1/45" (Building 217, Entrance 1, Toot 45)
+    const mThreePart = clean.match(/\b(\d{1,4})[-/. ]+(\d{1,2})[-/. ]+(\d{1,4})\b/);
+    if (mThreePart) {
+      const bCand = mThreePart[1];
+      const uCand = mThreePart[3];
+      if (!bCand.startsWith("202") && !uCand.startsWith("202")) {
+        building = bCand;
+        unit = uCand.replace(/^0+/, "") || uCand;
       }
     }
 
-    // 6. Explicit Toot Word if not matched above (support тоот, toot, -т, т, -р тоот):
+    // 6. Building & Toot pattern matching:
+    // Supports: "217-101", "218.78", "216/56", "218 байр 105 тоот", "12-р байр 45 тоот", "12-45", "12/45", "45 тоот", "45т", "45-т"
+    if (!unit) {
+      const mBairToot = clean.match(
+        /(?:байр|баир|bair)?\s*(\d{1,4})\s*(?:-?[рrR]\s*байр|\s*ба[йи]р|\s*bair|\s*iin|\s*ийн|\s*н|\*|[-./])\s*(?:тоот|toot|-?[тtT]\b)?\s*(\d{1,4}(?:[-/]\d{1,2}|[А-Яа-яA-Za-z])?)\s*(?:-?[рrR]\s*)?(?:тоот|toot|-?[тtT]\b)?/i
+      );
+      if (mBairToot) {
+        const bCandidate = mBairToot[1].trim();
+        const uCandidate = mBairToot[2].trim();
+        if (!bCandidate.startsWith("202") && !uCandidate.startsWith("202")) {
+          building = bCandidate;
+          unit = uCandidate.replace(/^0+/, "") || uCandidate;
+        }
+      }
+    }
+
+    // 7. Explicit Toot Word if not matched above (support тоот, toot, -т, т, -р тоот):
     if (!unit) {
       const mToot = clean.match(/\b(\d{1,4}(?:[-/]\d{1,2}|[А-Яа-яA-Za-z])?)\s*(?:-?[рrR]\s*)?(?:тоот|toot|-?[тtT]\b)\b/i) ||
                     clean.match(/(?:тоот|toot|-?[тtT]\b)\s*[:.-]?\s*(\d{1,4}(?:[-/]\d{1,2}|[А-Яа-яA-Za-z])?)\b/i);
@@ -578,7 +595,20 @@ export default function BankStatementImportModal({
       }
     }
 
-    // 7. Building alone if not matched:
+    // 8. Match official building from availableBuildings if not identified yet:
+    if (!building && availableBuildings.length > 0) {
+      for (const ab of availableBuildings) {
+        const code = normalizeBuilding(ab);
+        if (!code) continue;
+        const bRegex = new RegExp(`(?:^|[^0-9a-zа-яөүё])${code}(?:-?[рrR]\\s*байр|\\s*ба[йи]р|\\s*bair|[-/. ]+(?:\\d{1,4}))`, "i");
+        if (bRegex.test(clean)) {
+          building = code;
+          break;
+        }
+      }
+    }
+
+    // 9. Building alone if not matched:
     if (!building) {
       const mBair = clean.match(/\b(\d{1,4})\s*(?:-?[рrR]\s*байр|\s*ба[йи]р|\s*bair)\b/i) ||
                     clean.match(/(?:байр|баир|bair)\s*[:.-]?\s*(\d{1,4})\b/i);
@@ -1034,8 +1064,16 @@ export default function BankStatementImportModal({
   const isBuildingCompatible = (bBld?: string, hBld?: string): boolean => {
     const normB = normalizeBuilding(bBld);
     const normH = normalizeBuilding(hBld);
-    if (!normB || !normH) return true;
-    return normB === normH;
+    // If both specify a building, they MUST strictly match
+    if (normB && normH) return normB === normH;
+    // If neither specifies a building, compatible only in single building complex
+    if (!normB && !normH) return true;
+    // If one specifies building and other does not:
+    // In multi-building complexes (e.g. 216, 217, 218), this is NOT compatible to avoid wrong building match!
+    if (availableBuildings.length > 1) {
+      return false;
+    }
+    return true;
   };
 
   // Save learned recurring payer rule
@@ -1188,9 +1226,26 @@ export default function BankStatementImportModal({
     ) => {
       const bBld = normalizeBuilding(b.building);
       const hBld = normalizeBuilding(h.building);
+
+      // STRICT CHECK 1: NEVER pair cross-building!
       if (bBld && hBld && bBld !== hBld) {
-        return false; // NEVER pair cross-building!
+        return false;
       }
+
+      // STRICT CHECK 2: If bank row states a building, home row MUST belong to that building
+      if (bBld && !hBld) {
+        return false;
+      }
+
+      // STRICT CHECK 3: When multi-building complex exists, never attach an unassigned building bank to a building unless filter selected or name matches
+      if (!bBld && availableBuildings.length > 1 && buildingFilter === "ALL") {
+        // Only allow if resident name matches or rule matched!
+        const isNameVerified = isNameMatch(b.name, b.description, h.name, h.ovog);
+        if (!isNameVerified && status === "likely") {
+          return false; // Stop accidental cross-building link!
+        }
+      }
+
       if (buildingFilter !== "ALL" && !isBuildingCompatible(buildingFilter, h.building)) {
         return false;
       }
@@ -1316,12 +1371,16 @@ export default function BankStatementImportModal({
       }
     });
 
-    // TIER 4: Toot match alone (when building was not explicitly given in statement or matches buildingFilter)
+    // TIER 4: TOOT FIRST (Prioritize Toot matching, preventing false cross-building jumping)
     newBanks.forEach((b) => {
       if (b.status !== "open" || b.isExpense || b.isParking) return;
       const bToot = normalizeToot(b.unit);
       if (!bToot) return;
       const bBld = normalizeBuilding(b.building);
+
+      // Check if this toot exists in multiple buildings across the whole complex
+      const allHomesWithThisToot = newHomes.filter((h) => normalizeToot(h.unit) === bToot);
+      const tootExistsInMultipleBuildings = new Set(allHomesWithThisToot.map((h) => normalizeBuilding(h.building))).size > 1;
 
       const candidates = newHomes.filter((h) => {
         if (h.status !== "open") return false;
@@ -1335,30 +1394,48 @@ export default function BankStatementImportModal({
         return true;
       });
 
-      if (candidates.length === 1) {
-        const c = candidates[0];
-        const nameMatches = isNameMatch(b.name, b.description, c.name, c.ovog);
-        const amtMatches = isAmountCompatible(b.amount, c.amount);
-        if (nameMatches) {
-          pairMatch(b, c, "match", "Тоот болон оршин суугчийн нэр тохирсон");
-        } else if (amtMatches) {
-          pairMatch(b, c, "likely", "Тоот болон төлбөрийн дүн тохирсон");
-        } else {
-          pairMatch(b, c, "likely", "Тоот тохирсон");
+      if (candidates.length === 0) return;
+
+      // Case A: Bank transaction specified a building OR organization has only 1 building OR user filtered by building
+      if (bBld || availableBuildings.length <= 1 || buildingFilter !== "ALL") {
+        if (candidates.length === 1) {
+          const c = candidates[0];
+          const nameMatches = isNameMatch(b.name, b.description, c.name, c.ovog);
+          const amtMatches = isAmountCompatible(b.amount, c.amount);
+          if (nameMatches) {
+            pairMatch(b, c, "match", "Байр, тоот болон оршин суугчийн нэр тохирсон");
+          } else if (amtMatches) {
+            pairMatch(b, c, "likely", "Байр, тоот болон төлбөрийн дүн тохирсон");
+          } else {
+            pairMatch(b, c, "likely", "Байр, тоот тохирсон");
+          }
         }
-      } else if (candidates.length > 1) {
-        // Multiple buildings have this toot!
-        // 1. Try name match first
+        return;
+      }
+
+      // Case B: Bank transaction did NOT specify building, and complex has multiple buildings!
+      // In this case, Toot exists in multiple buildings! NEVER pair to a random building just because it's open!
+      if (tootExistsInMultipleBuildings) {
+        // 1. Match ONLY if resident name matches that specific building's resident!
         const nameCandidate = candidates.find((h) =>
           isNameMatch(b.name, b.description, h.name, h.ovog)
         );
         if (nameCandidate) {
-          pairMatch(b, nameCandidate, "match", "Тоот болон оршин суугчийн нэрээр ялгасан");
-        } else {
-          // 2. Try amount match if ONLY ONE candidate matches the fee
-          const amtCandidates = candidates.filter((h) => isAmountCompatible(b.amount, h.amount));
-          if (amtCandidates.length === 1) {
-            pairMatch(b, amtCandidates[0], "likely", "Тоот болон төлбөрийн дүнгээр ялгасан");
+          pairMatch(b, nameCandidate, "match", "Тоот болон оршин суугчийн нэрээр байрыг ялгасан");
+        }
+        // If name does not match, DO NOT arbitrarily pair across buildings! Leave open for user to drag.
+      } else {
+        // Single building in complex has this toot:
+        if (candidates.length === 1) {
+          const c = candidates[0];
+          const nameMatches = isNameMatch(b.name, b.description, c.name, c.ovog);
+          const amtMatches = isAmountCompatible(b.amount, c.amount);
+          if (nameMatches) {
+            pairMatch(b, c, "match", "Тоот болон оршин суугчийн нэр тохирсон");
+          } else if (amtMatches) {
+            pairMatch(b, c, "likely", "Тоот болон төлбөрийн дүн тохирсон");
+          } else {
+            pairMatch(b, c, "likely", "Тоот тохирсон");
           }
         }
       }
@@ -1375,6 +1452,8 @@ export default function BankStatementImportModal({
         if (h.status !== "open") return false;
         const hBld = normalizeBuilding(h.building);
         if (bBld && hBld && bBld !== hBld) return false;
+        if (bBld && !hBld) return false;
+        if (buildingFilter !== "ALL" && !isBuildingCompatible(buildingFilter, h.building)) return false;
         return Boolean(h.phone && h.phone.includes(phoneMatch));
       });
 
@@ -1383,14 +1462,18 @@ export default function BankStatementImportModal({
       }
     });
 
-    // TIER 6: Resident Name alone (Unique name match across complex) - STRICT: REQUIRES AMOUNT COMPATIBILITY!
+    // TIER 6: ABSOLUTE LAST PRIORITY - Resident Name alone (Only if Toot was never found anywhere!)
     newBanks.forEach((b) => {
       if (b.status !== "open" || b.isExpense || b.isParking) return;
+      // If the bank row already had a toot that failed to match, do NOT fallback to a name match in a different home!
+      if (b.unit && b.unit !== "—") return;
+
       const bBld = normalizeBuilding(b.building);
       const candidates = newHomes.filter((h) => {
         if (h.status !== "open") return false;
         const hBld = normalizeBuilding(h.building);
         if (bBld && hBld && bBld !== hBld) return false;
+        if (bBld && !hBld) return false;
         if (selectedBuilding !== "ALL" && !isBuildingCompatible(selectedBuilding, h.building)) return false;
         const nameMatches = isNameMatch(b.name, b.description, h.name, h.ovog);
         if (!nameMatches) return false;
@@ -1398,7 +1481,7 @@ export default function BankStatementImportModal({
       });
 
       if (candidates.length === 1) {
-        pairMatch(b, candidates[0], "likely", "Оршин суугчийн нэр болон төлбөрийн дүн тохирсон");
+        pairMatch(b, candidates[0], "likely", "Оршин суугчийн нэр болон төлбөрийн дүнгээр тохирсон (Тоот заагаагүй)");
       }
     });
 
@@ -1672,12 +1755,10 @@ export default function BankStatementImportModal({
         }
       }
       if (selectedMonth !== "ALL") {
-        const bMonths = new Set<string>();
-        if (x.month) bMonths.add(x.month);
-        if (Array.isArray(x.targetMonths)) {
-          x.targetMonths.forEach((m) => bMonths.add(m));
-        }
-        if (!bMonths.has(selectedMonth)) return false;
+        const bMonths = (Array.isArray(x.targetMonths) && x.targetMonths.length > 0)
+          ? x.targetMonths
+          : [x.month || ""];
+        if (!bMonths.includes(selectedMonth)) return false;
       }
       if (tab !== "all" && x.status !== tab) return false;
       if (bankSearch.trim()) {
@@ -1705,12 +1786,12 @@ export default function BankStatementImportModal({
     });
   }, [homes, tab, homeSearch, selectedMonth, selectedBuilding]);
 
-  // Aligned side-by-side row display (Option 2):
-  // 1. Matched, Done, and Likely rows remain paired with their matched home.
-  // 2. Unmatched (open) bank rows and unmatched homes are aligned side-by-side in parallel starting from row 0
-  //    (eliminates huge blank gaps and enables intuitive side-by-side manual linking).
+  // Aligned side-by-side row display with proper search support:
   const displayRows = useMemo(() => {
-    // Sort banks: matched & done & likely first, then open
+    const isHomeSearchActive = Boolean(homeSearch.trim());
+    const isBankSearchActive = Boolean(bankSearch.trim());
+
+    // 1. Get banks that pass bank filters
     const sBanks = [...filteredBanks].sort((a, b) => {
       const aPrior = a.status === "match" || a.status === "done" || a.status === "likely";
       const bPrior = b.status === "match" || b.status === "done" || b.status === "likely";
@@ -1723,31 +1804,68 @@ export default function BankStatementImportModal({
     const usedHomeIds = new Set<string | number>();
     const unmatchedBanks: BankRow[] = [];
 
-    // 1. For each bank row: if matched, done, or likely, pair with matched home
+    // Matched / likely / done pairings
     sBanks.forEach((b) => {
       if ((b.status === "match" || b.status === "done" || b.status === "likely") && b.matchedHomeId != null) {
-        const matchedHome =
-          filteredHomes.find((h) => h.id === b.matchedHomeId) ||
-          homes.find((h) => h.id === b.matchedHomeId);
-        if (matchedHome) {
-          const pairedHome = {
-            ...matchedHome,
-            status: matchedHome.status === "open" ? b.status : matchedHome.status,
-            matchedBankId: matchedHome.matchedBankId || b.id,
-          };
-          rows.push({ bank: b, home: pairedHome });
-          usedHomeIds.add(matchedHome.id);
-          return;
+        // If homeSearch is active, matched home MUST match homeSearch!
+        if (isHomeSearchActive) {
+          const matchedHome = filteredHomes.find((h) => h.id === b.matchedHomeId);
+          if (matchedHome) {
+            const pairedHome = {
+              ...matchedHome,
+              status: matchedHome.status === "open" ? b.status : matchedHome.status,
+              matchedBankId: matchedHome.matchedBankId || b.id,
+            };
+            rows.push({ bank: b, home: pairedHome });
+            usedHomeIds.add(matchedHome.id);
+            return;
+          } else {
+            // Matched home did not match search query, skip this row
+            return;
+          }
+        } else {
+          const matchedHome =
+            filteredHomes.find((h) => h.id === b.matchedHomeId) ||
+            homes.find((h) => h.id === b.matchedHomeId);
+          if (matchedHome) {
+            const pairedHome = {
+              ...matchedHome,
+              status: matchedHome.status === "open" ? b.status : matchedHome.status,
+              matchedBankId: matchedHome.matchedBankId || b.id,
+            };
+            rows.push({ bank: b, home: pairedHome });
+            usedHomeIds.add(matchedHome.id);
+            return;
+          }
         }
       }
 
-      unmatchedBanks.push(b);
+      // If bank is unmatched (open):
+      if (!isHomeSearchActive) {
+        unmatchedBanks.push(b);
+      }
     });
 
-    // 2. Unmatched homes
+    // 2. Unmatched homes from filteredHomes
     const unmatchedHomes = filteredHomes.filter((h) => !usedHomeIds.has(h.id));
 
-    // Sort unmatched homes: candidate matches for unmatched banks bubble up to top
+    // When bankSearch is active, show only the searched bank transactions
+    if (isBankSearchActive) {
+      unmatchedBanks.forEach((b) => {
+        rows.push({ bank: b, home: null });
+      });
+      return rows;
+    }
+
+    // When homeSearch is active, show remaining searched homes
+    if (isHomeSearchActive) {
+      unmatchedHomes.forEach((h) => {
+        rows.push({ bank: null, home: h });
+      });
+      return rows;
+    }
+
+    // Normal view (neither search active): Sort unmatched homes to align with unmatched banks
     const targetToots = new Set(unmatchedBanks.map((b) => normalizeToot(b.unit)).filter(Boolean));
     const targetNames = unmatchedBanks.map((b) => (b.name || "").toLowerCase().trim()).filter(Boolean);
 
@@ -1769,7 +1887,6 @@ export default function BankStatementImportModal({
       return String(a.unit).localeCompare(String(b.unit));
     });
 
-    // 3. Align unmatched banks and unmatched homes side-by-side in parallel!
     const maxUnmatched = Math.max(unmatchedBanks.length, unmatchedHomes.length);
     for (let i = 0; i < maxUnmatched; i++) {
       rows.push({
@@ -1779,7 +1896,7 @@ export default function BankStatementImportModal({
     }
 
     return rows;
-  }, [filteredBanks, filteredHomes, homes, selectedBuilding]);
+  }, [filteredBanks, filteredHomes, homes, selectedBuilding, bankSearch, homeSearch]);
 
   // Statistics calculation
   const stats = useMemo(() => {
@@ -1796,12 +1913,10 @@ export default function BankStatementImportModal({
         }
       }
       if (selectedMonth !== "ALL") {
-        const bMonths = new Set<string>();
-        if (x.month) bMonths.add(x.month);
-        if (Array.isArray(x.targetMonths)) {
-          x.targetMonths.forEach((m) => bMonths.add(m));
-        }
-        if (!bMonths.has(selectedMonth)) return false;
+        const bMonths = (Array.isArray(x.targetMonths) && x.targetMonths.length > 0)
+          ? x.targetMonths
+          : [x.month || ""];
+        if (!bMonths.includes(selectedMonth)) return false;
       }
       return true;
     });
@@ -2184,27 +2299,6 @@ export default function BankStatementImportModal({
                       </div>
                     </div>
                   </div>
-
-                  {/* Drag and Drop Instruction Banner */}
-                  {banks.length > 0 && (
-                    <div className="px-4 py-2 bg-emerald-50/90 dark:bg-emerald-950/40 border-b border-emerald-200/80 dark:border-emerald-900/40 text-xs text-emerald-800 dark:text-emerald-300 flex items-center justify-between shrink-0">
-                      <div className="flex items-center gap-2">
-                        <span className="font-bold">💡 Чирч тулгах:</span>
-                        <span>Аль ч мөрийг чирч (гүйлгээ эсвэл айлын төлбөр) нөгөө талын харгалзах мөр рүү тавин шууд холбож тулгана уу.</span>
-                      </div>
-                      <div className="hidden sm:flex items-center gap-3 text-[11px]">
-                        <span className="flex items-center gap-1 font-semibold text-emerald-700 dark:text-emerald-400">
-                          <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block" /> Тулгасан
-                        </span>
-                        <span className="flex items-center gap-1 font-semibold text-amber-700 dark:text-amber-400">
-                          <span className="w-2 h-2 rounded-full bg-amber-500 inline-block" /> Магадлалтай
-                        </span>
-                        <span className="flex items-center gap-1 font-semibold text-rose-700 dark:text-rose-400">
-                          <span className="w-2 h-2 rounded-full bg-rose-500 inline-block" /> Тулгаагүй
-                        </span>
-                      </div>
-                    </div>
-                  )}
 
                   {/* SINGLE SYNCHRONIZED SCROLL CONTAINER - SCROLLS BOTH SIDES AT ONCE */}
                   <div className="flex-1 overflow-y-auto overflow-x-auto min-h-[360px] max-h-[520px]">
