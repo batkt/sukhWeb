@@ -44,6 +44,7 @@ type ExistingRecord = {
   toot?: string;
   bank?: string;
   isQPay?: boolean;
+  isManualPayment?: boolean;
   status?: string;
 };
 
@@ -1104,16 +1105,29 @@ export default function BankStatementImportModal({
           return;
         }
 
+        const bToot = normalizeToot(b.unit);
+
         const existingMatch = currentExisting.find((ex) => {
           // 1. Direct journal / record match (must be a valid unique transaction identifier)
           const exRec = String(ex.record || "").trim().toLowerCase();
-          if (jClean && exRec && !jClean.startsWith("excel-") && !exRec.startsWith("excel-") && jClean.length >= 6) {
+          if (jClean && exRec && !jClean.startsWith("excel-") && !exRec.startsWith("excel-") && !exRec.startsWith("manual-") && jClean.length >= 6) {
             if (jClean === exRec || exRec.includes(jClean) || jClean.includes(exRec)) {
               return true;
             }
           }
           // 2. Strict Compound signature: Same Amount + Same Date + (Same Related Account or Exact Description)
           if (Math.abs(ex.amount - bAmt) >= 0.01) return false;
+
+          // 3. User rule: match if payment was manually entered by employee (matches toot & amount, ignoring ognoo)
+          const exToot = normalizeToot(ex.toot);
+          if (bToot && exToot && bToot === exToot) {
+            return true;
+          }
+
+          // If linked to same contract
+          if (b.matchedHomeId && ex.matchedGereeId && String(b.matchedHomeId) === String(ex.matchedGereeId)) {
+            return true;
+          }
 
           const exDateClean = String(ex.date || "").replace(/[-./]/g, "");
           const isDateMatch = bDateClean && exDateClean && (bDateClean.includes(exDateClean) || exDateClean.includes(bDateClean));
@@ -1136,21 +1150,23 @@ export default function BankStatementImportModal({
 
         if (existingMatch) {
           b.status = "done";
-          b.matchReason = "Өмнө нь системд бүртгэгдсэн гүйлгээ";
+          b.matchReason = existingMatch.isManualPayment
+            ? "Ажилтны системд бүртгэсэн төлөлттэй дүн тохирсон (Давхардсан)"
+            : "Өмнө нь системд бүртгэгдсэн гүйлгээ (Давхардсан)";
           alreadyDoneCount++;
 
           if (existingMatch.matchedGereeId) {
             const linkedHome = updatedHomes.find(
               (h) => String(h.gereeId || h.id) === String(existingMatch.matchedGereeId)
             );
-            // ONLY link if BOTH unit (toot) AND building match!
+            // Link if toot matches or was unassigned
             if (
               linkedHome &&
-              normalizeToot(linkedHome.unit) === normalizeToot(b.unit) &&
-              isBuildingCompatible(b.building, linkedHome.building)
+              (!b.unit || normalizeToot(linkedHome.unit) === normalizeToot(b.unit))
             ) {
               b.matchedHomeId = linkedHome.id;
-              // Do NOT mark linkedHome.status = "done" so current period transactions can match
+              if (!b.unit || b.unit === "—") b.unit = linkedHome.unit;
+              if (!b.building || b.building === "Байр") b.building = linkedHome.building;
             }
           }
         }
@@ -1167,7 +1183,7 @@ export default function BankStatementImportModal({
       setSelectedMonth("ALL");
 
       if (alreadyDoneCount > 0) {
-        toast.success(`${extractedBanks.length} гүйлгээ уншигдлаа (${alreadyDoneCount} нь өмнө нь бүртгэгдсэн)`);
+        toast.success(`${extractedBanks.length} гүйлгээ уншигдлаа (${alreadyDoneCount} нь давхардсан)`);
       } else {
         toast.success(`${extractedBanks.length} гүйлгээ уншигдлаа`);
       }
@@ -2113,7 +2129,12 @@ export default function BankStatementImportModal({
         if (!isBuildingCompatible(x.building, selectedBuilding)) return false;
       }
       if (selectedMonth !== "ALL" && x.month && x.month !== selectedMonth) return false;
-      if (tab !== "all" && x.status !== tab && !(tab === "open" && (x as any).isManual)) return false;
+      if (tab === "done") {
+        const isLinkedToDoneBank = banks.some((b) => b.status === "done" && b.matchedHomeId === x.id);
+        if (x.status !== "done" && !isLinkedToDoneBank) return false;
+      } else if (tab !== "all" && x.status !== tab && !(tab === "open" && (x as any).isManual)) {
+        return false;
+      }
       if (homeSearch.trim()) {
         const q = homeSearch.toLowerCase().trim();
         const str = [x.name, x.unit, x.building, x.amount, x.note].join(" ").toLowerCase();
@@ -2121,7 +2142,7 @@ export default function BankStatementImportModal({
       }
       return true;
     });
-  }, [homes, tab, homeSearch, selectedMonth, selectedBuilding]);
+  }, [homes, banks, tab, homeSearch, selectedMonth, selectedBuilding]);
 
   // Aligned side-by-side row display with separate, independent search and sort support:
   const displayRows = useMemo(() => {
@@ -2472,12 +2493,20 @@ export default function BankStatementImportModal({
 
               {/* Body Content Area */}
               <div className="flex-1 overflow-hidden px-6 py-3 flex flex-col space-y-3 min-h-0">
-                {/* 4 Stats Cards (Sleek Compact Height: px-3 py-1.5) */}
+                {/* 5 Stats Cards (Filter tabs with tooltips and active states) */}
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2.5 shrink-0">
-                  {/* Card 1: Нийт орлогын гүйлгээ */}
-                  <div className="bg-white dark:bg-zinc-900 border border-[#e7ece9] dark:border-zinc-800 rounded-lg px-3 py-1.5 shadow-xs flex items-center justify-between">
+                  {/* Card 1: Нийт орлого */}
+                  <button
+                    type="button"
+                    onClick={() => setTab("all")}
+                    title="Бүх банкны хуулгын гүйлгээг харах"
+                    className={`text-left rounded-lg px-3 py-1.5 shadow-xs flex items-center justify-between transition-all cursor-pointer border ${tab === "all"
+                      ? "bg-zinc-100 dark:bg-zinc-800 border-zinc-600 dark:border-zinc-400 ring-2 ring-zinc-400/40"
+                      : "bg-white dark:bg-zinc-900 border-[#e7ece9] dark:border-zinc-800 hover:border-zinc-400 dark:hover:border-zinc-700"
+                      }`}
+                  >
                     <div>
-                      <div className="text-[11px] text-black dark:text-zinc-200 leading-none">Нийт орлого</div>
+                      <div className="text-[11px] text-zinc-600 dark:text-zinc-400 leading-none font-medium">Нийт орлого</div>
                       <div className="text-base text-black dark:text-white leading-tight mt-1 font-bold">
                         {stats.totalCount}
                       </div>
@@ -2485,10 +2514,18 @@ export default function BankStatementImportModal({
                     <div className="text-xs text-black dark:text-zinc-200 tabular-nums text-right font-medium">
                       {formatNumber(stats.totalSum)} ₮
                     </div>
-                  </div>
+                  </button>
 
                   {/* Card 2: Тулгасан (Green) */}
-                  <div className="bg-emerald-50/40 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-900/50 rounded-lg px-3 py-1.5 shadow-xs flex items-center justify-between">
+                  <button
+                    type="button"
+                    onClick={() => setTab("match")}
+                    title="Байр, тоот болон дүнгээр 100% тохирсон гүйлгээ"
+                    className={`text-left rounded-lg px-3 py-1.5 shadow-xs flex items-center justify-between transition-all cursor-pointer border ${tab === "match"
+                      ? "bg-emerald-100 dark:bg-emerald-950/60 border-emerald-600 dark:border-emerald-500 ring-2 ring-emerald-500/40"
+                      : "bg-emerald-50/40 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-900/50 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 hover:border-emerald-300"
+                      }`}
+                  >
                     <div>
                       <div className="text-[11px] text-emerald-900 dark:text-emerald-300 leading-none font-semibold">✓ Тулгасан</div>
                       <div className="text-base text-emerald-800 dark:text-emerald-300 leading-tight mt-1 font-bold">
@@ -2498,10 +2535,18 @@ export default function BankStatementImportModal({
                     <div className="text-xs text-emerald-800 dark:text-emerald-300 tabular-nums text-right font-medium">
                       {formatNumber(stats.matchedSum)} ₮
                     </div>
-                  </div>
+                  </button>
 
                   {/* Card 3: Магадлалтай (Amber) */}
-                  <div className="bg-amber-50/50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/50 rounded-lg px-3 py-1.5 shadow-xs flex items-center justify-between min-w-0">
+                  <button
+                    type="button"
+                    onClick={() => setTab("likely")}
+                    title="Мэдээлэл зөрүүтэй тул шалгаж баталгаажуулах шаардлагатай гүйлгээ"
+                    className={`text-left rounded-lg px-3 py-1.5 shadow-xs flex items-center justify-between min-w-0 transition-all cursor-pointer border ${tab === "likely"
+                      ? "bg-amber-100 dark:bg-amber-950/60 border-amber-600 dark:border-amber-500 ring-2 ring-amber-500/40"
+                      : "bg-amber-50/50 dark:bg-amber-950/30 border-amber-200 dark:border-amber-900/50 hover:bg-amber-50 dark:hover:bg-amber-950/40 hover:border-amber-300"
+                      }`}
+                  >
                     <div className="min-w-0">
                       <div className="text-[11px] text-amber-900 dark:text-amber-300 leading-none font-semibold flex items-center gap-1">
                         <Zap className="w-3 h-3 text-amber-600 shrink-0" />
@@ -2514,10 +2559,18 @@ export default function BankStatementImportModal({
                     <div className="text-xs text-amber-800 dark:text-amber-300 tabular-nums text-right font-medium shrink-0 ml-2">
                       {formatNumber(stats.likelySum)} ₮
                     </div>
-                  </div>
+                  </button>
 
                   {/* Card 4: Тулгаагүй (Red / Rose) */}
-                  <div className="bg-rose-50/40 dark:bg-rose-950/20 border border-rose-200 dark:border-rose-900/50 rounded-lg px-3 py-1.5 shadow-xs flex items-center justify-between">
+                  <button
+                    type="button"
+                    onClick={() => setTab("open")}
+                    title="Айлын нэхэмжлэхтэй хараахан холбогдоогүй гүйлгээ"
+                    className={`text-left rounded-lg px-3 py-1.5 shadow-xs flex items-center justify-between transition-all cursor-pointer border ${tab === "open"
+                      ? "bg-rose-100 dark:bg-rose-950/60 border-rose-600 dark:border-rose-500 ring-2 ring-rose-500/40"
+                      : "bg-rose-50/40 dark:bg-rose-950/20 border-rose-200 dark:border-rose-900/50 hover:bg-rose-50 dark:hover:bg-rose-950/40 hover:border-rose-300"
+                      }`}
+                  >
                     <div>
                       <div className="text-[11px] text-rose-900 dark:text-rose-300 leading-none font-semibold">✕ Тулгаагүй</div>
                       <div className="text-base text-rose-700 dark:text-rose-400 leading-tight mt-1 font-bold">
@@ -2527,50 +2580,52 @@ export default function BankStatementImportModal({
                     <div className="text-xs text-rose-700 dark:text-rose-400 tabular-nums text-right font-medium">
                       {formatNumber(stats.openSum)} ₮
                     </div>
-                  </div>
+                  </button>
 
-                  {/* Card 5: Бүртгэсэн */}
-                  <div className="bg-white dark:bg-zinc-900 border border-[#e7ece9] dark:border-zinc-800 rounded-lg px-3 py-1.5 shadow-xs flex items-center justify-between">
+                  {/* Card 5: Давхардсан (Blue) */}
+                  <button
+                    type="button"
+                    onClick={() => setTab("done")}
+                    title="Ажилтны системд бүртгэсэн төлөлт болон өмнө бүртгэгдсэн гүйлгээтэй дүн тохирсон (давхардахаас сэргийлж хасагдсан)"
+                    className={`text-left rounded-lg px-3 py-1.5 shadow-xs flex items-center justify-between transition-all cursor-pointer border ${tab === "done"
+                      ? "bg-blue-100 dark:bg-blue-950/60 border-blue-600 dark:border-blue-500 ring-2 ring-blue-500/40"
+                      : "bg-blue-50/50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-900/50 hover:bg-blue-50 dark:hover:bg-blue-950/40 hover:border-blue-300"
+                      }`}
+                  >
                     <div>
-                      <div className="text-[11px] text-zinc-600 dark:text-zinc-400 leading-none">Бүртгэсэн</div>
-                      <div className="text-base text-zinc-700 dark:text-zinc-200 leading-tight mt-1 font-bold">
+                      <div className="text-[11px] text-blue-900 dark:text-blue-300 leading-none font-semibold">Давхардсан</div>
+                      <div className="text-base text-blue-700 dark:text-blue-300 leading-tight mt-1 font-bold">
                         {stats.doneCount}
                       </div>
                     </div>
-                    <div className="text-xs text-zinc-600 dark:text-zinc-300 tabular-nums text-right font-medium">
+                    <div className="text-xs text-blue-700 dark:text-blue-300 tabular-nums text-right font-medium">
                       {formatNumber(stats.doneSum)} ₮
                     </div>
-                  </div>
+                  </button>
                 </div>
 
                 {/* Workspace Container */}
                 <div className="bg-white dark:bg-zinc-900 border border-[#e7ece9] dark:border-zinc-800 rounded-xl overflow-hidden flex flex-col shadow-sm flex-1 min-h-0">
-                  {/* Toolbar with Tabs & Auto-Match Button */}
+                  {/* Toolbar with Active Filter Indicator & Action Buttons */}
                   <div className="px-5 py-2 border-b border-[#e7ece9] dark:border-zinc-800 flex items-center justify-between gap-3 shrink-0">
-                    <div className="flex items-center gap-1.5">
-                      {(
-                        [
-                          ["all", `Бүгд (${stats.totalCount})`],
-                          ["match", `Тулгасан (${stats.matchedCount})`],
-                          ["likely", `Магадлалтай (${stats.likelyCount})`],
-                          ["open", `Тулгаагүй (${stats.openCount})`],
-                          ["done", `Бүртгэсэн (${stats.doneCount})`],
-                        ] as const
-                      ).map(([key, label]) => {
-                        const active = tab === key;
-                        return (
-                          <button
-                            key={key}
-                            onClick={() => setTab(key)}
-                            className={`px-3 py-1 rounded-lg text-xs transition cursor-pointer ${active
-                              ? "bg-[#eaf5ef] text-[#087f64] font-bold"
-                              : "text-[#87928c] hover:bg-gray-100 dark:hover:bg-zinc-800"
-                              }`}
-                          >
-                            {label}
-                          </button>
-                        );
-                      })}
+                    <div className="flex items-center gap-2 text-xs">
+                      <span className="text-zinc-500 dark:text-zinc-400 font-medium">Шүүлтүүр:</span>
+                      <span className={`px-2.5 py-0.5 rounded-full font-bold ${tab === "all"
+                        ? "bg-zinc-100 text-zinc-800 dark:bg-zinc-800 dark:text-zinc-200"
+                        : tab === "match"
+                          ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300"
+                          : tab === "likely"
+                            ? "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300"
+                            : tab === "open"
+                              ? "bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300"
+                              : "bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300"
+                        }`}>
+                        {tab === "all" && `Нийт орлого (${stats.totalCount})`}
+                        {tab === "match" && `Тулгасан (${stats.matchedCount})`}
+                        {tab === "likely" && `Магадлалтай (${stats.likelyCount})`}
+                        {tab === "open" && `Тулгаагүй (${stats.openCount})`}
+                        {tab === "done" && `Давхардсан (${stats.doneCount})`}
+                      </span>
                     </div>
 
                     <div className="flex items-center gap-2">
@@ -2848,8 +2903,10 @@ export default function BankStatementImportModal({
                                 b && h && (b.status === "match" || b.status === "done") && (h.status === "match" || h.status === "done")
                               );
                               const isBothDone = Boolean(b && h && b.status === "done" && h.status === "done");
-                              const isBankMatched = Boolean(b && (b.status === "match" || b.status === "done"));
-                              const isHomeMatched = Boolean(h && (h.status === "match" || h.status === "done"));
+                              const isBankDone = Boolean(b && b.status === "done");
+                              const isHomeDone = Boolean(h && (h.status === "done" || (b && b.status === "done")));
+                              const isBankMatched = Boolean(b && b.status === "match");
+                              const isHomeMatched = Boolean(h && h.status === "match");
 
                               const isBankLikely = Boolean(b && b.status === "likely");
                               const isHomeLikely = Boolean(h && h.status === "likely");
@@ -2870,11 +2927,13 @@ export default function BankStatementImportModal({
                                   ? "bg-[#e0f2fe] dark:bg-sky-950/50"
                                   : !b
                                     ? "bg-zinc-50 dark:bg-zinc-900/30"
-                                    : isBankMatched
-                                      ? "bg-[#eaf5ef] dark:bg-emerald-950/30 hover:bg-[#e1f0e7]"
-                                      : isBankLikely
-                                        ? "bg-[#fefce8] dark:bg-amber-950/30 hover:bg-[#fef9c3]"
-                                        : "bg-[#fef2f2] dark:bg-rose-950/30 hover:bg-[#fde8e8]";
+                                    : isBankDone
+                                      ? "bg-blue-50/70 dark:bg-blue-950/30 hover:bg-blue-100/70 text-blue-950 dark:text-blue-200"
+                                      : isBankMatched
+                                        ? "bg-[#eaf5ef] dark:bg-emerald-950/30 hover:bg-[#e1f0e7]"
+                                        : isBankLikely
+                                          ? "bg-[#fefce8] dark:bg-amber-950/30 hover:bg-[#fef9c3]"
+                                          : "bg-[#fef2f2] dark:bg-rose-950/30 hover:bg-[#fde8e8]";
 
                               const homeBg = isDragTargetHome
                                 ? "bg-emerald-100 dark:bg-emerald-950/70 ring-2 ring-emerald-500 shadow-md"
@@ -2882,11 +2941,13 @@ export default function BankStatementImportModal({
                                   ? "bg-[#e0f2fe] dark:bg-sky-950/50"
                                   : !h
                                     ? "bg-zinc-50 dark:bg-zinc-900/30"
-                                    : isHomeMatched
-                                      ? "bg-[#eaf5ef] dark:bg-emerald-950/30 hover:bg-[#e1f0e7]"
-                                      : isHomeLikely
-                                        ? "bg-[#fefce8] dark:bg-amber-950/30 hover:bg-[#fef9c3]"
-                                        : "bg-[#fef2f2] dark:bg-rose-950/30 hover:bg-[#fde8e8]";
+                                    : isHomeDone
+                                      ? "bg-blue-50/70 dark:bg-blue-950/30 hover:bg-blue-100/70 text-blue-950 dark:text-blue-200"
+                                      : isHomeMatched
+                                        ? "bg-[#eaf5ef] dark:bg-emerald-950/30 hover:bg-[#e1f0e7]"
+                                        : isHomeLikely
+                                          ? "bg-[#fefce8] dark:bg-amber-950/30 hover:bg-[#fef9c3]"
+                                          : "bg-[#fef2f2] dark:bg-rose-950/30 hover:bg-[#fde8e8]";
 
                               // Foolproof Date & Time converter for Bank Statement
                               const { date: displayDate, time: displayTime } = (() => {
@@ -3190,15 +3251,23 @@ export default function BankStatementImportModal({
                                               </span>
                                             )}
                                             {b.status === "done" && (
-                                              <span
-                                                className={`inline-flex items-center text-[10px] font-medium px-2 py-0.5 rounded-full ${b.isQPay
-                                                  ? "bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800"
-                                                  : "bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-700"
-                                                  } shrink-0`}
-                                                title={b.matchReason}
-                                              >
-                                                {b.isQPay ? "QPay бүртгэгдсэн" : "Бүртгэсэн"}
-                                              </span>
+                                              <div className="flex items-center gap-1 shrink-0">
+                                                <span
+                                                  className="inline-flex items-center text-[10px] font-semibold px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-950/70 text-blue-700 dark:text-blue-300 border border-blue-300 dark:border-blue-800 shrink-0"
+                                                  title={b.matchReason || "Давхардсан төлөлт"}
+                                                >
+                                                  {b.isQPay ? "QPay давхардсан" : "Давхардсан"}
+                                                </span>
+                                                {b.matchedHomeId && (
+                                                  <button
+                                                    onClick={(e) => handleUnlink(e, b.id, b.matchedHomeId)}
+                                                    className="text-[11px] text-zinc-400 hover:text-rose-600 font-medium px-1 py-0.5 rounded hover:bg-rose-50 transition-colors cursor-pointer whitespace-nowrap shrink-0"
+                                                    title="Тулгалт салгах"
+                                                  >
+                                                    [Салгах]
+                                                  </button>
+                                                )}
+                                              </div>
                                             )}
                                           </div>
                                         </div>
@@ -3391,14 +3460,12 @@ export default function BankStatementImportModal({
                                                 ✕ Тулгаагүй
                                               </span>
                                             )}
-                                            {h.status === "done" && (
+                                            {(h.status === "done" || (b && b.status === "done")) && (
                                               <span
-                                                className={`inline-flex items-center text-[10px] font-medium px-2 py-0.5 rounded-full ${h.qpayPaid
-                                                  ? "bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800"
-                                                  : "bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-700"
-                                                  } shrink-0`}
+                                                className="inline-flex items-center text-[10px] font-semibold px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-950/70 text-blue-700 dark:text-blue-300 border border-blue-300 dark:border-blue-800 shrink-0"
+                                                title="Давхардсан төлөлт"
                                               >
-                                                {h.qpayPaid ? "QPay төлсөн" : "Бүртгэсэн"}
+                                                {h.qpayPaid ? "QPay төлсөн" : "Давхардсан"}
                                               </span>
                                             )}
                                           </div>
@@ -3414,7 +3481,7 @@ export default function BankStatementImportModal({
                                           {h.qpayPaid ? 0 : formatNumber(h.amount)} ₮
                                         </div>
                                         <div className="text-[11px] text-zinc-400 dark:text-zinc-500 mt-0.5">
-                                          {h.qpayPaid ? "QPay төлөгдсөн" : "Нэхэмжлэх"}
+                                          {h.qpayPaid ? "QPay төлөгдсөн" : (h.status === "done" || (b && b.status === "done")) ? "Давхардсан" : "Нэхэмжлэх"}
                                         </div>
                                         {b && (b.status === "match" || b.status === "likely") && (
                                           <div className="mt-1 flex justify-end">
