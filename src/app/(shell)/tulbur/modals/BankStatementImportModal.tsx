@@ -2749,7 +2749,74 @@ export default function BankStatementImportModal({
                         </div>
                       </div>
                     ) : (
-                      <table className="w-full text-left text-xs border-separate border-spacing-0 table-fixed">
+                      <>
+                        <style dangerouslySetInnerHTML={{ __html: `
+                          tr:has(.bank-cell:hover) .bank-cell.status-open:not(.pair-selected):not(.drag-target) {
+                            background-color: #fde8e8 !important;
+                          }
+                          tr:has(.bank-cell:hover) .bank-cell.status-match:not(.pair-selected):not(.drag-target) {
+                            background-color: #e1f0e7 !important;
+                          }
+                          tr:has(.bank-cell:hover) .bank-cell.status-likely:not(.pair-selected):not(.drag-target) {
+                            background-color: #fef9c3 !important;
+                          }
+                          tr:has(.bank-cell:hover) .bank-cell.status-done:not(.pair-selected):not(.drag-target) {
+                            background-color: #dbeafe !important;
+                          }
+
+                          .dark tr:has(.bank-cell:hover) .bank-cell.status-open:not(.pair-selected):not(.drag-target) {
+                            background-color: rgba(136, 19, 55, 0.45) !important;
+                          }
+                          .dark tr:has(.bank-cell:hover) .bank-cell.status-match:not(.pair-selected):not(.drag-target) {
+                            background-color: rgba(6, 78, 59, 0.45) !important;
+                          }
+                          .dark tr:has(.bank-cell:hover) .bank-cell.status-likely:not(.pair-selected):not(.drag-target) {
+                            background-color: rgba(120, 53, 15, 0.45) !important;
+                          }
+                          .dark tr:has(.bank-cell:hover) .bank-cell.status-done:not(.pair-selected):not(.drag-target) {
+                            background-color: rgba(30, 58, 138, 0.45) !important;
+                          }
+
+                          tr:has(.home-cell:hover) .home-cell.status-open:not(.pair-selected):not(.drag-target) {
+                            background-color: #fde8e8 !important;
+                          }
+                          tr:has(.home-cell:hover) .home-cell.status-match:not(.pair-selected):not(.drag-target) {
+                            background-color: #e1f0e7 !important;
+                          }
+                          tr:has(.home-cell:hover) .home-cell.status-likely:not(.pair-selected):not(.drag-target) {
+                            background-color: #fef9c3 !important;
+                          }
+                          tr:has(.home-cell:hover) .home-cell.status-done:not(.pair-selected):not(.drag-target) {
+                            background-color: #dbeafe !important;
+                          }
+
+                          .dark tr:has(.home-cell:hover) .home-cell.status-open:not(.pair-selected):not(.drag-target) {
+                            background-color: rgba(136, 19, 55, 0.45) !important;
+                          }
+                          .dark tr:has(.home-cell:hover) .home-cell.status-match:not(.pair-selected):not(.drag-target) {
+                            background-color: rgba(6, 78, 59, 0.45) !important;
+                          }
+                          .dark tr:has(.home-cell:hover) .home-cell.status-likely:not(.pair-selected):not(.drag-target) {
+                            background-color: rgba(120, 53, 15, 0.45) !important;
+                          }
+                          .dark tr:has(.home-cell:hover) .home-cell.status-done:not(.pair-selected):not(.drag-target) {
+                            background-color: rgba(30, 58, 138, 0.45) !important;
+                          }
+
+                          tr:has(.both-matched:hover) .both-matched.status-match:not(.pair-selected):not(.drag-target) {
+                            background-color: #e1f0e7 !important;
+                          }
+                          .dark tr:has(.both-matched:hover) .both-matched.status-match:not(.pair-selected):not(.drag-target) {
+                            background-color: rgba(6, 78, 59, 0.45) !important;
+                          }
+                          tr:has(.both-matched:hover) .both-matched.status-done:not(.pair-selected):not(.drag-target) {
+                            background-color: #dbeafe !important;
+                          }
+                          .dark tr:has(.both-matched:hover) .both-matched.status-done:not(.pair-selected):not(.drag-target) {
+                            background-color: rgba(30, 58, 138, 0.45) !important;
+                          }
+                        `}} />
+                        <table className="w-full text-left text-xs border-separate border-spacing-0 table-fixed">
                         {/* 50 / 50 HALF AND HALF COLUMN SPECIFICATION */}
                         <colgroup>
                           {/* Left (Bank): 50% */}
@@ -2920,34 +2987,53 @@ export default function BankStatementImportModal({
                               );
                               const isDragConnecting = (draggedBankId && dragOverHomeId === h?.id) || (draggedHomeId && dragOverBankId === b?.id);
 
-                              // Distinct cell colors
+                              const bankStatusClass = isBankDone
+                                ? "status-done"
+                                : isBankMatched
+                                  ? "status-match"
+                                  : isBankLikely
+                                    ? "status-likely"
+                                    : "status-open";
+
+                              const homeStatusClass = isHomeDone
+                                ? "status-done"
+                                : isHomeMatched
+                                  ? "status-match"
+                                  : isHomeLikely
+                                    ? "status-likely"
+                                    : "status-open";
+
+                              // Distinct cell colors (unified hover handled by tr:has selector across entire row)
                               const bankBg = isDragTargetBank
-                                ? "bg-emerald-100 dark:bg-emerald-950/70 ring-2 ring-emerald-500 shadow-md"
+                                ? "bg-emerald-100 dark:bg-emerald-950/70 ring-2 ring-emerald-500 shadow-md drag-target"
                                 : isPairSelectedBank
-                                  ? "bg-[#e0f2fe] dark:bg-sky-950/50"
+                                  ? "bg-[#e0f2fe] dark:bg-sky-950/50 pair-selected"
                                   : !b
                                     ? "bg-zinc-50 dark:bg-zinc-900/30"
                                     : isBankDone
-                                      ? "bg-blue-50/70 dark:bg-blue-950/30 hover:bg-blue-100/70 text-blue-950 dark:text-blue-200"
+                                      ? "bg-blue-50/70 dark:bg-blue-950/30 text-blue-950 dark:text-blue-200"
                                       : isBankMatched
-                                        ? "bg-[#eaf5ef] dark:bg-emerald-950/30 hover:bg-[#e1f0e7]"
+                                        ? "bg-[#eaf5ef] dark:bg-emerald-950/30"
                                         : isBankLikely
-                                          ? "bg-[#fefce8] dark:bg-amber-950/30 hover:bg-[#fef9c3]"
-                                          : "bg-[#fef2f2] dark:bg-rose-950/30 hover:bg-[#fde8e8]";
+                                          ? "bg-[#fefce8] dark:bg-amber-950/30"
+                                          : "bg-[#fef2f2] dark:bg-rose-950/30";
 
                               const homeBg = isDragTargetHome
-                                ? "bg-emerald-100 dark:bg-emerald-950/70 ring-2 ring-emerald-500 shadow-md"
+                                ? "bg-emerald-100 dark:bg-emerald-950/70 ring-2 ring-emerald-500 shadow-md drag-target"
                                 : isPairSelectedHome
-                                  ? "bg-[#e0f2fe] dark:bg-sky-950/50"
+                                  ? "bg-[#e0f2fe] dark:bg-sky-950/50 pair-selected"
                                   : !h
                                     ? "bg-zinc-50 dark:bg-zinc-900/30"
                                     : isHomeDone
-                                      ? "bg-blue-50/70 dark:bg-blue-950/30 hover:bg-blue-100/70 text-blue-950 dark:text-blue-200"
+                                      ? "bg-blue-50/70 dark:bg-blue-950/30 text-blue-950 dark:text-blue-200"
                                       : isHomeMatched
-                                        ? "bg-[#eaf5ef] dark:bg-emerald-950/30 hover:bg-[#e1f0e7]"
+                                        ? "bg-[#eaf5ef] dark:bg-emerald-950/30"
                                         : isHomeLikely
-                                          ? "bg-[#fefce8] dark:bg-amber-950/30 hover:bg-[#fef9c3]"
-                                          : "bg-[#fef2f2] dark:bg-rose-950/30 hover:bg-[#fde8e8]";
+                                          ? "bg-[#fefce8] dark:bg-amber-950/30"
+                                          : "bg-[#fef2f2] dark:bg-rose-950/30";
+
+                              const bankRowClasses = `bank-cell ${bankStatusClass} ${isBothMatched ? "both-matched" : ""} ${bankBg} transition-colors duration-100`;
+                              const homeRowClasses = `home-cell ${homeStatusClass} ${isBothMatched ? "both-matched" : ""} ${homeBg} transition-colors duration-100`;
 
                               // Foolproof Date & Time converter for Bank Statement
                               const { date: displayDate, time: displayTime } = (() => {
@@ -3015,7 +3101,7 @@ export default function BankStatementImportModal({
                                       {/* Cell 0: № */}
                                       <td
                                         onClick={() => setPairBankId((prev) => (prev === b.id ? null : b.id))}
-                                        className={`py-2 px-1 text-center text-xs font-semibold text-zinc-500 dark:text-zinc-400 select-none cursor-pointer ${bankBg}`}
+                                        className={`py-2 px-1 text-center text-xs font-semibold text-zinc-500 dark:text-zinc-400 select-none cursor-pointer ${bankRowClasses}`}
                                       >
                                         {bankNo}
                                       </td>
@@ -3055,7 +3141,7 @@ export default function BankStatementImportModal({
                                           setDragOverBankId(null);
                                         }}
                                         onClick={() => setPairBankId((prev) => (prev === b.id ? null : b.id))}
-                                        className={`py-2 px-3 cursor-pointer overflow-hidden ${bankBg}`}
+                                        className={`py-2 px-3 cursor-pointer overflow-hidden ${bankRowClasses}`}
                                       >
                                         <div className="flex items-center gap-1.5">
                                           <span title="Чирч зөөх эсвэл айлын төлбөртэй холбох" className="cursor-grab shrink-0">
@@ -3107,7 +3193,7 @@ export default function BankStatementImportModal({
                                           setDragOverBankId(null);
                                         }}
                                         onClick={() => setPairBankId((prev) => (prev === b.id ? null : b.id))}
-                                        className={`py-2 px-3 cursor-pointer overflow-hidden ${bankBg}`}
+                                        className={`py-2 px-3 cursor-pointer overflow-hidden ${bankRowClasses}`}
                                       >
                                         <div className="text-xs text-zinc-900 dark:text-zinc-100 font-semibold tracking-tight whitespace-nowrap">
                                           {b.unit && b.unit !== "—" ? (
@@ -3163,7 +3249,7 @@ export default function BankStatementImportModal({
                                           setDragOverBankId(null);
                                         }}
                                         onClick={() => setPairBankId((prev) => (prev === b.id ? null : b.id))}
-                                        className={`py-2 px-3 cursor-pointer overflow-hidden ${bankBg}`}
+                                        className={`py-2 px-3 cursor-pointer overflow-hidden ${bankRowClasses}`}
                                       >
                                         <div className="flex items-center justify-between gap-2 h-full">
                                           <div className="min-w-0 flex-1">
@@ -3276,7 +3362,7 @@ export default function BankStatementImportModal({
                                       {/* Cell 4: Орлого ₮ */}
                                       <td
                                         onClick={() => setPairBankId((prev) => (prev === b.id ? null : b.id))}
-                                        className={`py-2 px-4 text-right whitespace-nowrap cursor-pointer border-r border-zinc-200 dark:border-zinc-700 ${bankBg}`}
+                                        className={`py-2 px-4 text-right whitespace-nowrap cursor-pointer border-r border-zinc-200 dark:border-zinc-700 ${bankRowClasses}`}
                                       >
                                         <div className="text-xs text-zinc-900 dark:text-zinc-100 tabular-nums font-semibold">
                                           {formatNumber(b.amount)} ₮
@@ -3308,7 +3394,7 @@ export default function BankStatementImportModal({
                                       </td>
                                     </>
                                   ) : (
-                                    <td colSpan={5} className={`py-2 px-3 text-center text-[11px] text-zinc-400 dark:text-zinc-600 italic border-r border-zinc-200 dark:border-zinc-700 ${bankBg}`}>
+                                    <td colSpan={5} className={`py-2 px-3 text-center text-[11px] text-zinc-400 dark:text-zinc-600 italic border-r border-zinc-200 dark:border-zinc-700 ${bankRowClasses}`}>
                                       —
                                     </td>
                                   )}
@@ -3319,7 +3405,7 @@ export default function BankStatementImportModal({
                                       {/* Cell 5: № */}
                                       <td
                                         onClick={() => toggleHomeRow(h.id)}
-                                        className={`py-2 px-1 text-center text-xs font-semibold text-zinc-500 dark:text-zinc-400 select-none cursor-pointer ${homeBg}`}
+                                        className={`py-2 px-1 text-center text-xs font-semibold text-zinc-500 dark:text-zinc-400 select-none cursor-pointer ${homeRowClasses}`}
                                       >
                                         {homeNo}
                                       </td>
@@ -3359,7 +3445,7 @@ export default function BankStatementImportModal({
                                           setDragOverHomeId(null);
                                         }}
                                         onClick={() => toggleHomeRow(h.id)}
-                                        className={`py-2 px-3 cursor-pointer overflow-hidden ${homeBg}`}
+                                        className={`py-2 px-3 cursor-pointer overflow-hidden ${homeRowClasses}`}
                                       >
                                         <div className="flex items-center gap-1.5">
                                           <span title="Чирч зөөх эсвэл банкны гүйлгээтэй холбох" className="cursor-grab shrink-0">
@@ -3414,7 +3500,7 @@ export default function BankStatementImportModal({
                                           setDragOverHomeId(null);
                                         }}
                                         onClick={() => toggleHomeRow(h.id)}
-                                        className={`py-2 px-3 cursor-pointer overflow-hidden ${homeBg}`}
+                                        className={`py-2 px-3 cursor-pointer overflow-hidden ${homeRowClasses}`}
                                       >
                                         <div className="flex items-center justify-between gap-2 h-full">
                                           <div className="min-w-0 flex-1">
@@ -3475,7 +3561,7 @@ export default function BankStatementImportModal({
                                       {/* Cell 8: Төлбөр ₮ */}
                                       <td
                                         onClick={() => toggleHomeRow(h.id)}
-                                        className={`py-2 px-4 text-right whitespace-nowrap cursor-pointer ${homeBg}`}
+                                        className={`py-2 px-4 text-right whitespace-nowrap cursor-pointer ${homeRowClasses}`}
                                       >
                                         <div className="text-xs text-zinc-900 dark:text-zinc-100 tabular-nums font-semibold">
                                           {h.qpayPaid ? 0 : formatNumber(h.amount)} ₮
@@ -3512,6 +3598,7 @@ export default function BankStatementImportModal({
                           )}
                         </tbody>
                       </table>
+                      </>
                     )}
                   </div>
 
