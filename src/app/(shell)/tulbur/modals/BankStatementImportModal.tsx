@@ -754,8 +754,11 @@ export default function BankStatementImportModal({
     let building = "";
     let unit = "";
 
-    // 5. 3-part pattern e.g. "217-1-45" or "217/1/45" (Building 217, Entrance 1, Toot 45)
-    const mThreePart = clean.match(/\b(\d{1,4})[-/. ]+(\d{1,2})[-/. ]+(\d{1,4})\b/);
+    // 5. 3-part pattern: Building - Entrance - Toot
+    // e.g. "216-1-31TOOT", "216-1-31ТООТ", "216-1-31 тоот", "216-1-31", "216/1/31", "216 - 1 - 31"
+    const mThreePart = clean.match(
+      /\b(\d{1,4})\s*[-/. ]*(?:-?[рrR]?\s*(?:дугаар|dugaar)?\s*байр[.]*|\s*ба[йи]р[.]*|\s*bair[.]*)?\s*[-/. ]+\s*(\d{1,2})\s*(?:-?[рrR]?\s*(?:орц|orts|ortz|орт|ort)\s*)?[-/. ]*\s*(\d{1,4})(?:[А-Яа-яA-Za-z](?!(?:оот|oot|орт)))?\s*(?:-?[рrR]\s*)?(?:[nн]\s*)?(?:тоот|toot|торт|-?[тtT]\b)?/i
+    );
     if (mThreePart) {
       const bCand = mThreePart[1];
       const uCand = mThreePart[3];
@@ -765,11 +768,11 @@ export default function BankStatementImportModal({
       }
     }
 
-    // 6. Building & Toot pattern matching:
+    // 6. Building & Toot pattern matching (with negative lookahead so 3-part patterns don't accidentally match entrance as toot):
     // Supports: "216-БАЙР. 125-ТООТ.", "216 BAIR 43 TOOT", "216-80 ТООТ", "216-26", "218.52", "217/45", "216 dugar bair 4 toot"
     if (!unit) {
       const mBldToot = clean.match(
-        /\b(21[6-9]|\d{1,4})\s*[-/.]*(?:-?[рrR]?\s*(?:дугаар|dugaar)?\s*байр[.]*|\s*ба[йи]р[.]*|\s*bair[.]*)?\s*[-/.:\s]*(\d{1,4})\s*(?:[nн]\s*)?(?:тоот|toot|торт|-?[тtT]\b)?/i
+        /\b(21[6-9]|\d{1,4})\s*[-/.]*(?:-?[рrR]?\s*(?:дугаар|dugaar)?\s*байр[.]*|\s*ба[йи]р[.]*|\s*bair[.]*)?\s*[-/.:\s]*(\d{1,4}[А-Яа-яA-Za-z]?)(?![-/]\d)\s*(?:[nн]\s*)?(?:тоот|toot|торт|-?[тtT]\b)?/i
       );
       if (mBldToot && !mBldToot[1].startsWith("202") && !mBldToot[2].startsWith("202")) {
         building = mBldToot[1].trim();
