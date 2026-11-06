@@ -391,7 +391,7 @@ export default function BankStatementImportModal({
 
   const formatMonthName = (m: string) => {
     if (m === "ALL") return "Бүх хугацаа (Бүх сар)";
-    const parts = m.split(".");
+    const parts = String(m || "").replace(/-/g, ".").split(".");
     if (parts.length === 2) {
       const year = parts[0];
       const month = parseInt(parts[1], 10);
@@ -513,9 +513,7 @@ export default function BankStatementImportModal({
               gereeniiDugaar: String(c.gereeniiDugaar || c.dugaar || "").trim(),
               barilgiinId: matchedBarilga?._id || c.barilgiinId?._id || c.barilgiinId || "",
               ekhlekhOgnoo: c.ekhlekhOgnoo || c.gereeniiOgnoo || c.nekhemjlekhiinOgnoo,
-              month: c.ekhlekhOgnoo
-                ? new Date(c.ekhlekhOgnoo).toISOString().slice(0, 7)
-                : (c.month || undefined),
+              month: c.month ? String(c.month).replace(/-/g, ".") : undefined,
             });
           });
           setHomes(loadedHomes);
@@ -591,17 +589,91 @@ export default function BankStatementImportModal({
       return Array.from(months);
     }
 
-    // 2. Year-month e.g. 2026.07, 2026-08, 2026/7, 202606
-    const ymMatches = orig.matchAll(/(?:^|[^0-9])(202\d)[./-](0?[1-9]|1[0-2])(?=[^0-9]|$)/g);
+    // 2. Explicit Year + Month list: e.g. "2025-10,11,12 sar", "2025.10,11,12", "2025 оны 10,11,12 сар"
+    const yearListMatch = orig.match(
+      /(?:^|[^0-9a-zа-яөүё])(202\d)\s*(?:оны|onii|on|он)?\s*[-/. ]?\s*((?:[1-9]|1[0-2])(?:\s*[,;/]\s*(?:[1-9]|1[0-2]))+)\s*(?:-[рrR]\s*)?(?:сар|sar)[а-яөүёa-z]*(?=[^0-9a-zа-яөүё]|$)/i
+    );
+    if (yearListMatch) {
+      const yr = yearListMatch[1];
+      const digits = yearListMatch[2].match(/\d{1,2}/g) || [];
+      for (const d of digits) {
+        const num = parseInt(d, 10);
+        if (num >= 1 && num <= 12) {
+          months.add(`${yr}.${String(num).padStart(2, "0")}`);
+        }
+      }
+      return Array.from(months).sort();
+    }
+
+    // 3. Explicit Year + Month range: e.g. "2025-10-12 sar", "2025.1-6 sar", "2025 оны 6-8 сар", "2025/1-3 sar"
+    const yearRangeMatch = orig.match(
+      /(?:^|[^0-9a-zа-яөүё])(202\d)\s*(?:оны|onii|on|он)?\s*[-/. ]?\s*([1-9]|1[0-2])\s*[-~]\s*([1-9]|1[0-2])\s*(?:-[рrR]\s*)?(?:сар|sar)[а-яөүёa-z]*(?=[^0-9a-zа-яөүё]|$)/i
+    );
+    if (yearRangeMatch) {
+      const yr = yearRangeMatch[1];
+      const startM = parseInt(yearRangeMatch[2], 10);
+      const endM = parseInt(yearRangeMatch[3], 10);
+      if (startM >= 1 && startM <= 12 && endM >= 1 && endM <= 12 && startM <= endM) {
+        for (let mo = startM; mo <= endM; mo++) {
+          months.add(`${yr}.${String(mo).padStart(2, "0")}`);
+        }
+      }
+      return Array.from(months).sort();
+    }
+
+    // 4. Explicit Year + Single Month with "sar" word: e.g. "2025 оны 10 сар", "2025-10 sar", "2025.10 сарын", "2025/10 sar"
+    const yearSingleMatch = orig.match(
+      /(?:^|[^0-9a-zа-яөүё])(202\d)\s*(?:оны|onii|on|он)?\s*[-/. ]?\s*([1-9]|1[0-2])\s*(?:-[рrR]\s*)?(?:сар|sar)[а-яөүёa-z]*(?=[^0-9a-zа-яөүё]|$)/i
+    );
+    if (yearSingleMatch) {
+      const yr = yearSingleMatch[1];
+      const num = parseInt(yearSingleMatch[2], 10);
+      if (num >= 1 && num <= 12) {
+        months.add(`${yr}.${String(num).padStart(2, "0")}`);
+      }
+      return Array.from(months).sort();
+    }
+
+    // 5. Month list or range with Year suffix: e.g. "10,11,12 sar 2025 on", "1-6 sar 2025"
+    const suffixYearMatch = orig.match(
+      /(?:^|[^0-9a-zа-яөүё])((?:[1-9]|1[0-2])(?:\s*[,;/]\s*(?:[1-9]|1[0-2]))+|[1-9]|1[0-2]\s*[-~]\s*(?:[1-9]|1[0-2])|[1-9]|1[0-2])\s*(?:-[рrR]\s*)?(?:сар|sar)[а-яөүёa-z]*\s*[-/. ]?\s*(202\d)\s*(?:оны|onii|on|он)?(?=[^0-9a-zа-яөүё]|$)/i
+    );
+    if (suffixYearMatch) {
+      const yr = suffixYearMatch[2];
+      const rawMo = suffixYearMatch[1];
+      const rangeParts = rawMo.match(/^([1-9]|1[0-2])\s*[-~]\s*([1-9]|1[0-2])$/);
+      if (rangeParts) {
+        const sM = parseInt(rangeParts[1], 10);
+        const eM = parseInt(rangeParts[2], 10);
+        for (let mo = sM; mo <= eM; mo++) {
+          months.add(`${yr}.${String(mo).padStart(2, "0")}`);
+        }
+      } else {
+        const digits = rawMo.match(/\d{1,2}/g) || [];
+        for (const d of digits) {
+          const num = parseInt(d, 10);
+          if (num >= 1 && num <= 12) {
+            months.add(`${yr}.${String(num).padStart(2, "0")}`);
+          }
+        }
+      }
+      return Array.from(months).sort();
+    }
+
+    // 6. Year-month e.g. 2026.07, 2026-08, 2026/7, 202606 (not followed by comma/slash month list)
+    const ymMatches = orig.matchAll(/(?:^|[^0-9])(202\d)[./-](0?[1-9]|1[0-2])(?=[^0-9,;/]|$)/g);
     for (const m of ymMatches) {
       months.add(`${m[1]}.${m[2].padStart(2, "0")}`);
     }
-    const compactYm = orig.matchAll(/(?:^|[^0-9])(202\d)(0[1-9]|1[0-2])(?=[^0-9]|$)/g);
+    const compactYm = orig.matchAll(/(?:^|[^0-9])(202\d)(0[1-9]|1[0-2])(?=[^0-9,;/]|$)/g);
     for (const m of compactYm) {
       months.add(`${m[1]}.${m[2]}`);
     }
+    if (months.size > 0) {
+      return Array.from(months).sort();
+    }
 
-    // 3. Month ranges e.g. 1-7 SAR, 1-9 SAR, 6-12 сар, 6-8 sar (strict 1-12 months only!)
+    // 7. Month ranges without year: e.g. 1-7 SAR, 1-9 SAR, 6-12 сар, 6-8 sar (strict 1-12 months only!)
     const rangeMatch = orig.match(
       /(?:^|[^0-9a-zа-яөүё])([1-9]|1[0-2])\s*[-~]\s*([1-9]|1[0-2])\s*(?:-[рrR]\s*)?(?:сар|sar)[а-яөүёa-z]*(?=[^0-9a-zа-яөүё]|$)/i
     );
@@ -615,7 +687,7 @@ export default function BankStatementImportModal({
       }
     }
 
-    // 4. Comma / semicolon / slash list e.g. 6,7,8 SARIIN, 4,5,6,7SAR (strict 1-12 months only!)
+    // 8. Comma / semicolon / slash list without year: e.g. 6,7,8 SARIIN, 4,5,6,7SAR (strict 1-12 months only!)
     const listMatch = orig.match(
       /(?:^|[^0-9a-zа-яөүё])((?:[1-9]|1[0-2])(?:\s*[,;/]\s*(?:[1-9]|1[0-2]))+)\s*(?:-[рrR]\s*)?(?:сар|sar)[а-яөүёa-z]*(?=[^0-9a-zа-яөүё]|$)/i
     );
@@ -629,7 +701,7 @@ export default function BankStatementImportModal({
       }
     }
 
-    // 5. Single month e.g. 8-r sar, 8 sar, 8 САР, 6 sar, 7 сарын төлбөр, 216-62-8 САР
+    // 9. Single month without year: e.g. 8-r sar, 8 sar, 8 САР, 6 sar, 7 сарын төлбөр, 216-62-8 САР
     if (!rangeMatch && !listMatch) {
       const singleMatch = orig.match(
         /(?:^|[^0-9a-zа-яөүё])([1-9]|1[0-2])\s*(?:-[рrR]\s*)?(?:сар|sar)[а-яөүёa-z]*(?=[^0-9a-zа-яөүё]|$)/i
@@ -642,7 +714,7 @@ export default function BankStatementImportModal({
       }
     }
 
-    // If no explicit month in text, fall back to transaction execution month
+    // 10. If no explicit month in text, fall back to transaction execution month
     if (months.size === 0) {
       const parts = (txDateStr || "").split(".");
       if (parts.length >= 2) {
@@ -709,19 +781,37 @@ export default function BankStatementImportModal({
 
     // 2. Extract periods (target months) before cleaning
     const periodMatches: string[] = [];
-    const mMulti = orig.match(
-      /(?:^|[^0-9a-zа-яөүё])((?:[1-9]|1[0-2])(?:\s*[,;/]\s*(?:[1-9]|1[0-2]))+|[1-9]|1[0-2]\s*[-~]\s*(?:[1-9]|1[0-2]))\s*(?:-[рrR]\s*)?(?:сар|sar)[а-яөүёa-z]*(?=[^0-9a-zа-яөүё]|$)/i
+    const mYearPrefix = orig.match(
+      /\b(202\d)\s*(?:оны|onii|on|он)?\s*[-/. ]?\s*((?:[1-9]|1[0-2])(?:\s*[,;/]\s*(?:[1-9]|1[0-2]))+|[1-9]|1[0-2]\s*[-~]\s*(?:[1-9]|1[0-2])|[1-9]|1[0-2])\s*(?:-[рrR]\s*)?(?:сар|sar)[а-яөүёa-z]*/i
     );
-    if (mMulti) {
-      periodMatches.push(mMulti[0].trim());
+    if (mYearPrefix) {
+      const yr = mYearPrefix[1];
+      const moStr = mYearPrefix[2].replace(/\s+/g, "");
+      periodMatches.push(`${yr} оны ${moStr} сар`);
     } else {
-      const mSingle = orig.match(
-        /(?:^|[^0-9a-zа-яөүё])([1-9]|1[0-2])\s*(?:-[рrR]\s*)?(?:сар|sar)[а-яөүёa-z]*(?=[^0-9a-zа-яөүё]|$)/i
+      const mYearSuffix = orig.match(
+        /\b((?:[1-9]|1[0-2])(?:\s*[,;/]\s*(?:[1-9]|1[0-2]))+|[1-9]|1[0-2]\s*[-~]\s*(?:[1-9]|1[0-2])|[1-9]|1[0-2])\s*(?:-[рrR]\s*)?(?:сар|sar)[а-яөүёa-z]*\s*[-/. ]?\s*(202\d)\s*(?:оны|onii|on|он)?/i
       );
-      if (mSingle) periodMatches.push(mSingle[0].trim());
+      if (mYearSuffix) {
+        const moStr = mYearSuffix[1].replace(/\s+/g, "");
+        const yr = mYearSuffix[2];
+        periodMatches.push(`${yr} оны ${moStr} сар`);
+      } else {
+        const mMulti = orig.match(
+          /(?:^|[^0-9a-zа-яөүё\-])((?:[1-9]|1[0-2])(?:\s*[,;/]\s*(?:[1-9]|1[0-2]))+|[1-9]|1[0-2]\s*[-~]\s*(?:[1-9]|1[0-2]))\s*(?:-[рrR]\s*)?(?:сар|sar)[а-яөүёa-z]*(?=[^0-9a-zа-яөүё]|$)/i
+        );
+        if (mMulti) {
+          periodMatches.push(`${mMulti[1].replace(/\s+/g, "")} сар`);
+        } else {
+          const mSingle = orig.match(
+            /(?:^|[^0-9a-zа-яөүё\-])([1-9]|1[0-2])\s*(?:-[рrR]\s*)?(?:сар|sar)[а-яөүёa-z]*(?=[^0-9a-zа-яөүё]|$)/i
+          );
+          if (mSingle) periodMatches.push(`${mSingle[1]} сар`);
+        }
+        const mYm = orig.match(/\b(202[4-9][./-](?:0?[1-9]|1[0-2]))(?=[^0-9,;/]|$)/);
+        if (mYm) periodMatches.push(mYm[1]);
+      }
     }
-    const mYm = orig.match(/\b(202[4-9][./-](?:0?[1-9]|1[0-2]))\b/);
-    if (mYm) periodMatches.push(mYm[1]);
     const mNiit = orig.match(/niit\s*(\d{1,2})\s*n?\s*sar/i);
     if (mNiit) periodMatches.push(`${mNiit[1]} сар (нийт)`);
 
