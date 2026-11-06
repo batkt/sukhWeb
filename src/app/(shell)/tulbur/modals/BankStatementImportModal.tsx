@@ -99,6 +99,7 @@ export type HomeRow = {
   name: string;
   ovog?: string;
   phone?: string;
+  phones?: string[];
   building: string;
   unit: string;
   amount: number;
@@ -499,11 +500,31 @@ export default function BankStatementImportModal({
               buildingName = "Байр";
             }
 
+            const rawPhones: string[] = [];
+            if (Array.isArray(c.utas)) rawPhones.push(...c.utas);
+            else if (c.utas) rawPhones.push(c.utas);
+            if (c.orshinSuugchId?.utas) rawPhones.push(c.orshinSuugchId.utas);
+            if (Array.isArray(c.orshinSuugchId?.nemeltUtas)) rawPhones.push(...c.orshinSuugchId.nemeltUtas);
+            if (Array.isArray(c.suhUtas)) rawPhones.push(...c.suhUtas);
+
+            const cleanedPhones: string[] = [];
+            rawPhones.forEach((u: any) => {
+              const digits = String(u || "").replace(/\D/g, "");
+              if (digits.length === 8) cleanedPhones.push(digits);
+              else if (digits.length === 11 && digits.startsWith("976")) cleanedPhones.push(digits.slice(3));
+              else if (digits.length > 8) {
+                const m = digits.match(/[789]\d{7}/g);
+                if (m) cleanedPhones.push(...m);
+              }
+            });
+            const uniquePhones = Array.from(new Set(cleanedPhones));
+
             loadedHomes.push({
               id: c._id || `c-${idx}`,
               name: c.ner || c.orshinSuugchId?.ner || "Нэргүй",
               ovog: c.ovog || c.orshinSuugchId?.ovog || "",
-              phone: Array.isArray(c.utas) ? c.utas.join(", ") : (c.utas || ""),
+              phone: uniquePhones.length > 0 ? uniquePhones.join(", ") : (Array.isArray(c.utas) ? c.utas.join(", ") : (c.utas || "")),
+              phones: uniquePhones,
               building: buildingName,
               unit: String(c.toot || "").trim(),
               amount: Number(c.ashiglaltiinZardal || c.suhTulbur || c.niitTulbur || c.sarBuriinTulbur || c.nekhemjlekhDun || c.sarBuriinUilchilgee || c.uilchilgeeniiZardal || 0),
@@ -725,6 +746,21 @@ export default function BankStatementImportModal({
     return Array.from(months).sort();
   };
 
+  // Helper to extract a clean 8-digit mobile/phone number from description
+  const extractPhoneNumber = (str: string): string => {
+    if (!str) return "";
+    // Direct 8 digits starting with 7, 8, or 9
+    const m = str.match(/(?:^|[^\d])(?:\+?976[-.\s]?)?([789]\d{7})(?=[^\d]|$)/);
+    if (m) return m[1];
+    // Formatted with dash or space e.g. 9911-2233, 8811 2233
+    const mFmt = str.match(/(?:^|[^\d])(?:\+?976[-.\s]?)?([789]\d{1}[-.\s]\d{2}[-.\s]?\d{2}[-.\s]?\d{2})(?=[^\d]|$)/);
+    if (mFmt) {
+      const cleaned = mFmt[1].replace(/\D/g, "");
+      if (cleaned.length === 8) return cleaned;
+    }
+    return "";
+  };
+
   // Advanced Transaction Description Parser
   const parseTransactionDescription = (descStr: string, accName?: string) => {
     const orig = String(descStr || "").trim();
@@ -816,8 +852,7 @@ export default function BankStatementImportModal({
     if (mNiit) periodMatches.push(`${mNiit[1]} сар (нийт)`);
 
     // 3. Extract 8-digit phone number
-    const phoneMatch = orig.match(/\b([89]\d{7})\b/);
-    const phone = phoneMatch ? phoneMatch[1] : "";
+    const phone = extractPhoneNumber(orig);
 
     // 4. Clean working copy of the description to avoid dates/years becoming toot
     let clean = orig;
@@ -1873,10 +1908,10 @@ export default function BankStatementImportModal({
       }
     });
 
-    // TIER 5: Phone number match in description
+    // TIER 5: Phone number fallback match (Always status: "likely" / Магадлалтай)
     newBanks.forEach((b) => {
       if (b.status !== "open" || b.isExpense || b.isParking) return;
-      const phoneMatch = b.phone || b.description.match(/\b([89]\d{7})\b/)?.[1];
+      const phoneMatch = b.phone || extractPhoneNumber(b.description);
       if (!phoneMatch) return;
 
       const bBld = normalizeBuilding(b.building);
@@ -1886,11 +1921,21 @@ export default function BankStatementImportModal({
         if (bBld && hBld && bBld !== hBld) return false;
         if (bBld && !hBld) return false;
         if (buildingFilter !== "ALL" && !isBuildingCompatible(buildingFilter, h.building)) return false;
-        return Boolean(h.phone && h.phone.includes(phoneMatch));
+        const hPhones = h.phones && h.phones.length > 0 ? h.phones : (h.phone ? [h.phone.replace(/\D/g, "")] : []);
+        return hPhones.some((p) => p === phoneMatch || (p.length >= 8 && p.includes(phoneMatch)));
       });
 
       if (candidates.length === 1) {
-        pairMatch(b, candidates[0], "likely", "Утасны дугаараар тохирсон");
+        pairMatch(b, candidates[0], "likely", `Утасны дугаараар тохирсон (${phoneMatch})`);
+      } else if (candidates.length > 1) {
+        // If multiple homes share this phone (e.g. resident owns multiple apartments or garage),
+        // try to disambiguate by amount compatibility!
+        const amtCandidate = candidates.find((cand) => isAmountCompatible(b.amount, cand.amount));
+        if (amtCandidate) {
+          pairMatch(b, amtCandidate, "likely", `Утасны дугаар болон дүнгээр тохирсон (${phoneMatch})`);
+        } else {
+          pairMatch(b, candidates[0], "likely", `Утасны дугаараар тохирсон (${phoneMatch})`);
+        }
       }
     });
 
