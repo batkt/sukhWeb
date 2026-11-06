@@ -1659,8 +1659,8 @@ export default function BankStatementImportModal({
         return isBuildingCompatible(b.building, h.building);
       });
 
-      if (candidates.length === 1) {
-        const c = candidates[0];
+      if (candidates.length >= 1) {
+        const c = candidates.find((cand) => isAmountCompatible(b.amount, cand.amount)) || candidates[0];
         const amtMatches = isAmountCompatible(b.amount, c.amount);
         if (amtMatches) {
           pairMatch(b, c, "match", "Байр, тоот болон төлбөрийн дүн тохирсон");
@@ -1697,8 +1697,10 @@ export default function BankStatementImportModal({
 
       // Case A: Bank transaction specified a building OR organization has only 1 building OR user filtered by building
       if (bBld || availableBuildings.length <= 1 || buildingFilter !== "ALL") {
-        if (candidates.length === 1) {
-          const c = candidates[0];
+        if (candidates.length >= 1) {
+          const c = candidates.find((cand) => isNameMatch(b.name, b.description, cand.name, cand.ovog)) ||
+                    candidates.find((cand) => isAmountCompatible(b.amount, cand.amount)) ||
+                    candidates[0];
           const nameMatches = isNameMatch(b.name, b.description, c.name, c.ovog);
           const amtMatches = isAmountCompatible(b.amount, c.amount);
           if (nameMatches) {
@@ -1725,8 +1727,10 @@ export default function BankStatementImportModal({
         // If name does not match, DO NOT arbitrarily pair across buildings! Leave open for user to drag.
       } else {
         // Single building in complex has this toot:
-        if (candidates.length === 1) {
-          const c = candidates[0];
+        if (candidates.length >= 1) {
+          const c = candidates.find((cand) => isNameMatch(b.name, b.description, cand.name, cand.ovog)) ||
+                    candidates.find((cand) => isAmountCompatible(b.amount, cand.amount)) ||
+                    candidates[0];
           const nameMatches = isNameMatch(b.name, b.description, c.name, c.ovog);
           const amtMatches = isAmountCompatible(b.amount, c.amount);
           if (nameMatches) {
@@ -1967,9 +1971,20 @@ export default function BankStatementImportModal({
         const allocatedDun = (b.allocation && Number(b.allocation.totalAllocated) > 0)
           ? Number(b.allocation.totalAllocated)
           : null;
-        const effectivePayAmount = allocatedDun !== null
-          ? allocatedDun
-          : b.amount;
+        const homeMonthlyFee = Number(linkedHome?.amount || 0);
+
+        let effectivePayAmount = b.amount;
+        if (allocatedDun !== null) {
+          effectivePayAmount = allocatedDun;
+        } else if (b.targetMonths && Array.isArray(b.targetMonths) && b.targetMonths.length > 0 && homeMonthlyFee > 0) {
+          effectivePayAmount = Math.min(b.amount, homeMonthlyFee * b.targetMonths.length);
+        } else if (b.targetPeriod && /(\d+)\s*сар/.test(b.targetPeriod) && homeMonthlyFee > 0) {
+          const m = b.targetPeriod.match(/(\d+)\s*сар/);
+          const mCount = m ? parseInt(m[1], 10) : 0;
+          if (mCount > 0) {
+            effectivePayAmount = Math.min(b.amount, homeMonthlyFee * mCount);
+          }
+        }
 
         return {
           journal: b.journal && !b.journal.startsWith("J-") ? b.journal : `EXCEL-${Date.now()}-${b.id}`,
@@ -1981,6 +1996,7 @@ export default function BankStatementImportModal({
           amount: b.amount,
           payAmount: effectivePayAmount,
           allocatedAmount: allocatedDun,
+          homeAmount: homeMonthlyFee,
           relatedAccount: b.relatedAccount || "",
           accName: b.accName || b.name,
           bank: "Банк",
@@ -2184,8 +2200,13 @@ export default function BankStatementImportModal({
       return rows;
     }
 
-    // 4. Remaining unmatched banks and homes (independent for both sides)
-    const unmatchedBanks = sBanks.filter((b) => !usedBankIds.has(b.id));
+    // 4. Remaining unmatched banks and homes (smart align by toot)
+    const unmatchedBanks = sBanks.filter((b) => {
+      if (usedBankIds.has(b.id)) return false;
+      if (tab === "open" && (b.status === "match" || b.status === "done")) return false;
+      return true;
+    });
+
     const unmatchedHomes = sHomes
       .filter((h) => !usedHomeIds.has(h.id))
       .map((h) => {
@@ -2196,11 +2217,37 @@ export default function BankStatementImportModal({
         return h;
       });
 
-    const maxUnmatched = Math.max(unmatchedBanks.length, unmatchedHomes.length);
-    for (let i = 0; i < maxUnmatched; i++) {
+    // Align unmatched rows that share unit (toot) so they line up on the exact same row!
+    const remainingHomes = [...unmatchedHomes];
+    const unalignedBanks: BankRow[] = [];
+
+    unmatchedBanks.forEach((b) => {
+      const bToot = normalizeToot(getBankUnit(b));
+      const bBld = normalizeBuilding(b.building);
+      let homeIdx = -1;
+
+      if (bToot) {
+        homeIdx = remainingHomes.findIndex((h) => {
+          if (normalizeToot(h.unit) !== bToot) return false;
+          const hBld = normalizeBuilding(h.building);
+          if (bBld && hBld && bBld !== hBld) return false;
+          return true;
+        });
+      }
+
+      if (homeIdx !== -1) {
+        const [matchedH] = remainingHomes.splice(homeIdx, 1);
+        rows.push({ bank: b, home: matchedH });
+      } else {
+        unalignedBanks.push(b);
+      }
+    });
+
+    const maxRemaining = Math.max(unalignedBanks.length, remainingHomes.length);
+    for (let i = 0; i < maxRemaining; i++) {
       rows.push({
-        bank: unmatchedBanks[i] || null,
-        home: unmatchedHomes[i] || null,
+        bank: unalignedBanks[i] || null,
+        home: remainingHomes[i] || null,
       });
     }
 
@@ -3698,6 +3745,8 @@ export default function BankStatementImportModal({
                   b.id === bankId
                     ? {
                       ...b,
+                      status: "match",
+                      isManual: true,
                       targetMonths: targetMonths.length > 0 ? targetMonths : b.targetMonths,
                       targetPeriod: targetPeriod || b.targetPeriod,
                       allocation,
@@ -3705,6 +3754,7 @@ export default function BankStatementImportModal({
                     : b
                 )
               );
+              setSelB((prev) => new Set([...Array.from(prev), bankId]));
               setAllocationModal((prev) => ({ ...prev, isOpen: false }));
               const h = homes.find((hm) => String(hm.id) === String(allocationModal.homeId));
               toast.success(
