@@ -3502,13 +3502,6 @@ export default function BankStatementImportModal({
                                                     [Батлах]
                                                   </button>
                                                 )}
-                                                <button
-                                                  onClick={(e) => handleUnlink(e, b.id, b.matchedHomeId)}
-                                                  className="text-[11px] text-zinc-400 hover:text-rose-600 font-medium px-1 py-0.5 rounded hover:bg-rose-50 transition-colors cursor-pointer whitespace-nowrap shrink-0"
-                                                  title="Тулгалт салгах"
-                                                >
-                                                  [Салгах]
-                                                </button>
                                               </>
                                             )}
                                             {b.status === "open" && (
@@ -3708,18 +3701,9 @@ export default function BankStatementImportModal({
                                               </>
                                             )}
                                             {h.status === "likely" && (
-                                              <>
-                                                <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-50 dark:bg-amber-950/50 text-amber-800 dark:text-amber-200 border border-amber-300 dark:border-amber-700 whitespace-nowrap shrink-0">
-                                                  <Zap className="w-2.5 h-2.5 text-amber-600" /> Магадлалтай
-                                                </span>
-                                                <button
-                                                  onClick={(e) => handleUnlink(e, h.matchedBankId, h.id)}
-                                                  className="text-[11px] text-zinc-400 hover:text-rose-600 font-medium px-1 py-0.5 rounded hover:bg-rose-50 transition-colors cursor-pointer whitespace-nowrap shrink-0"
-                                                  title="Тулгалт салгах"
-                                                >
-                                                  [Салгах]
-                                                </button>
-                                              </>
+                                              <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-50 dark:bg-amber-950/50 text-amber-800 dark:text-amber-200 border border-amber-300 dark:border-amber-700 whitespace-nowrap shrink-0">
+                                                <Zap className="w-2.5 h-2.5 text-amber-600" /> Магадлалтай
+                                              </span>
                                             )}
                                             {h.status === "open" && (
                                               <span className="inline-flex items-center text-[10px] font-medium px-2 py-0.5 rounded-full bg-rose-50 dark:bg-rose-950/50 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800 shrink-0">
