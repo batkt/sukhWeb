@@ -657,7 +657,7 @@ export default function BankStatementImportModal({
   const parseTransactionDescription = (descStr: string, accName?: string) => {
     const orig = String(descStr || "").trim();
     const isFee = Boolean(orig.match(/^(fee|шимтгэл|хураамж)$|данс хөтөлсний|гүйлгээний шимтгэл/i));
-    const isExpense = Boolean(orig.match(/\btsalin\b|цалин|lift|лифт|засвар|zaswar|хог\b|hog\b|тээвэр|teewer|унгалгаа|ungulguu|тог\b|tog\b|цонх|хулдаас|huldaas|будаг|budag|харуул|haruul/i));
+    const isExpense = Boolean(orig.match(/\btsalin\b|цалин|lift|лифт|засвар|zaswar|хог\b|hog\b|тээвэр|teewer|унгалгаа|ungulguu|тог\b|tog\b|цонх|хулдаас|huldaas|будаг|budag|харуул|haruul|зардал|zardal/i));
     const isParking = Boolean(orig.match(/qrgadaa|зогсоол|автомашин|улсын дугаар/i));
     const isAldangi = Boolean(orig.match(/алданги/i));
 
@@ -1013,6 +1013,16 @@ export default function BankStatementImportModal({
 
         const descClean = descStr.trim();
         const parsed = parseTransactionDescription(descStr, accName);
+
+        // Skip total / summary / footer rows e.g. "Хөл дүн", "Нийт дүн", "Нийт хөл дүн", "Total", "Grand Total"
+        const rowText = (row as any[]).map((c: any) => String(c || "")).join(" ").toLowerCase();
+        const isFooterTotal =
+          /(?:хөл\s*дүн|хөлдүн|нийт\s*хөл\s*дүн|нийт\s*хөл|нийт\s*дүн|дүнгийн\s*нийлбэр|total\s*amount|grand\s*total|\btotal\b)/i.test(
+            rowText
+          ) && (!parsed.unit || parsed.unit === "—");
+        if (isFooterTotal) {
+          continue;
+        }
 
         // Skip parking (Зогсоол / QRGADAA) transactions completely as requested
         const isParking = Boolean(descClean.match(/qrgadaa|зогсоол|автомашин|улсын дугаар/i)) || parsed.isParking;
@@ -2119,7 +2129,7 @@ export default function BankStatementImportModal({
       if (tab !== "all" && x.status !== tab && !(tab === "open" && (x as any).isManual)) return false;
       if (bankSearch.trim()) {
         const q = bankSearch.toLowerCase().trim();
-        const str = [x.name, x.unit, x.building, x.amount, x.description, x.targetPeriod].join(" ").toLowerCase();
+        const str = [x.name, x.unit, x.building, x.description, x.targetPeriod].join(" ").toLowerCase();
         if (!str.includes(q)) return false;
       }
       return true;
@@ -2140,7 +2150,7 @@ export default function BankStatementImportModal({
       }
       if (homeSearch.trim()) {
         const q = homeSearch.toLowerCase().trim();
-        const str = [x.name, x.unit, x.building, x.amount, x.note].join(" ").toLowerCase();
+        const str = [x.name, x.unit, x.building, x.note].join(" ").toLowerCase();
         if (!str.includes(q)) return false;
       }
       return true;
@@ -2162,21 +2172,38 @@ export default function BankStatementImportModal({
       return "";
     };
 
-    // 1. Sort bank list if sort field selected
+    // 1. Sort bank list if sort field selected (keeping Зардал / isExpense at the bottom)
     if (bankSortField === "date") {
       sBanks.sort((a, b) => {
+        if (Boolean(a.isExpense) !== Boolean(b.isExpense)) {
+          return a.isExpense ? 1 : -1;
+        }
         const diff = getBankDateTimestamp(a) - getBankDateTimestamp(b);
         return bankSortOrder === "asc" ? diff : -diff;
       });
     } else if (bankSortField === "toot") {
       sBanks.sort((a, b) => {
+        if (Boolean(a.isExpense) !== Boolean(b.isExpense)) {
+          return a.isExpense ? 1 : -1;
+        }
         const diff = compareToot(getBankUnit(a), getBankUnit(b));
         return bankSortOrder === "asc" ? diff : -diff;
       });
     } else if (bankSortField === "amount") {
       sBanks.sort((a, b) => {
+        if (Boolean(a.isExpense) !== Boolean(b.isExpense)) {
+          return a.isExpense ? 1 : -1;
+        }
         const diff = (a.amount || 0) - (b.amount || 0);
         return bankSortOrder === "asc" ? diff : -diff;
+      });
+    } else {
+      // Default order: non-expenses first, Зардал (expenses) at the bottom
+      sBanks.sort((a, b) => {
+        if (Boolean(a.isExpense) !== Boolean(b.isExpense)) {
+          return a.isExpense ? 1 : -1;
+        }
+        return 0;
       });
     }
 
@@ -2267,10 +2294,15 @@ export default function BankStatementImportModal({
       }
     });
 
-    const maxRemaining = Math.max(unalignedBanks.length, remainingHomes.length);
+    // Show Зардал (expense) transactions at the very bottom of the unmatched list
+    const regularUnalignedBanks = unalignedBanks.filter((b) => !b.isExpense);
+    const expenseBanks = unalignedBanks.filter((b) => b.isExpense);
+    const sortedUnalignedBanks = [...regularUnalignedBanks, ...expenseBanks];
+
+    const maxRemaining = Math.max(sortedUnalignedBanks.length, remainingHomes.length);
     for (let i = 0; i < maxRemaining; i++) {
       rows.push({
-        bank: unalignedBanks[i] || null,
+        bank: sortedUnalignedBanks[i] || null,
         home: remainingHomes[i] || null,
       });
     }
@@ -2696,7 +2728,7 @@ export default function BankStatementImportModal({
                           type="text"
                           value={bankSearch}
                           onChange={(e) => setBankSearch(e.target.value)}
-                          placeholder="⌕  Гүйлгээний утга, дүнгээр хайх..."
+                          placeholder="⌕  Байр, тоот, нэр, гүйлгээний утгаар хайх..."
                           className="w-full h-7 px-3 rounded-md border border-[#e7ece9] dark:border-zinc-700 bg-white dark:bg-zinc-800 text-xs text-[#203a35] dark:text-white placeholder-[#9aa69e] focus:outline-none focus:border-[#087f64]"
                         />
                       </div>
