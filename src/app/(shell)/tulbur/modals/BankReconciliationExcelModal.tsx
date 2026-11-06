@@ -310,6 +310,31 @@ export default function BankReconciliationExcelModal({
     return set.size;
   }, [processedRecords]);
 
+  // Open resident history ledger
+  const handleOpenHistory = (r: BankReconciliationRecord) => {
+    let targetContract = r.contract;
+    if ((!targetContract?._id || targetContract?._id === "") && Array.isArray(contracts)) {
+      const found =
+        contracts.find((c: any) => {
+          const cToot = String(c?.toot || "").trim().replace(/\s*тоот$/i, "");
+          if (cToot !== r.toot) return false;
+          if (r.building) {
+            const cBair = extractBuildingCode(c?.bairNer || c?.barilgiinId?.ner || c?.barilga);
+            if (cBair && cBair !== r.building) return false;
+          }
+          return true;
+        }) || contracts.find((c: any) => String(c?.toot || "").trim().replace(/\s*тоот$/i, "") === r.toot);
+      if (found) targetContract = found;
+    }
+
+    if (!targetContract || (!targetContract._id && !targetContract.gereeniiId && !targetContract.gereeId)) {
+      toast.warning(`${r.toot} тоот дээр холбогдох гэрээний мэдээлэл олдсонгүй`);
+      return;
+    }
+
+    setSelectedContractForHistory(targetContract);
+  };
+
   // Export to Excel handler
   const handleExportExcel = async (format: "xlsx" | "csv" = "xlsx") => {
     if (processedRecords.length === 0) {
@@ -424,9 +449,9 @@ export default function BankReconciliationExcelModal({
               </button>
             </div>
 
-            {/* Controls & Filter Bar - 2 columns, No bold */}
-            <div className="p-6 border-b border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shrink-0">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {/* Controls & Filter Bar */}
+            <div className="p-5 sm:p-6 border-b border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shrink-0">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {/* Filter 1: Payment Source (Choice: All / QPay / Manual) */}
                 <div>
                   <label className="block text-xs font-medium text-zinc-600 dark:text-zinc-400 mb-1.5 flex items-center gap-1.5">
@@ -467,8 +492,33 @@ export default function BankReconciliationExcelModal({
                   </div>
                 </div>
 
-                {/* Filter 2: Date Range with modern FilterDatePicker */}
-                <div>
+                {/* Filter 2: Building Selection (if available) */}
+                {availableBuildings.length > 0 && (
+                  <div>
+                    <label className="block text-xs font-medium text-zinc-600 dark:text-zinc-400 mb-1.5 flex items-center gap-1.5">
+                      <Building2 className="w-3.5 h-3.5 text-zinc-400" />
+                      Байр
+                    </label>
+                    <div className="relative">
+                      <select
+                        value={selectedBuilding}
+                        onChange={(e) => setSelectedBuilding(e.target.value)}
+                        className="w-full h-10 px-3 pr-8 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 text-xs font-medium text-zinc-800 dark:text-zinc-200 focus:outline-none cursor-pointer appearance-none"
+                      >
+                        <option value="ALL">Бүх байр</option>
+                        {availableBuildings.map((b) => (
+                          <option key={b.name} value={b.name}>
+                            {b.name}
+                          </option>
+                        ))}
+                      </select>
+                      <ChevronDown className="w-4 h-4 text-zinc-400 absolute right-3 top-3 pointer-events-none" />
+                    </div>
+                  </div>
+                )}
+
+                {/* Filter 3: Date Range with FilterDatePicker */}
+                <div className={availableBuildings.length === 0 ? "sm:col-span-1" : ""}>
                   <div className="flex items-center justify-between mb-1.5">
                     <label className="block text-xs font-medium text-zinc-600 dark:text-zinc-400 flex items-center gap-1.5">
                       <Calendar className="w-3.5 h-3.5 text-zinc-400" />
@@ -500,6 +550,45 @@ export default function BankReconciliationExcelModal({
                     placeholder={["Эхлэх огноо", "Дуусах огноо"]}
                     className="w-full !h-10 !rounded-xl !border !border-zinc-200 dark:!border-zinc-700 !bg-zinc-50 dark:!bg-zinc-800 text-xs font-medium"
                   />
+                </div>
+              </div>
+
+              {/* Summary Statistics Cards (Хэдэн айлын, ямар хэмжээний дүн байгааг нүдээрээ шууд хянах) */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-4 pt-4 border-t border-zinc-100 dark:border-zinc-800">
+                <div className="px-4 py-2.5 rounded-xl bg-zinc-50 dark:bg-zinc-800/60 border border-zinc-200/70 dark:border-zinc-700/60 flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-emerald-100 dark:bg-emerald-950/70 text-emerald-700 dark:text-emerald-400 flex items-center justify-center shrink-0">
+                    <Building2 className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <div className="text-[11px] text-zinc-500 dark:text-zinc-400 font-normal">Нийт өрх (Айл)</div>
+                    <div className="text-sm font-semibold text-zinc-900 dark:text-white tabular-nums">
+                      {uniqueHomesCount} <span className="text-xs font-normal text-zinc-500">айл</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="px-4 py-2.5 rounded-xl bg-zinc-50 dark:bg-zinc-800/60 border border-zinc-200/70 dark:border-zinc-700/60 flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-sky-100 dark:bg-sky-950/70 text-sky-700 dark:text-sky-400 flex items-center justify-center shrink-0">
+                    <FileSpreadsheet className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <div className="text-[11px] text-zinc-500 dark:text-zinc-400 font-normal">Нийт төлбөрийн мөр</div>
+                    <div className="text-sm font-semibold text-zinc-900 dark:text-white tabular-nums">
+                      {totalCount} <span className="text-xs font-normal text-zinc-500">бичлэг</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="px-4 py-2.5 rounded-xl bg-emerald-50/70 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/60 flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-emerald-600 text-white flex items-center justify-center shrink-0 shadow-2xs">
+                    <CreditCard className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <div className="text-[11px] text-emerald-800 dark:text-emerald-300 font-normal">Нийт хаагдах дүн</div>
+                    <div className="text-sm font-semibold text-emerald-700 dark:text-emerald-400 tabular-nums">
+                      {totalAmount.toLocaleString()} ₮
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -535,7 +624,7 @@ export default function BankReconciliationExcelModal({
                     {processedRecords.map((r, idx) => (
                       <tr
                         key={`${r.building}-${r.toot}-${r.on}-${r.sar}-${idx}`}
-                        onClick={() => setSelectedContractForHistory(r.contract)}
+                        onClick={() => handleOpenHistory(r)}
                         className="hover:bg-emerald-50/50 dark:hover:bg-zinc-800/60 transition cursor-pointer group"
                       >
                         <td className="py-2.5 px-3 text-center text-zinc-400 tabular-nums">
@@ -575,12 +664,12 @@ export default function BankReconciliationExcelModal({
                             type="button"
                             onClick={(e) => {
                               e.stopPropagation();
-                              setSelectedContractForHistory(r.contract);
+                              handleOpenHistory(r);
                             }}
-                            className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-emerald-700 hover:text-emerald-800 dark:text-emerald-400 hover:bg-emerald-100/70 dark:hover:bg-emerald-950/60 font-medium text-[11px] transition cursor-pointer"
+                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-emerald-700 hover:text-emerald-800 dark:text-emerald-400 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/60 dark:hover:bg-emerald-900/60 border border-emerald-200 dark:border-emerald-800 font-medium text-[11px] transition cursor-pointer shadow-2xs"
                             title="Хуулга харах"
                           >
-                            <Eye className="w-3.5 h-3.5" />
+                            <Eye className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
                             <span>Хуулга</span>
                           </button>
                         </td>
@@ -593,9 +682,13 @@ export default function BankReconciliationExcelModal({
 
             {/* Footer with Actions - Нийт дүн on left, buttons on right, No bold */}
             <div className="px-6 py-3.5 border-t border-zinc-200 dark:border-zinc-800 bg-zinc-50/70 dark:bg-zinc-800/40 flex items-center justify-between shrink-0">
-              <div className="text-xs text-zinc-600 dark:text-zinc-300 flex items-center gap-2">
-                <span>Нийт дүн:</span>
-                <span className="text-sm font-medium text-emerald-700 dark:text-emerald-400 tabular-nums">
+              <div className="text-xs text-zinc-600 dark:text-zinc-300 flex items-center gap-2 flex-wrap">
+                <span>Нийт:</span>
+                <span className="font-semibold text-zinc-900 dark:text-zinc-100">{uniqueHomesCount} айл</span>
+                <span className="text-zinc-300 dark:text-zinc-600">·</span>
+                <span className="font-semibold text-zinc-900 dark:text-zinc-100">{totalCount} бичлэг</span>
+                <span className="text-zinc-300 dark:text-zinc-600">·</span>
+                <span className="text-sm font-semibold text-emerald-700 dark:text-emerald-400 tabular-nums">
                   {totalAmount.toLocaleString()} ₮
                 </span>
               </div>
@@ -631,6 +724,7 @@ export default function BankReconciliationExcelModal({
         contract={selectedContractForHistory}
         token={token}
         baiguullagiinId={
+          selectedContractForHistory?.baiguullagiinId?._id ||
           selectedContractForHistory?.baiguullagiinId ||
           ajiltan?.baiguullagiinId ||
           baiguullaga?._id ||

@@ -18,6 +18,7 @@ import {
   Zap,
   GripVertical,
   Layers,
+  Eye,
 } from "lucide-react";
 import * as XLSX from "xlsx";
 import { useModalHotkeys } from "@/lib/useModalHotkeys";
@@ -27,6 +28,7 @@ import { useAuth } from "@/lib/useAuth";
 import { ModalPortal } from "../../../../../components/shell/ModalPortal";
 import formatNumber from "../../../../../tools/function/formatNumber";
 import { PaymentAllocationModal } from "./PaymentAllocationModal";
+import HistoryModal from "../../geree/modals/HistoryModal";
 
 export type MatchStatus = "open" | "likely" | "match" | "done";
 
@@ -259,6 +261,26 @@ export default function BankStatementImportModal({
     setBankSortOrder("desc");
     setHomeSortField(null);
     setHomeSortOrder("asc");
+  };
+
+  // Selected resident contract for HistoryModal (Хуулга)
+  const [selectedContractForHistory, setSelectedContractForHistory] = useState<any>(null);
+
+  const handleOpenHistoryForHome = (h: HomeRow) => {
+    setSelectedContractForHistory({
+      _id: h.gereeId || h.id,
+      gereeniiId: h.gereeId || h.id,
+      gereeId: h.gereeId || h.id,
+      _gereeniiId: h.gereeId || h.id,
+      gereeniiDugaar: h.gereeniiDugaar || "",
+      toot: h.unit,
+      ner: h.name,
+      ovog: h.ovog || "",
+      utas: h.phone || "",
+      bairNer: h.building,
+      barilgiinId: h.barilgiinId || barilgiinId,
+      baiguullagiinId: baiguullaga?._id || baiguullagiinId,
+    });
   };
 
   // Sub-dialogs
@@ -3677,8 +3699,20 @@ export default function BankStatementImportModal({
                                       >
                                         <div className="flex items-center justify-between gap-2 h-full">
                                           <div className="min-w-0 flex-1">
-                                            <div className="text-xs text-zinc-900 dark:text-zinc-100 font-semibold truncate" title={h.name}>
-                                              {h.name}
+                                            <div className="text-xs text-zinc-900 dark:text-zinc-100 font-semibold truncate flex items-center justify-between gap-1.5" title={h.name}>
+                                              <span className="truncate">{h.name}</span>
+                                              <button
+                                                type="button"
+                                                onClick={(e) => {
+                                                  e.stopPropagation();
+                                                  handleOpenHistoryForHome(h);
+                                                }}
+                                                className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-normal text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800 shrink-0 transition-colors cursor-pointer"
+                                                title="Тухайн айлын төлбөрийн түүх / хуулга харах"
+                                              >
+                                                <Eye className="w-3 h-3" />
+                                                <span>Хуулга</span>
+                                              </button>
                                             </div>
                                             <div className="text-[11px] text-zinc-500 dark:text-zinc-400 mt-0.5 truncate" title={h.note}>
                                               {h.note}
@@ -4133,6 +4167,19 @@ export default function BankStatementImportModal({
           </div>
         )}
       </AnimatePresence>
+
+      {selectedContractForHistory && (
+        <HistoryModal
+          show={Boolean(selectedContractForHistory)}
+          onClose={() => setSelectedContractForHistory(null)}
+          contract={selectedContractForHistory}
+          token={token}
+          baiguullagiinId={baiguullaga?._id || baiguullagiinId || null}
+          barilgiinId={selectedContractForHistory?.barilgiinId || barilgiinId || null}
+          printedByAjiltan={null}
+          baiguullagiinNer={baiguullaga?.ner || null}
+        />
+      )}
     </ModalPortal>
   );
 }
