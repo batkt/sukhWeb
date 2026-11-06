@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
-import { motion } from "framer-motion";
+import React, { useState, useMemo, useRef } from "react";
+import { motion, AnimatePresence, useDragControls } from "framer-motion";
 import {
   X,
   Download,
@@ -18,6 +18,7 @@ import FilterDatePicker from "@/components/ui/FilterDatePicker";
 import { useModalHotkeys } from "@/lib/useModalHotkeys";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/useAuth";
+import Button from "@/components/ui/Button";
 import { ModalPortal } from "../../../../../components/shell/ModalPortal";
 import HistoryModal from "../../geree/modals/HistoryModal";
 
@@ -60,11 +61,15 @@ export default function BankReconciliationExcelModal({
   contractsByNumber = {},
 }: BankReconciliationExcelModalProps) {
   const { token, ajiltan } = useAuth();
+  const modalRef = useRef<HTMLDivElement>(null);
+  const constraintsRef = useRef<HTMLDivElement>(null);
+  const dragControls = useDragControls();
 
   // Modal keyboard handling
   useModalHotkeys({
     isOpen: show,
     onClose,
+    container: modalRef.current,
   });
 
   // Source Choice: 'all' | 'qpay' | 'manual'
@@ -406,316 +411,306 @@ export default function BankReconciliationExcelModal({
 
   return (
     <>
-      <ModalPortal>
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          {/* Backdrop */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={onClose}
-            className="fixed inset-0 bg-black/60 backdrop-blur-xs"
-          />
+      <AnimatePresence>
+        <ModalPortal>
+          <div ref={constraintsRef} className="fixed inset-0 z-[12000]">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 bg-transparent"
+              onClick={onClose}
+            />
 
-          {/* Modal Container */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0.96, y: 12 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.96, y: 12 }}
-            transition={{ duration: 0.2 }}
-            className="relative w-full max-w-4xl bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl border border-zinc-200 dark:border-zinc-800 flex flex-col max-h-[90vh] overflow-hidden z-10"
-          >
-            {/* Header */}
-            <div className="px-6 py-4 border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-between shrink-0 bg-zinc-50/70 dark:bg-zinc-800/40">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-emerald-100 dark:bg-emerald-950/70 text-emerald-700 dark:text-emerald-400 flex items-center justify-center shadow-xs">
-                  <FileSpreadsheet className="w-5 h-5" />
-                </div>
-                <div>
-                  <h2 className="text-base font-medium text-zinc-900 dark:text-white leading-tight">
+            <motion.div
+              ref={modalRef}
+              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.9, opacity: 0, y: 20 }}
+              drag
+              dragListener={false}
+              dragControls={dragControls}
+              dragConstraints={constraintsRef}
+              dragMomentum={false}
+              className="fixed left-1/2 top-1/2 z-[12001] -translate-x-1/2 -translate-y-1/2 bg-[color:var(--surface-bg)] rounded-[32px] shadow-2xl w-[min(1040px,96vw)] max-h-[90vh] flex flex-col overflow-hidden"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="p-8 flex flex-col flex-1 min-h-0 overflow-hidden">
+                {/* Draggable Title Bar */}
+                <div
+                  onPointerDown={(e) => dragControls.start(e)}
+                  className="-mt-2 mb-6 px-1 py-1 flex items-center justify-between cursor-move select-none"
+                >
+                  <div className="text-sm font-medium text-[color:var(--panel-text)] dark:text-white">
                     Банкны тулгалт (Төлбөр хаалтын Excel бэлтгэх)
-                  </h2>
-                  <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
-                    Манай систем дээр төлөгдсөн төлбөрүүдийг банкны системд илгээж нэхэмжлэлийг нь хаалгах
-                  </p>
-                </div>
-              </div>
-
-              <button
-                onClick={onClose}
-                className="p-1.5 rounded-lg text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition cursor-pointer"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            {/* Controls & Filter Bar */}
-            <div className="p-5 sm:p-6 border-b border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shrink-0">
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {/* Filter 1: Payment Source (Choice: All / QPay / Manual) */}
-                <div>
-                  <label className="block text-xs font-medium text-zinc-600 dark:text-zinc-400 mb-1.5 flex items-center gap-1.5">
-                    <CreditCard className="w-3.5 h-3.5 text-zinc-400" />
-                    Төлбөрийн төрөл
-                  </label>
-                  <div className="grid grid-cols-3 gap-1 p-1 bg-zinc-100 dark:bg-zinc-800 rounded-xl h-10 items-center">
-                    <button
-                      onClick={() => setSourceChoice("all")}
-                      className={`h-8 px-2 rounded-lg text-xs font-medium text-center transition cursor-pointer flex items-center justify-center ${
-                        sourceChoice === "all"
-                          ? "bg-white dark:bg-zinc-700 text-zinc-900 dark:text-white shadow-xs"
-                          : "text-zinc-600 dark:text-zinc-400 hover:text-zinc-900"
-                      }`}
-                    >
-                      Бүгд
-                    </button>
-                    <button
-                      onClick={() => setSourceChoice("qpay")}
-                      className={`h-8 px-2 rounded-lg text-xs font-medium text-center transition cursor-pointer flex items-center justify-center ${
-                        sourceChoice === "qpay"
-                          ? "bg-sky-600 text-white shadow-xs"
-                          : "text-zinc-600 dark:text-zinc-400 hover:text-zinc-900"
-                      }`}
-                    >
-                      Зөвхөн QPay
-                    </button>
-                    <button
-                      onClick={() => setSourceChoice("manual")}
-                      className={`h-8 px-2 rounded-lg text-xs font-medium text-center transition cursor-pointer flex items-center justify-center ${
-                        sourceChoice === "manual"
-                          ? "bg-emerald-700 text-white shadow-xs"
-                          : "text-zinc-600 dark:text-zinc-400 hover:text-zinc-900"
-                      }`}
-                    >
-                      Зөвхөн Төлөлт
-                    </button>
                   </div>
+                  <Button
+                    onPointerDown={(e) => e.stopPropagation()}
+                    onClick={onClose}
+                    variant="ghost"
+                    className="p-2 rounded-full cursor-pointer"
+                  >
+                    <X className="w-5 h-5 text-[color:var(--muted-text)]" />
+                  </Button>
                 </div>
 
-                {/* Filter 2: Building Selection (if available) */}
-                {availableBuildings.length > 0 && (
-                  <div>
-                    <label className="block text-xs font-medium text-zinc-600 dark:text-zinc-400 mb-1.5 flex items-center gap-1.5">
-                      <Building2 className="w-3.5 h-3.5 text-zinc-400" />
-                      Байр
-                    </label>
-                    <div className="relative">
-                      <select
-                        value={selectedBuilding}
-                        onChange={(e) => setSelectedBuilding(e.target.value)}
-                        className="w-full h-10 px-3 pr-8 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 text-xs font-medium text-zinc-800 dark:text-zinc-200 focus:outline-none cursor-pointer appearance-none"
-                      >
-                        <option value="ALL">Бүх байр</option>
-                        {availableBuildings.map((b) => (
-                          <option key={b.name} value={b.name}>
-                            {b.name}
+                {/* Filters row */}
+                <div className="mb-4 flex flex-wrap items-center justify-between gap-3 shrink-0">
+                  <div className="flex flex-wrap items-center gap-3">
+                    {/* Төлбөрийн төрөл */}
+                    <div
+                      className="inline-flex rounded-2xl border border-[color:var(--surface-border)] p-1 bg-[color:var(--surface-hover)]"
+                      role="tablist"
+                      aria-label="Гүйлгээний төрөл"
+                    >
+                      {([
+                        { id: "all", label: "Бүгд" },
+                        { id: "qpay", label: "Зөвхөн QPay" },
+                        { id: "manual", label: "Зөвхөн Төлөлт" },
+                      ] as const).map((tab) => (
+                        <button
+                          key={tab.id}
+                          type="button"
+                          role="tab"
+                          aria-selected={sourceChoice === tab.id}
+                          onClick={() => setSourceChoice(tab.id)}
+                          className={`rounded-xl px-4 py-1.5 text-xs font-medium transition-colors cursor-pointer ${
+                            sourceChoice === tab.id
+                              ? "bg-theme text-white shadow-sm"
+                              : "text-[color:var(--muted-text)] hover:text-[color:var(--panel-text)]"
+                          }`}
+                        >
+                          {tab.label}
+                        </button>
+                      ))}
+                    </div>
+
+                    {/* Байр сонгох */}
+                    {availableBuildings.length > 0 && (
+                      <div className="relative">
+                        <select
+                          value={selectedBuilding}
+                          onChange={(e) => setSelectedBuilding(e.target.value)}
+                          className="px-3.5 pr-8 py-1.5 border border-[color:var(--surface-border)] bg-transparent rounded-2xl text-xs font-medium text-[color:var(--panel-text)] focus:outline-none focus:ring-2 focus:ring-theme/20 h-[34px] cursor-pointer appearance-none"
+                        >
+                          <option value="ALL" className="bg-[color:var(--surface-bg)] text-[color:var(--panel-text)]">
+                            Бүх байр
                           </option>
-                        ))}
-                      </select>
-                      <ChevronDown className="w-4 h-4 text-zinc-400 absolute right-3 top-3 pointer-events-none" />
-                    </div>
-                  </div>
-                )}
-
-                {/* Filter 3: Date Range with FilterDatePicker */}
-                <div className={availableBuildings.length === 0 ? "sm:col-span-1" : ""}>
-                  <div className="flex items-center justify-between mb-1.5">
-                    <label className="block text-xs font-medium text-zinc-600 dark:text-zinc-400 flex items-center gap-1.5">
-                      <Calendar className="w-3.5 h-3.5 text-zinc-400" />
-                      Төлсөн огнооны хүрээ
-                    </label>
-                    {(startDate || endDate) && (
-                      <button
-                        onClick={() => {
-                          setStartDate("");
-                          setEndDate("");
-                        }}
-                        className="text-[11px] text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200 underline cursor-pointer"
-                      >
-                        Цэвэрлэх
-                      </button>
+                          {availableBuildings.map((b) => (
+                            <option
+                              key={b.name}
+                              value={b.name}
+                              className="bg-[color:var(--surface-bg)] text-[color:var(--panel-text)]"
+                            >
+                              {b.name}
+                            </option>
+                          ))}
+                        </select>
+                        <ChevronDown className="w-4 h-4 text-[color:var(--muted-text)] absolute right-2.5 top-2.5 pointer-events-none" />
+                      </div>
                     )}
-                  </div>
-                  <FilterDatePicker
-                    value={[startDate || null, endDate || null]}
-                    onChange={(_: any, dateStrings: any) => {
-                      if (Array.isArray(dateStrings)) {
-                        setStartDate(dateStrings[0] || "");
-                        setEndDate(dateStrings[1] || "");
-                      } else {
-                        setStartDate("");
-                        setEndDate("");
-                      }
-                    }}
-                    placeholder={["Эхлэх огноо", "Дуусах огноо"]}
-                    className="w-full !h-10 !rounded-xl !border !border-zinc-200 dark:!border-zinc-700 !bg-zinc-50 dark:!bg-zinc-800 text-xs font-medium"
-                  />
-                </div>
-              </div>
 
-              {/* Summary Statistics Cards (Хэдэн айлын, ямар хэмжээний дүн байгааг нүдээрээ шууд хянах) */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-4 pt-4 border-t border-zinc-100 dark:border-zinc-800">
-                <div className="px-4 py-2.5 rounded-xl bg-zinc-50 dark:bg-zinc-800/60 border border-zinc-200/70 dark:border-zinc-700/60 flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-xl bg-emerald-100 dark:bg-emerald-950/70 text-emerald-700 dark:text-emerald-400 flex items-center justify-center shrink-0">
-                    <Building2 className="w-4 h-4" />
-                  </div>
-                  <div>
-                    <div className="text-[11px] text-zinc-500 dark:text-zinc-400 font-normal">Нийт өрх (Айл)</div>
-                    <div className="text-sm font-semibold text-zinc-900 dark:text-white tabular-nums">
-                      {uniqueHomesCount} <span className="text-xs font-normal text-zinc-500">айл</span>
+                    {/* Огнооны хүрээ */}
+                    <div className="flex items-center gap-1.5">
+                      <FilterDatePicker
+                        value={[startDate || null, endDate || null]}
+                        onChange={(_: any, dateStrings: any) => {
+                          if (Array.isArray(dateStrings)) {
+                            setStartDate(dateStrings[0] || "");
+                            setEndDate(dateStrings[1] || "");
+                          } else {
+                            setStartDate("");
+                            setEndDate("");
+                          }
+                        }}
+                        placeholder={["Эхлэх огноо", "Дуусах огноо"]}
+                        className="!h-[34px] !rounded-2xl !border !border-[color:var(--surface-border)] !bg-transparent text-xs font-medium text-[color:var(--panel-text)]"
+                      />
+                      {(startDate || endDate) && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setStartDate("");
+                            setEndDate("");
+                          }}
+                          className="text-[11px] text-[color:var(--muted-text)] hover:text-[color:var(--panel-text)] px-1.5 py-1 rounded cursor-pointer"
+                          title="Огноо цэвэрлэх"
+                        >
+                          ✕
+                        </button>
+                      )}
                     </div>
                   </div>
                 </div>
 
-                <div className="px-4 py-2.5 rounded-xl bg-zinc-50 dark:bg-zinc-800/60 border border-zinc-200/70 dark:border-zinc-700/60 flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-xl bg-sky-100 dark:bg-sky-950/70 text-sky-700 dark:text-sky-400 flex items-center justify-center shrink-0">
-                    <FileSpreadsheet className="w-4 h-4" />
+                {/* Summary Statistics Cards */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4 shrink-0">
+                  <div className="px-4 py-2.5 rounded-2xl bg-[color:var(--surface-hover)] border border-[color:var(--surface-border)] flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-xl bg-theme/15 text-theme flex items-center justify-center shrink-0">
+                      <Building2 className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <div className="text-[11px] text-[color:var(--muted-text)] font-normal">Нийт өрх (Айл)</div>
+                      <div className="text-sm font-semibold text-[color:var(--panel-text)] tabular-nums">
+                        {uniqueHomesCount} <span className="text-xs font-normal text-[color:var(--muted-text)]">айл</span>
+                      </div>
+                    </div>
                   </div>
-                  <div>
-                    <div className="text-[11px] text-zinc-500 dark:text-zinc-400 font-normal">Нийт төлбөрийн мөр</div>
-                    <div className="text-sm font-semibold text-zinc-900 dark:text-white tabular-nums">
-                      {totalCount} <span className="text-xs font-normal text-zinc-500">бичлэг</span>
+
+                  <div className="px-4 py-2.5 rounded-2xl bg-[color:var(--surface-hover)] border border-[color:var(--surface-border)] flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-xl bg-sky-500/15 text-sky-600 dark:text-sky-400 flex items-center justify-center shrink-0">
+                      <FileSpreadsheet className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <div className="text-[11px] text-[color:var(--muted-text)] font-normal">Нийт төлбөрийн мөр</div>
+                      <div className="text-sm font-semibold text-[color:var(--panel-text)] tabular-nums">
+                        {totalCount} <span className="text-xs font-normal text-[color:var(--muted-text)]">бичлэг</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="px-4 py-2.5 rounded-2xl bg-theme/10 border border-theme/20 flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-xl bg-theme text-white flex items-center justify-center shrink-0 shadow-xs">
+                      <CreditCard className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <div className="text-[11px] text-theme font-normal">Нийт хаагдах дүн</div>
+                      <div className="text-sm font-semibold text-theme tabular-nums">
+                        {totalAmount.toLocaleString()} ₮
+                      </div>
                     </div>
                   </div>
                 </div>
 
-                <div className="px-4 py-2.5 rounded-xl bg-emerald-50/70 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/60 flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-xl bg-emerald-600 text-white flex items-center justify-center shrink-0 shadow-2xs">
-                    <CreditCard className="w-4 h-4" />
-                  </div>
-                  <div>
-                    <div className="text-[11px] text-emerald-800 dark:text-emerald-300 font-normal">Нийт хаагдах дүн</div>
-                    <div className="text-sm font-semibold text-emerald-700 dark:text-emerald-400 tabular-nums">
-                      {totalAmount.toLocaleString()} ₮
+                {/* Table Preview Area */}
+                <div className="flex-1 overflow-y-auto min-h-0 rounded-2xl border border-[color:var(--surface-border)] custom-scrollbar">
+                  {processedRecords.length === 0 ? (
+                    <div className="h-56 flex flex-col items-center justify-center p-6 text-center text-[color:var(--muted-text)]">
+                      <Filter className="w-8 h-8 mb-2 opacity-40" />
+                      <div className="text-xs font-medium text-[color:var(--panel-text)]">
+                        Сонгосон нөхцөлд тохирох төлбөрийн бичлэг олдсонгүй
+                      </div>
+                      <div className="text-[11px] text-[color:var(--muted-text)] mt-1 max-w-[280px]">
+                        Төлбөрийн төрөл, байр эсвэл огнооны шүүлтүүрээ өөрчилж шалгана уу
+                      </div>
                     </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Table Preview Area - Removed Өрх column */}
-            <div className="flex-1 overflow-y-auto min-h-[280px] max-h-[420px]">
-              {processedRecords.length === 0 ? (
-                <div className="h-[280px] flex flex-col items-center justify-center p-6 text-center text-zinc-400">
-                  <Filter className="w-8 h-8 mb-2 text-zinc-300 dark:text-zinc-600" />
-                  <div className="text-xs font-semibold text-zinc-600 dark:text-zinc-300">
-                    Сонгосон нөхцөлд тохирох төлбөрийн бичлэг олдсонгүй
-                  </div>
-                  <div className="text-[11px] text-zinc-400 mt-1 max-w-[280px]">
-                    Төлбөрийн төрөл, байр эсвэл огнооны шүүлтүүрээ өөрчилж шалгана уу
-                  </div>
-                </div>
-              ) : (
-                <table className="w-full text-left text-xs border-collapse">
-                  <thead className="sticky top-0 z-10 bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 border-b border-zinc-200 dark:border-zinc-700 font-medium select-none">
-                    <tr>
-                      <th className="py-2.5 px-3 w-10 text-center font-medium">№</th>
-                      <th className="py-2.5 px-3 font-medium">Байрны код</th>
-                      <th className="py-2.5 px-3 font-medium">Хаалга (Тоот)</th>
-                      <th className="py-2.5 px-3 text-center font-medium">Он</th>
-                      <th className="py-2.5 px-3 text-center font-medium">Сар</th>
-                      <th className="py-2.5 px-3 text-right font-medium">Төлсөн дүн</th>
-                      <th className="py-2.5 px-3 font-medium">Оршин суугч</th>
-                      <th className="py-2.5 px-3 font-medium">Хэлбэр</th>
-                      <th className="py-2.5 px-3 text-right w-20 font-medium">Хуулга</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800 font-medium">
-                    {processedRecords.map((r, idx) => (
-                      <tr
-                        key={`${r.building}-${r.toot}-${r.on}-${r.sar}-${idx}`}
-                        onClick={() => handleOpenHistory(r)}
-                        className="hover:bg-emerald-50/50 dark:hover:bg-zinc-800/60 transition cursor-pointer group"
-                      >
-                        <td className="py-2.5 px-3 text-center text-zinc-400 tabular-nums">
-                          {idx + 1}
-                        </td>
-                        <td className="py-2.5 px-3 font-medium text-zinc-800 dark:text-zinc-200">
-                          {r.building}
-                        </td>
-                        <td className="py-2.5 px-3 font-medium text-emerald-700 dark:text-emerald-400">
-                          {r.toot} тоот
-                        </td>
-                        <td className="py-2.5 px-3 text-center tabular-nums text-zinc-700 dark:text-zinc-300">
-                          {r.on}
-                        </td>
-                        <td className="py-2.5 px-3 text-center tabular-nums font-medium text-zinc-800 dark:text-zinc-200">
-                          {r.sar}
-                        </td>
-                        <td className="py-2.5 px-3 text-right tabular-nums font-medium text-zinc-800 dark:text-zinc-200">
-                          {r.dun.toLocaleString()} ₮
-                        </td>
-                        <td className="py-2.5 px-3 text-zinc-700 dark:text-zinc-300 truncate max-w-[160px]">
-                          {r.residentName}
-                        </td>
-                        <td className="py-2.5 px-3">
-                          {r.paymentType === "qpay" ? (
-                            <span className="inline-flex items-center text-[10px] font-medium px-1.5 py-0.5 rounded bg-sky-100 dark:bg-sky-950 text-sky-700 dark:text-sky-300 border border-sky-200 dark:border-sky-800">
-                              QPay
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-center text-[10px] font-medium px-1.5 py-0.5 rounded bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
-                              Төлөлт
-                            </span>
-                          )}
-                        </td>
-                        <td className="py-2.5 px-3 text-right">
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleOpenHistory(r);
-                            }}
-                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-emerald-700 hover:text-emerald-800 dark:text-emerald-400 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/60 dark:hover:bg-emerald-900/60 border border-emerald-200 dark:border-emerald-800 font-medium text-[11px] transition cursor-pointer shadow-2xs"
-                            title="Хуулга харах"
+                  ) : (
+                    <table className="w-full text-left text-xs border-collapse">
+                      <thead>
+                        <tr>
+                          {[
+                            { title: "№", align: "text-center w-10" },
+                            { title: "Байрны код", align: "" },
+                            { title: "Хаалга (Тоот)", align: "" },
+                            { title: "Он", align: "text-center" },
+                            { title: "Сар", align: "text-center" },
+                            { title: "Төлсөн дүн", align: "text-right" },
+                            { title: "Оршин суугч", align: "" },
+                            { title: "Хэлбэр", align: "" },
+                            { title: "Хуулга", align: "text-right w-20" },
+                          ].map((col) => (
+                            <th
+                              key={col.title}
+                              className={`sticky top-0 z-10 border-b border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] [background-image:linear-gradient(var(--surface-hover),var(--surface-hover))] px-3 py-2 text-xs font-medium text-[color:var(--panel-text)] dark:border-white/10 ${col.align}`}
+                            >
+                              {col.title}
+                            </th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {processedRecords.map((r, idx) => (
+                          <tr
+                            key={`${r.building}-${r.toot}-${r.on}-${r.sar}-${idx}`}
+                            onClick={() => handleOpenHistory(r)}
+                            className="hover:bg-[color:var(--surface-hover)] transition-colors cursor-pointer group"
                           >
-                            <Eye className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-                            <span>Хуулга</span>
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              )}
-            </div>
+                            <td className="border-b border-[color:var(--surface-border)] px-3 py-2 text-center text-xs text-[color:var(--muted-text)] dark:border-white/5 tabular-nums">
+                              {idx + 1}
+                            </td>
+                            <td className="border-b border-[color:var(--surface-border)] px-3 py-2 text-xs font-medium text-[color:var(--panel-text)] dark:border-white/5">
+                              {r.building}
+                            </td>
+                            <td className="border-b border-[color:var(--surface-border)] px-3 py-2 text-xs text-theme font-medium dark:border-white/5">
+                              {r.toot} тоот
+                            </td>
+                            <td className="border-b border-[color:var(--surface-border)] px-3 py-2 text-center text-xs tabular-nums text-[color:var(--panel-text)] dark:border-white/5">
+                              {r.on}
+                            </td>
+                            <td className="border-b border-[color:var(--surface-border)] px-3 py-2 text-center text-xs tabular-nums font-medium text-[color:var(--panel-text)] dark:border-white/5">
+                              {r.sar}
+                            </td>
+                            <td className="border-b border-[color:var(--surface-border)] px-3 py-2 text-right text-xs tabular-nums font-medium text-[color:var(--panel-text)] dark:border-white/5">
+                              {r.dun.toLocaleString()} ₮
+                            </td>
+                            <td className="border-b border-[color:var(--surface-border)] px-3 py-2 text-xs text-[color:var(--panel-text)] dark:border-white/5 truncate max-w-[160px]">
+                              {r.residentName}
+                            </td>
+                            <td className="border-b border-[color:var(--surface-border)] px-3 py-2 text-xs dark:border-white/5">
+                              {r.paymentType === "qpay" ? (
+                                <span className="inline-flex items-center text-[10px] font-medium px-2 py-0.5 rounded-full bg-sky-500/10 text-sky-600 dark:text-sky-400 border border-sky-500/20">
+                                  QPay
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center text-[10px] font-medium px-2 py-0.5 rounded-full bg-theme/10 text-theme border border-theme/20">
+                                  Төлөлт
+                                </span>
+                              )}
+                            </td>
+                            <td className="border-b border-[color:var(--surface-border)] px-3 py-2 text-right text-xs dark:border-white/5">
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleOpenHistory(r);
+                                }}
+                                className="inline-flex items-center gap-1 px-2 py-1 rounded-xl text-theme hover:bg-theme/10 border border-theme/20 font-medium text-[11px] transition-colors cursor-pointer"
+                                title="Хуулга харах"
+                              >
+                                <Eye className="w-3.5 h-3.5" />
+                                <span>Хуулга</span>
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  )}
+                </div>
 
-            {/* Footer with Actions - Нийт дүн on left, buttons on right, No bold */}
-            <div className="px-6 py-3.5 border-t border-zinc-200 dark:border-zinc-800 bg-zinc-50/70 dark:bg-zinc-800/40 flex items-center justify-between shrink-0">
-              <div className="text-xs text-zinc-600 dark:text-zinc-300 flex items-center gap-2 flex-wrap">
-                <span>Нийт:</span>
-                <span className="font-semibold text-zinc-900 dark:text-zinc-100">{uniqueHomesCount} айл</span>
-                <span className="text-zinc-300 dark:text-zinc-600">·</span>
-                <span className="font-semibold text-zinc-900 dark:text-zinc-100">{totalCount} бичлэг</span>
-                <span className="text-zinc-300 dark:text-zinc-600">·</span>
-                <span className="text-sm font-semibold text-emerald-700 dark:text-emerald-400 tabular-nums">
-                  {totalAmount.toLocaleString()} ₮
-                </span>
+                {/* Footer */}
+                <div className="mt-6 flex items-center justify-between shrink-0">
+                  <div className="text-xs font-medium text-[color:var(--muted-text)]">
+                    Нийт: <span className="font-semibold text-[color:var(--panel-text)]">{uniqueHomesCount} айл</span> ·{" "}
+                    <span className="font-semibold text-[color:var(--panel-text)]">{totalCount} бичлэг</span> ·{" "}
+                    <span className="font-semibold text-theme text-sm">{totalAmount.toLocaleString()} ₮</span>
+                  </div>
+
+                  <div className="flex gap-3">
+                    <Button
+                      onClick={onClose}
+                      variant="secondary"
+                      className="px-6 py-2.5 rounded-2xl cursor-pointer"
+                    >
+                      Хаах
+                    </Button>
+                    <Button
+                      onClick={() => handleExportExcel("xlsx")}
+                      isLoading={isExporting}
+                      disabled={processedRecords.length === 0 || isExporting}
+                      variant="primary"
+                      className="px-6 py-2.5 rounded-2xl flex items-center gap-2 cursor-pointer"
+                    >
+                      <Download className="w-4 h-4" />
+                      <span>Банкны тулгалт (Excel) татах</span>
+                    </Button>
+                  </div>
+                </div>
               </div>
-
-              <div className="flex items-center gap-3">
-                <button
-                  type="button"
-                  onClick={onClose}
-                  className="h-10 px-5 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-xs font-medium text-zinc-700 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-700 transition cursor-pointer flex items-center justify-center"
-                >
-                  Хаах
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => handleExportExcel("xlsx")}
-                  disabled={processedRecords.length === 0 || isExporting}
-                  className="h-10 px-5 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-medium transition shadow-sm disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer flex items-center justify-center gap-2 whitespace-nowrap"
-                >
-                  <Download className="w-4 h-4 shrink-0" />
-                  <span>{isExporting ? "Бэлтгэж байна..." : "Банкны тулгалт (Excel) татах"}</span>
-                </button>
-              </div>
-            </div>
-          </motion.div>
-        </div>
-      </ModalPortal>
+            </motion.div>
+          </div>
+        </ModalPortal>
+      </AnimatePresence>
 
       {/* History Modal when any resident row or "Хуулга" is clicked */}
       <HistoryModal
