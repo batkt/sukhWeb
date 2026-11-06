@@ -1011,13 +1011,23 @@ export default function BankStatementImportModal({
         // Skip expense rows (Зарлага): only import income (Орлого) as requested
         if (orlogoRaw <= 0) continue;
 
+        // A valid bank transaction MUST have a date! Summary and signature rows don't have transaction dates.
+        if (dateIdx !== -1 && (!rawDateVal || String(rawDateVal).trim() === "" || String(rawDateVal).trim() === "-")) {
+          continue;
+        }
+
+        // A valid bank transaction MUST have a description or account name.
+        if (!descStr && !accName) {
+          continue;
+        }
+
         const descClean = descStr.trim();
         const parsed = parseTransactionDescription(descStr, accName);
 
-        // Skip total / summary / footer rows e.g. "Хөл дүн", "Нийт дүн", "Нийт хөл дүн", "Total", "Grand Total"
+        // Skip total / summary / footer / signature rows e.g. "Хөл дүн", "Эцсийн үлдэгдэл", "Эхний үлдэгдэл", "Теллер", "Хэвлэсэн огноо", "Total"
         const rowText = (row as any[]).map((c: any) => String(c || "")).join(" ").toLowerCase();
         const isFooterTotal =
-          /(?:хөл\s*дүн|хөлдүн|нийт\s*хөл\s*дүн|нийт\s*хөл|нийт\s*дүн|дүнгийн\s*нийлбэр|total\s*amount|grand\s*total|\btotal\b)/i.test(
+          /(?:хөл\s*дүн|хөлдүн|нийт\s*хөл\s*дүн|нийт\s*хөл|нийт\s*дүн|эцсийн\s*үлдэгдэл|эхний\s*үлдэгдэл|теллер|хэвлэсэн\s*огноо|дүнгийн\s*нийлбэр|total\s*amount|grand\s*total|\btotal\b)/i.test(
             rowText
           ) && (!parsed.unit || parsed.unit === "—");
         if (isFooterTotal) {
