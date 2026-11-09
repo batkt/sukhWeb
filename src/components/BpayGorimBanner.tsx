@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useAuth } from "@/lib/useAuth";
 
 export default function BpayGorimBanner() {
@@ -13,9 +12,7 @@ export default function BpayGorimBanner() {
         <span className="font-bold">Төрийн банк (BPay) горим идэвхтэй.</span>
         <span>СӨХ-ийн төлбөрийг BPay нэхэмжилнэ.</span>
       </div>
-      <Link href="/tulbur/bpay" className="font-semibold underline hover:text-amber-950">
-        BPay төлбөр харах →
-      </Link>
+      <span className="opacity-80">Сар бүрийн төлбөр, задаргаа: Гүйлгээний түүх → Хуулга</span>
     </div>
   );
 }

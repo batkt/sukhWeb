@@ -17,6 +17,7 @@ import formatNumber, {
 import FilterDatePicker from "@/components/ui/FilterDatePicker";
 import { useModalHotkeys } from "@/lib/useModalHotkeys";
 import InvoiceModal from "./InvoiceModal";
+import BpayKhuulga from "./BpayKhuulga";
 import { ModalPortal } from "../../../../../components/shell/ModalPortal";
 import { ledgerFilterYmdKey, itemPrimaryDateMs } from "@/app/(shell)/tulbur/guilgeeTuukh/ledgerRunningBalances";
 
@@ -2416,6 +2417,8 @@ export default function HistoryModal({
 
                 {/* Table Section - Scrollable */}
                 <div className="history-print-table-body flex-1 overflow-auto custom-scrollbar px-5 sm:px-6 print:px-0">
+                  {/* Төрийн банк (BPay) горим: сар бүрийн билл + задаргаа (горимгүй үед юу ч зурахгүй) */}
+                  <BpayKhuulga contract={contract} show={show} />
                   <table className="w-full text-[12px] border-collapse leading-tight">
                     <thead className="sticky top-0 z-10 bg-white dark:bg-[color:var(--panel)]">
                       <tr className="border-b border-[color:var(--surface-border)]">
