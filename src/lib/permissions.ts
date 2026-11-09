@@ -240,6 +240,11 @@ export const ALL_PERMISSIONS: PermissionItem[] = [
         description: "Нэмэлт харах, засах эрх",
       },
       {
+        id: "tokhirgoo.turiinBank",
+        label: "Төрийн банк",
+        description: "Төрийн банк (BPay) горим, тоот холбох, синк",
+      },
+      {
         id: "tokhirgoo.tuslamj",
         label: "Ерөнхий тусламж",
         description: "Ерөнхий тусламж харах, засах эрх",

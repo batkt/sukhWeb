@@ -27,6 +27,7 @@ import {
   UserCheck,
   Users,
   Vote,
+  Wallet,
   type LucideIcon,
 } from "lucide-react";
 import { hasPermission } from "@/lib/permissionUtils";
@@ -74,6 +75,7 @@ export const NAV_ITEMS: NavItem[] = [
       { label: "Дансны хуулга", path: "dansKhuulga", icon: Landmark },
       { label: "Хөнгөлөлт", path: "khungulult", icon: Tag },
       { label: "И-баримт", path: "ebarimt", icon: Receipt },
+      { label: "BPay төлбөр", path: "bpay", icon: Wallet },
     ],
   },
   { label: "Камер", path: "camera", icon: Cctv },

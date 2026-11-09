@@ -14,6 +14,7 @@ import {
   Receipt,
   Settings,
   SlidersHorizontal,
+  Wallet,
 } from "lucide-react";
 import { hasPermission } from "@/lib/permissionUtils";
 import Button from "@/components/ui/Button";
@@ -30,6 +31,7 @@ const NevtreltiinTuukh = lazy(() => import("./NevtreltiinTuukh"));
 const ZogsoolTokhirgoo = lazy(() => import("./ZogsoolTokhirgoo"));
 const BarilgiinTokhirgoo = lazy(() => import("./BarilgiinTokhirgoo"));
 const NemeltTokhirgoo = lazy(() => import("./NemeltTokhirgoo"));
+const TuriinBankTokhirgoo = lazy(() => import("./TuriinBankTokhirgoo"));
 const TuslamjTokhirgoo = lazy(() => import("./TuslamjTokhirgoo"));
 
 // Error boundary for chunk loading errors
@@ -197,6 +199,7 @@ function Tokhirgoo() {
     }[] = [
       { perm: "tokhirgoo.barilga", text: "Барилгын тохиргоо", tailbar: "СӨХ-ийн мэдээлэл, барилга, орц, давхар", buleg: "Байгууллага", Icon: Building2, tsonkh: BarilgiinTokhirgoo, tolgoi: true, comingSoon: false },
       { perm: "tokhirgoo.nemelt", text: "Нэмэлт тохиргоо", tailbar: "Нэхэмжлэх, гараж ба агуулах, лифт, гэр бүл", buleg: "Байгууллага", Icon: SlidersHorizontal, tsonkh: NemeltTokhirgoo, tolgoi: true, comingSoon: false },
+      { perm: "tokhirgoo.turiinBank", perm2: "tokhirgoo.nemelt", text: "Төрийн банк", tailbar: "BPay-ээр төлбөр авах: тоот холбох, синк", buleg: "Байгууллага", Icon: Wallet, tsonkh: TuriinBankTokhirgoo, tolgoi: true, comingSoon: false },
       { perm: "tokhirgoo.ashiglaltiinZardal", text: "Ашиглалтын зардал", tailbar: "Сар бүр бодогдох зардлууд", buleg: "Төлбөр", Icon: ListChecks, tsonkh: AshiglaltiinZardal, tolgoi: true, comingSoon: false },
       { perm: "tokhirgoo.dans", text: "Данс", tailbar: "Төлбөр хүлээн авах данс", buleg: "Төлбөр", Icon: Landmark, tsonkh: Dans, tolgoi: true, comingSoon: false },
       { perm: "tokhirgoo.ebarimt", text: "И-Баримт", tailbar: "Татварын баримтын тохиргоо", buleg: "Төлбөр", Icon: Receipt, tsonkh: EbarimtTokhirgoo, tolgoi: true, comingSoon: false },
