@@ -81,7 +81,7 @@ export default function BpayTulburPage() {
     if (!token) return;
     setAchaalj(true);
     try {
-      const t = await uilchilgee(token).get("/bpay/tokhirgoo");
+      const t = await uilchilgee(token).get("/bpay/medeelel");
       const asaalttai = !!t.data?.tokhirgoo?.idevkhtei;
       setIdevkhtei(asaalttai);
       const { data } = await uilchilgee(token).get("/bpay/billuud", {

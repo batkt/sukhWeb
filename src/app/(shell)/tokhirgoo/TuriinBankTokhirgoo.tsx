@@ -56,7 +56,7 @@ function TuriinBankKart() {
   const achaalakh = useCallback(async () => {
     if (!token) return;
     try {
-      const { data } = await uilchilgee(token).get("/bpay/tokhirgoo");
+      const { data } = await uilchilgee(token).get("/bpay/medeelel");
       const t = data?.tokhirgoo || {};
       setIdevkhtei(!!t.idevkhtei);
       setEkhelsenOgnoo(t.ekhelsenOgnoo ? String(t.ekhelsenOgnoo).slice(0, 10) : "");
@@ -97,7 +97,7 @@ function TuriinBankKart() {
     if (!token) return;
     setKhadgalj(true);
     try {
-      await uilchilgee(token).post("/bpay/tokhirgoo", {
+      await uilchilgee(token).post("/bpay/medeelel", {
         bpayEkhelsenOgnoo: ekhelsenOgnoo || null,
         barilguud: barilguud.map((b) => ({ barilgiinId: b.barilgiinId, bpayBairId: b.bpayBairId })),
       });
@@ -122,7 +122,7 @@ function TuriinBankKart() {
     const umnukh = idevkhtei;
     setIdevkhtei(utga);
     try {
-      await uilchilgee(token).post("/bpay/tokhirgoo", { bpayAshiglakhEsekh: utga });
+      await uilchilgee(token).post("/bpay/medeelel", { bpayAshiglakhEsekh: utga });
       openSuccessOverlay(utga ? "Төрийн банк горим асаалаа" : "Төрийн банк горим унтарлаа");
       await achaalakh();
     } catch (e) {
