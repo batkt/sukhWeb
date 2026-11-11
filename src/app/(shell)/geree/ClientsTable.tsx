@@ -320,13 +320,19 @@ export const ClientsTable: React.FC<ClientsTableProps> = React.memo(({
           const ekhnii = toots[0];
           return (
             <Tooltip title={tooltipContent} placement="top" trigger="hover">
-              <span
-                className={`inline-flex h-6 cursor-pointer items-center gap-1 rounded-md px-2 leading-none ${getChipClass(ekhnii)}`}
-              >
-                {getTurulIcon(ekhnii, "h-3 w-3 shrink-0")}
-                <span>{ekhnii.toot}</span>
-                {toots.length > 1 && <span className="opacity-70">+{toots.length - 1}</span>}
-              </span>
+              {toots.length > 1 ? (
+                // Олон тоот — зогсоолын «Олон» машинтай ижил хэв маяг
+                <span className="inline-flex shrink-0 cursor-pointer items-center gap-1 whitespace-nowrap px-2 py-0.5 font-medium text-blue-600 underline underline-offset-2 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300">
+                  Олон ({toots.length})
+                </span>
+              ) : (
+                <span
+                  className={`inline-flex h-6 cursor-pointer items-center gap-1 rounded-md px-2 leading-none ${getChipClass(ekhnii)}`}
+                >
+                  {getTurulIcon(ekhnii, "h-3 w-3 shrink-0")}
+                  <span>{ekhnii.toot}</span>
+                </span>
+              )}
             </Tooltip>
           );
         },

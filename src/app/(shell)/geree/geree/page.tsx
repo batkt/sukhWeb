@@ -52,14 +52,13 @@ export default function GereeGereePage() {
     ner: string;
     too: number;
     unguClass: string;
-    ungu?: string;
     // Дахин дарахад анхдагч «Идэвхтэй» рүү буцна.
     togglekh?: boolean;
   }[] = [
     { key: "all", ner: "Бүгд", too: toonuud.bugd, unguClass: "text-[color:var(--panel-text)]" },
     { key: "active", ner: "Идэвхтэй", too: toonuud.idevkhtei, unguClass: "text-success" },
-    { key: "khariltsagch", ner: "Харилцагч", too: toonuud.khariltsagch, unguClass: "", ungu: "rgb(168, 85, 247)", togglekh: true },
-    { key: "orshinSuugch", ner: "Оршин суугч", too: toonuud.orshinSuugch, unguClass: "", ungu: "rgb(59, 130, 246)", togglekh: true },
+    { key: "khariltsagch", ner: "Харилцагч", too: toonuud.khariltsagch, unguClass: "text-[color:var(--panel-text)]", togglekh: true },
+    { key: "orshinSuugch", ner: "Оршин суугч", too: toonuud.orshinSuugch, unguClass: "text-[color:var(--panel-text)]", togglekh: true },
     { key: "cancelled", ner: "Идэвхгүй", too: toonuud.idevkhgui, unguClass: "text-danger" },
   ];
 
@@ -113,7 +112,6 @@ export default function GereeGereePage() {
               <div className="stat-card">
                 <div
                   className={`stat-card-value ${k.unguClass}`}
-                  style={k.ungu ? { color: k.ungu } : undefined}
                 >
                   {k.too.toLocaleString("mn-MN")}</div>
                 <div className="stat-card-title">{k.ner} гэрээ</div>

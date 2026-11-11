@@ -166,11 +166,9 @@ export const ContractsTable: React.FC<ContractsTableProps> = React.memo(({
 
             return (
               <Tooltip title={tooltipContent} placement="top" trigger="hover">
-                <span className="inline-flex items-center gap-1.5 cursor-pointer px-2 py-0.5 rounded-lg bg-[color:var(--surface-hover)] font-medium text-[color:var(--panel-text)] border border-[color:var(--surface-border)] hover:bg-[color:var(--surface-hover)] transition-colors">
-                  {allUnits[0].toot}
-                  <span className="text-[color:var(--muted-text)] font-medium">
-                    +{allUnits.length - 1}
-                  </span>
+                {/* Олон тоот — зогсоолын «Олон» машинтай ижил хэв маяг */}
+                <span className="inline-flex shrink-0 cursor-pointer items-center gap-1 whitespace-nowrap px-2 py-0.5 font-medium text-blue-600 underline underline-offset-2 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300">
+                  Олон ({allUnits.length})
                 </span>
               </Tooltip>
             );
@@ -305,37 +303,37 @@ export const ContractsTable: React.FC<ContractsTableProps> = React.memo(({
             : null;
 
           return (
-            <div className="flex gap-1 justify-center items-center">
+            <div className="flex gap-0.5 justify-center items-center">
               <button
                 onClick={() => handlePreviewContractTemplate(record)}
-                className="p-1.5 rounded-md hover-surface transition-colors hover:bg-[color:var(--surface-hover)]"
+                className="p-1 rounded-md hover-surface transition-colors hover:bg-[color:var(--surface-hover)]"
                 title="Гэрээний загвар харах"
               >
-                <Eye className="w-4 h-4 text-[color:var(--muted-text)]" />
+                <Eye className="w-3.5 h-3.5 text-[color:var(--muted-text)]" />
               </button>
               <button
                 onClick={() => handleEdit(record)}
-                className="p-1.5 rounded-md hover-surface transition-colors hover:bg-theme/10 dark:hover:bg-theme/30"
+                className="p-1 rounded-md hover-surface transition-colors hover:bg-theme/10 dark:hover:bg-theme/30"
                 id={index === 0 ? "geree-edit-btn" : undefined}
                 title="Засах"
               >
-                <Edit className="w-4 h-4 text-brand" />
+                <Edit className="w-3.5 h-3.5 text-brand" />
               </button>
               {/* Устгах товчгүй мөрөнд ч хоосон зай үлдээж, дүрсүүд мөр бүрт ижил байрлалд байна. */}
               {isAdmin && handleAdminDelete && !isCancelled && (
-                <span className="inline-block w-7 h-7" aria-hidden="true" />
+                <span className="inline-block w-[22px] h-[22px]" aria-hidden="true" />
               )}
               {isCancelled && isAdmin && handleAdminDelete && (
                 <button
                   onClick={() => handleAdminDelete(record)}
-                  className="p-1.5 rounded-md hover-surface transition-colors hover:bg-danger/10"
+                  className="p-1 rounded-md hover-surface transition-colors hover:bg-danger/10"
                   title={
                     cancelDate
                       ? `${cancelDate}-нд цуцлагдсан · Гэрээг авлагатай нь устгах`
                       : "Цуцлагдсан гэрээг авлагатай нь устгах"
                   }
                 >
-                  <Trash2 className="w-4 h-4 text-danger" />
+                  <Trash2 className="w-3.5 h-3.5 text-danger" />
                 </button>
               )}
             </div>

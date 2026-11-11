@@ -176,6 +176,10 @@ const NegjNemekh: React.FC<{
 };
 
 
+/** Олон тоот/гараж/агуулахтай мөрөнд «Олон (N)» — зогсоолын «Олон» машинтай ижил хэв маяг. */
+const OLON_CLASS =
+  "inline-flex shrink-0 cursor-pointer items-center gap-1 whitespace-nowrap px-2 py-0.5 font-medium text-blue-600 underline underline-offset-2 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300";
+
 /** «Гараж», «Агуулах» тусдаа багана — ижил дүрслэл, зөвхөн төрлөөр шүүнэ. */
 function negjiinBagana(
   turul: "Гараж" | "Агуулах",
@@ -246,14 +250,13 @@ function negjiinBagana(
 
       const chip = (
         <Tooltip title={tooltipContent} placement="top" trigger="hover">
-          <span className="inline-flex items-center gap-1.5 cursor-pointer px-2.5 py-0.5 rounded-md bg-[color:var(--surface-hover)] font-medium text-[color:var(--panel-text)] border border-[color:var(--surface-border)] hover:bg-[color:var(--surface-hover)] transition-colors">
-            {toots[0].toot}
-            {toots.length > 1 && (
-              <span className="text-[color:var(--muted-text)] font-medium">
-                +{toots.length - 1}
-              </span>
-            )}
-          </span>
+          {toots.length > 1 ? (
+            <span className={OLON_CLASS}>Олон ({toots.length})</span>
+          ) : (
+            <span className="inline-flex items-center gap-1.5 cursor-pointer px-2.5 py-0.5 rounded-md bg-[color:var(--surface-hover)] font-medium text-[color:var(--panel-text)] border border-[color:var(--surface-border)] hover:bg-[color:var(--surface-hover)] transition-colors">
+              {toots[0].toot}
+            </span>
+          )}
         </Tooltip>
       );
       if (!nemekhTovch) return chip;
@@ -430,14 +433,13 @@ export const ResidentsTable: React.FC<ResidentsTableProps> = React.memo(({
 
           return (
             <Tooltip title={tooltipContent} placement="top" trigger="hover">
-              <span className="inline-flex items-center gap-1.5 cursor-pointer px-2.5 py-0.5 rounded-md bg-[color:var(--surface-hover)] font-medium text-[color:var(--panel-text)] border border-[color:var(--surface-border)] hover:bg-[color:var(--surface-hover)] transition-colors">
-                {toots[0].toot}
-                {toots.length > 1 && (
-                  <span className="text-[color:var(--muted-text)] font-medium">
-                    +{toots.length - 1}
-                  </span>
-                )}
-              </span>
+              {toots.length > 1 ? (
+                <span className={OLON_CLASS}>Олон ({toots.length})</span>
+              ) : (
+                <span className="inline-flex items-center gap-1.5 cursor-pointer px-2.5 py-0.5 rounded-md bg-[color:var(--surface-hover)] font-medium text-[color:var(--panel-text)] border border-[color:var(--surface-border)] hover:bg-[color:var(--surface-hover)] transition-colors">
+                  {toots[0].toot}
+                </span>
+              )}
             </Tooltip>
           );
         },
