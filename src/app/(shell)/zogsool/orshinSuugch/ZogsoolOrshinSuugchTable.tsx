@@ -257,8 +257,8 @@ export const ZogsoolOrshinSuugchTable: React.FC<
                 title="Засах"
                 className="group inline-flex items-center gap-1.5 whitespace-nowrap px-2 py-0.5 rounded-lg bg-success/10 border border-success/30 transition-colors hover:bg-success/20 hover:border-success/60"
               >
-                <Pencil className="!h-3 !w-3 shrink-0 text-success opacity-60 transition-opacity group-hover:opacity-100" />
-                <span className="font-medium tracking-wide text-success">
+                <Pencil className="!h-3 !w-3 shrink-0 text-black opacity-50 transition-opacity group-hover:opacity-100 dark:text-white" />
+                <span className="font-medium tracking-wide text-black dark:text-white">
                   {record.mashiniiDugaar}
                 </span>
               </button>

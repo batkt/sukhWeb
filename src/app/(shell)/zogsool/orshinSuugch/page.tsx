@@ -428,7 +428,7 @@ export default function OrshinSuugch() {
   };
 
   return (
-    <div className="flex h-full min-h-0 flex-col overflow-y-auto custom-scrollbar">
+    <div className="zogsool-os-khuudas flex h-full min-h-0 flex-col overflow-y-auto custom-scrollbar">
       <div className="mx-auto flex min-h-0 w-full max-w-[1700px] flex-1 flex-col gap-3 px-4 py-4 pb-8">
         {/* Category Filter Cards */}
         <div className="stat-cards-grid grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-7">

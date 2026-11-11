@@ -92,7 +92,7 @@ export default function EzniiMashinuudModal({
                     type="button"
                     onClick={() => onEdit(m)}
                     title="Засах"
-                    className="group inline-flex w-fit items-center gap-1.5 whitespace-nowrap rounded-lg border border-success/30 bg-success/10 px-2 py-0.5 font-medium tracking-wide text-success transition-colors hover:border-success/60 hover:bg-success/20"
+                    className="group inline-flex w-fit items-center gap-1.5 whitespace-nowrap rounded-lg border border-success/30 bg-success/10 px-2 py-0.5 font-medium tracking-wide text-black dark:text-white transition-colors hover:border-success/60 hover:bg-success/20"
                   >
                     <Pencil className="h-3 w-3 shrink-0 opacity-60 transition-opacity group-hover:opacity-100" />
                     <span>{m.mashiniiDugaar || "-"}</span>

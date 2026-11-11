@@ -8495,3 +8495,13 @@ body:not(:has(#tour-replay-fab)) .ai-launcher-wrap { right: 24px; }
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+/* ── Бүх хуудасны бичиг нэг хэмжээ (11px) ──────────────────────────────
+   `.shell-surface` = нэвтэрсэн хэсгийн хуудас бүрийн агуулга (AppShell).
+   Портал цонхнууд (modal) үүнд хамаарахгүй. Картын том тоо, text-xl+
+   том үзүүлэлтүүд хэмжээгээ хадгална. */
+.shell-surface *:not(.stat-card-value, [class*="text-xl"], [class*="text-2xl"],
+  [class*="text-3xl"], [class*="text-4xl"], [class*="text-5xl"]) {
+  font-size: 11px !important;
+}
+.shell-surface .stat-card-value { font-size: 20px !important; }
