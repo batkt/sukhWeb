@@ -48,6 +48,80 @@ interface ResidentsTableProps {
   onSort?: (key: SortKey, order?: "ascend" | "descend" | null) => void;
 }
 
+/** «Гараж», «Агуулах» тусдаа багана — ижил дүрслэл, зөвхөн төрлөөр шүүнэ. */
+function negjiinBagana(
+  turul: "Гараж" | "Агуулах",
+  currentBaiguullagiinId: string | undefined,
+  onKhasakh: (record: ResidentItem, t: any) => void,
+): ColumnsType<ResidentItem>[number] {
+  return {
+    title: turul,
+    key: turul === "Гараж" ? "garaazh" : "aguulakh",
+    width: 110,
+    align: "center",
+    render: (_: any, record: ResidentItem) => {
+      let toots =
+        Array.isArray(record.toots) && record.toots.length > 0
+          ? record.toots
+          : [
+              {
+                toot: record.toot,
+                baiguullagiinId: record.baiguullagiinId,
+                barilgiinId: record.barilgiinId,
+                turul: record.turul || "Орон сууц",
+              },
+            ];
+      
+      // Filter by currentBaiguullagiinId if provided
+      if (currentBaiguullagiinId) {
+        toots = toots.filter((t: any) => String(t.baiguullagiinId) === String(currentBaiguullagiinId));
+      }
+
+      // Зөвхөн энэ баганын төрөл (Гараж эсвэл Агуулах)
+      toots = toots.filter((t: any) => negjiinTurul(t) === turul);
+
+      if (toots.length === 0) return "-";
+
+      const tooltipContent = (
+        <div className="space-y-1.5 p-1.5 max-w-[220px]">
+          {toots.map((t: any, idx: number) => {
+            const label = negjiinTurul(t);
+            return (
+              <div key={idx} className="flex items-center justify-between gap-3 py-0.5">
+                <span className="font-medium text-[color:var(--panel-text)]">Тоот {t.toot} {label}</span>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onKhasakh(record, t);
+                  }}
+                  className="p-0.5 text-danger hover:text-danger rounded hover:bg-danger/30 transition-colors"
+                  title="Хасах"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            );
+          })}
+        </div>
+      );
+
+      return (
+        <Tooltip title={tooltipContent} placement="top" trigger="hover">
+          <span className="inline-flex items-center gap-1.5 cursor-pointer px-2.5 py-0.5 rounded-md bg-[color:var(--surface-hover)] font-medium text-[color:var(--panel-text)] border border-[color:var(--surface-border)] hover:bg-[color:var(--surface-hover)] transition-colors">
+            {toots[0].toot}
+            {toots.length > 1 && (
+              <span className="text-[color:var(--muted-text)] font-medium">
+                +{toots.length - 1}
+              </span>
+            )}
+          </span>
+        </Tooltip>
+      );
+    },
+  };
+}
+
 export const ResidentsTable: React.FC<ResidentsTableProps> = React.memo(({
   data,
   loading = false,
@@ -222,72 +296,8 @@ export const ResidentsTable: React.FC<ResidentsTableProps> = React.memo(({
           );
         },
       },
-      {
-        title: "Гараж / Агуулах",
-        key: "garage_storage",
-        width: 140,
-        align: "center",
-        render: (_: any, record: ResidentItem) => {
-          let toots =
-            Array.isArray(record.toots) && record.toots.length > 0
-              ? record.toots
-              : [
-                  {
-                    toot: record.toot,
-                    baiguullagiinId: record.baiguullagiinId,
-                    barilgiinId: record.barilgiinId,
-                    turul: record.turul || "Орон сууц",
-                  },
-                ];
-          
-          // Filter by currentBaiguullagiinId if provided
-          if (currentBaiguullagiinId) {
-            toots = toots.filter((t: any) => String(t.baiguullagiinId) === String(currentBaiguullagiinId));
-          }
-
-          // Only show Garage or Storage
-          toots = toots.filter((t: any) => negjiinTurul(t) !== "Орон сууц");
-
-          if (toots.length === 0) return "-";
-
-          const tooltipContent = (
-            <div className="space-y-1.5 p-1.5 max-w-[220px]">
-              {toots.map((t: any, idx: number) => {
-                const label = negjiinTurul(t);
-                return (
-                  <div key={idx} className="flex items-center justify-between gap-3 py-0.5">
-                    <span className="font-medium text-[color:var(--panel-text)]">Тоот {t.toot} {label}</span>
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setKhasakhAsuult({ record, t });
-                      }}
-                      className="p-0.5 text-danger hover:text-danger rounded hover:bg-danger/30 transition-colors"
-                      title="Хасах"
-                    >
-                      <X className="w-4 h-4" />
-                    </button>
-                  </div>
-                );
-              })}
-            </div>
-          );
-
-          return (
-            <Tooltip title={tooltipContent} placement="top" trigger="hover">
-              <span className="inline-flex items-center gap-1.5 cursor-pointer px-2.5 py-0.5 rounded-md bg-[color:var(--surface-hover)] font-medium text-[color:var(--panel-text)] border border-[color:var(--surface-border)] hover:bg-[color:var(--surface-hover)] transition-colors">
-                {toots[0].toot}
-                {toots.length > 1 && (
-                  <span className="text-[color:var(--muted-text)] font-medium">
-                    +{toots.length - 1}
-                  </span>
-                )}
-              </span>
-            </Tooltip>
-          );
-        },
-      },
+      negjiinBagana("Гараж", currentBaiguullagiinId, (record, t) => setKhasakhAsuult({ record, t })),
+      negjiinBagana("Агуулах", currentBaiguullagiinId, (record, t) => setKhasakhAsuult({ record, t })),
       {
         title: "Утас",
         dataIndex: "utas",

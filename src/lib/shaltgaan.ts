@@ -142,7 +142,6 @@ const POST_ZAMUUD: RegExp[] = [
   /^\/bpay\/medeelel\/?$/,
   /^\/gereeTsutslakh\/?$/,
   /^\/gereeNemeltTootKhasya\/?$/,
-  /^\/zogsoolAguulakhTuluv\/?$/,
   /^\/guilgeeSalgaya\/?$/,
   /^\/khungulultZasvarlaya\/?$/,
   /^\/zardalTseverlekhiya\/?$/,
