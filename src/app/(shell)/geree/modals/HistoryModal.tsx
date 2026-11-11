@@ -957,6 +957,11 @@ export default function HistoryModal({
   const [loading, setLoading] = useState(false);
   /** Төрийн банк (BPay) горим: хуулгыг BpayKhuulga зурна */
   const [bpayIdevkhtei, setBpayIdevkhtei] = useState(false);
+  /** Төрийн банк горимд ч хуучин (Sukh) журналыг харах */
+  const [khuuchinKharakh, setKhuuchinKharakh] = useState(false);
+  useEffect(() => {
+    if (!show) setKhuuchinKharakh(false);
+  }, [show]);
   const [data, setData] = useState<LedgerEntry[]>([]);
   const [globalUldegdel, setGlobalUldegdel] = useState<number | null>(null);
   const [dateRange, setDateRange] = useState<
@@ -2414,15 +2419,41 @@ export default function HistoryModal({
                         Арилгах
                       </button>
                     )}
+                    {bpayIdevkhtei && (
+                      <div
+                        className="inline-flex rounded-lg border border-[color:var(--surface-border)] p-0.5 text-[11px] print:hidden"
+                        onPointerDown={(e) => e.stopPropagation()}
+                      >
+                        {[
+                          { v: false, t: "Төрийн банк" },
+                          { v: true, t: "Хуучин" },
+                        ].map((o) => (
+                          <button
+                            key={o.t}
+                            type="button"
+                            onClick={() => setKhuuchinKharakh(o.v)}
+                            className={`px-2.5 py-1 rounded-md transition-colors ${
+                              khuuchinKharakh === o.v
+                                ? "bg-[color:var(--surface-hover)] text-[color:var(--panel-text)] font-medium"
+                                : "text-[color:var(--muted-text)] hover:text-[color:var(--panel-text)]"
+                            }`}
+                          >
+                            {o.t}
+                          </button>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </div>
 
                 {/* Table Section - Scrollable */}
                 <div className="history-print-table-body flex-1 overflow-auto custom-scrollbar px-5 sm:px-6 print:px-0">
                   {/* Төрийн банк (BPay) горим: сар бүрийн билл + задаргаа (горимгүй үед юу ч зурахгүй) */}
-                  <BpayKhuulga contract={contract} show={show} dateRange={dateRange} onIdevkhtei={setBpayIdevkhtei} />
-                  {/* Төрийн банк горимд зөвхөн банкны хуулга (нэг хүснэгт); Sukh журнал нуугдана */}
-                  {!bpayIdevkhtei && (
+                  <div className={bpayIdevkhtei && khuuchinKharakh ? "hidden" : undefined}>
+                    <BpayKhuulga contract={contract} show={show} dateRange={dateRange} onIdevkhtei={setBpayIdevkhtei} />
+                  </div>
+                  {/* Төрийн банк горимд банкны хуулга; «Хуучин» сонговол Sukh журнал */}
+                  {(!bpayIdevkhtei || khuuchinKharakh) && (
                   <table className="w-full text-[12px] border-collapse leading-tight">
                     <thead className="sticky top-0 z-10 bg-white dark:bg-[color:var(--panel)]">
                       <tr className="border-b border-[color:var(--surface-border)]">

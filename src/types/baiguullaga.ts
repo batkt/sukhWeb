@@ -76,6 +76,9 @@ export interface Erkh {
 }
 
 export interface BaiguullagaTokhirgoo {
+  /** Төрийн банк горим: СӨХ-ийн төлбөрийг зөвхөн банк нэхэмжилнэ */
+  bpayAshiglakhEsekh?: boolean;
+  bpayEkhelsenOgnoo?: string | Date | null;
   aldangiinKhuvi: number;
   aldangiChuluulukhKhonog: number;
   aldangiBodojEkhlekhOgnoo: Date;

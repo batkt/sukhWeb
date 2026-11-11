@@ -138,10 +138,42 @@ export default function DansniiKhuulga() {
     hasPermission(ajiltan, "tulbur.khungulultOruulakh");
   const { selectedBuildingId } = useBuilding();
   const effectiveBarilgiinId = selectedBuildingId || barilgiinId || undefined;
+  /** Төрийн банк горим: банкинд холбогдсон гэрээний үлдэгдэл/төлөлт (/bpay/dunguud) */
+  const [bpayDunguud, setBpayDunguud] = useState<Record<
+    string,
+    { uldegdel: number; tulburuud: { ognoo: string | null; dun: number }[] }
+  > | null>(null);
   const { baiguullaga, baiguullagaMutate } = useBaiguullaga(
     token,
     (ajiltan?.baiguullagiinId || null) as string | null,
   );
+  const bpayGorim = baiguullaga?.tokhirgoo?.bpayAshiglakhEsekh === true;
+  useEffect(() => {
+    if (!bpayGorim || !token) {
+      setBpayDunguud(null);
+      return;
+    }
+    let tsutsalsan = false;
+    const tatakh = () =>
+      uilchilgee(token)
+        .get("/bpay/dunguud")
+        .then(({ data }) => {
+          if (!tsutsalsan) setBpayDunguud(data?.bpay ? data.dunguud || {} : null);
+        })
+        .catch(() => {
+          /* дараагийн удаа */
+        });
+    tatakh();
+    // Синк 5 минут тутам явдаг — жагсаалтыг 1 минут тутам шинэчилнэ
+    const timer = setInterval(tatakh, 60000);
+    return () => {
+      tsutsalsan = true;
+      clearInterval(timer);
+    };
+  }, [bpayGorim, token]);
+  /** «Хуучин» сонговол Sukh-ийн журналын дүн (банкны дүнгээр дарахгүй) */
+  const [khuuchinDun, setKhuuchinDun] = useState(false);
+  const bankniiDun = khuuchinDun ? null : bpayDunguud;
 
   // Барилгын «Заалтаар цахилгаан бодох» тохиргоо (Нэмэлт тохиргоо хуудас).
   // Унтраалттай үед систем юу ч бодохгүй — хэрэглэгч цахилгааны эцсийн дүнг
@@ -974,6 +1006,11 @@ export default function DansniiKhuulga() {
 
   const tableDisplayBalances = useMemo(() => {
     const out: Record<string, number> = {};
+    // Төрийн банк горим: холбогдсон гэрээний үлдэгдэл = банкны төлөгдөөгүй билл (доор эцэст нь дарна)
+    const bankniiUldegdel = () => {
+      if (!bankniiDun) return;
+      for (const [gid, d] of Object.entries(bankniiDun)) out[gid] = Number(d.uldegdel) || 0;
+    };
 
     Object.values(contractsById).forEach((c: any) => {
       if (c?._id != null && c.uldegdel != null) {
@@ -995,8 +1032,10 @@ export default function DansniiKhuulga() {
       if (v != null && Number.isFinite(v)) out[gid] = v;
     });
 
+    bankniiUldegdel();
     return out;
   }, [
+    bankniiDun,
     contractsById,
     allHistoryItems,
     contractsByNumber,
@@ -1005,17 +1044,32 @@ export default function DansniiKhuulga() {
 
   /** Гүйцэтгэл: зөвхөн `monthlyMatrixRange` сарын төлөлт (бүх түүхийн харагдац ч ижил) */
   const monthPaidByGereeId = useMemo(() => {
-    return aggregateLedgerTulsunByGereeIdInRange(
+    const sukh = aggregateLedgerTulsunByGereeIdInRange(
       buildingHistoryItems,
       contractsByNumber,
       effectiveDateFilter.paidRangeStartMs,
       effectiveDateFilter.paidRangeEndMs,
     );
+    if (!bankniiDun) return sukh;
+    // Төрийн банк горим: банкинд холбогдсон гэрээний Гүйцэтгэл = тухайн хугацаанд банкаар төлсөн дүн
+    const out: Record<string, number> = { ...sukh };
+    for (const [gid, d] of Object.entries(bankniiDun)) {
+      out[gid] = d.tulburuud.reduce((s, t) => {
+        const ms = t.ognoo ? new Date(t.ognoo).getTime() : NaN;
+        const dotor =
+          Number.isFinite(ms) &&
+          ms >= effectiveDateFilter.paidRangeStartMs &&
+          ms <= effectiveDateFilter.paidRangeEndMs;
+        return dotor ? s + (Number(t.dun) || 0) : s;
+      }, 0);
+    }
+    return out;
   }, [
     buildingHistoryItems,
     contractsByNumber,
     effectiveDateFilter.paidRangeStartMs,
     effectiveDateFilter.paidRangeEndMs,
+    bankniiDun,
   ]);
 
   /** Хөнгөлөлт: зөвхөн `monthlyMatrixRange` сарын хөнгөлөлт */
@@ -3919,6 +3973,27 @@ export default function DansniiKhuulga() {
                 }}
                 className="w-full sm:w-[284px]"
               />
+              {bpayDunguud ? (
+                <div className="inline-flex shrink-0 rounded-lg border border-[color:var(--surface-border)] p-0.5 text-[12px]">
+                  {[
+                    { v: false, t: "Төрийн банк" },
+                    { v: true, t: "Хуучин" },
+                  ].map((o) => (
+                    <button
+                      key={o.t}
+                      type="button"
+                      onClick={() => setKhuuchinDun(o.v)}
+                      className={`px-2.5 py-1 rounded-md transition-colors ${
+                        khuuchinDun === o.v
+                          ? "bg-[color:var(--surface-hover)] text-[color:var(--panel-text)] font-medium"
+                          : "text-[color:var(--muted-text)] hover:text-[color:var(--panel-text)]"
+                      }`}
+                    >
+                      {o.t}
+                    </button>
+                  ))}
+                </div>
+              ) : null}
               <FilterSelect
                 label="Орц"
                 value={selectedOrtsFilter}

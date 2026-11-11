@@ -2,7 +2,7 @@
 
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { TextInput as MTextInput } from "@mantine/core";
-import { Landmark, Link2, RefreshCw, Search } from "lucide-react";
+import { Landmark, Link2, ListX, RefreshCw, Search } from "lucide-react";
 import { useAuth } from "@/lib/useAuth";
 import uilchilgee from "@/lib/uilchilgee";
 import { openSuccessOverlay } from "@/components/ui/SuccessOverlay";
@@ -15,6 +15,32 @@ import { SettingsCard, SettingsItem, Switch } from "./SettingsRow";
  */
 
 type Barilga = { barilgiinId: string; ner: string; bpayBairId: string };
+type KholbogdooguiMur = {
+  gereeniiId: string;
+  barilga: string;
+  toot: string;
+  gereeniiDugaar: string;
+  ner: string;
+  utas: string;
+  shaltgaan: string;
+};
+
+/** Холбогдоогүй тоотуудыг CSV (Excel-д нээгдэнэ) болгож татна. */
+function csvTatakh(muruud: KholbogdooguiMur[]) {
+  const q = (v: string) => `"${String(v ?? "").replace(/"/g, '""')}"`;
+  const tolgoi = ["Барилга", "Тоот", "Гэрээ", "Нэр", "Утас", "Шалтгаан"];
+  const mur = muruud.map((m) => [m.barilga, m.toot, m.gereeniiDugaar, m.ner, m.utas, m.shaltgaan].map(q).join(","));
+  // ﻿ (BOM) — Excel кирилл үсгийг зөв уншина
+  const blob = new Blob(["﻿" + [tolgoi.map(q).join(","), ...mur].join("\r\n")], {
+    type: "text/csv;charset=utf-8",
+  });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "kholbogdoogui_toot.csv";
+  a.click();
+  URL.revokeObjectURL(url);
+}
 type Ajil = {
   ajillajBaina: boolean;
   ekhelsen?: string;
@@ -321,6 +347,9 @@ function TuriinBankKart() {
         ) : null}
       </SettingsItem>
 
+      {/* 3б. Холбогдоогүй тоот */}
+      <KholbogdooguiTootuud token={token} idevkhtei={idevkhtei} />
+
       {/* 4. Билл синк хийх */}
       <SettingsItem
         icon={<RefreshCw />}
@@ -365,5 +394,95 @@ function TuriinBankKart() {
         ) : null}
       </SettingsItem>
     </SettingsCard>
+  );
+}
+
+function KholbogdooguiTootuud({ token, idevkhtei }: { token?: string | null; idevkhtei: boolean }) {
+  const [muruud, setMuruud] = useState<KholbogdooguiMur[] | null>(null);
+  const [achaalj, setAchaalj] = useState(false);
+  const [barilga, setBarilga] = useState("");
+
+  const achaalakh = async () => {
+    if (!token) return;
+    setAchaalj(true);
+    try {
+      const { data } = await uilchilgee(token).get("/bpay/kholbogdoogui");
+      setMuruud(Array.isArray(data?.jagsaalt) ? data.jagsaalt : []);
+    } catch (e) {
+      openErrorOverlay(aldaaZurvas(e));
+    } finally {
+      setAchaalj(false);
+    }
+  };
+
+  const barilguud = muruud ? [...new Set(muruud.map((m) => m.barilga))] : [];
+  const kharuulakh = (muruud || []).filter((m) => !barilga || m.barilga === barilga);
+
+  return (
+    <SettingsItem
+      icon={<ListX />}
+      title="Холбогдоогүй тоот"
+      desc={muruud ? `${muruud.length} тоот` : "Бүх барилгын холбогдоогүй тоот, шалтгаантай"}
+      control={
+        <div className="stg-inline">
+          {muruud?.length ? (
+            <button type="button" className="stg-btn" onClick={() => csvTatakh(kharuulakh)}>
+              Excel татах
+            </button>
+          ) : null}
+          <button type="button" className="stg-btn" disabled={!idevkhtei || achaalj} onClick={achaalakh}>
+            {achaalj ? "Ачаалж байна…" : muruud ? "Шинэчлэх" : "Жагсаалт"}
+          </button>
+        </div>
+      }
+    >
+      {muruud && muruud.length ? (
+        <div className="mt-2">
+          {barilguud.length > 1 ? (
+            <div className="flex items-center gap-1.5 flex-wrap text-xs mb-2">
+              <button type="button" className={`stg-chip ${!barilga ? "!bg-emerald-50 !text-emerald-700" : ""}`} onClick={() => setBarilga("")}>
+                Бүгд: {muruud.length}
+              </button>
+              {barilguud.map((b) => (
+                <button
+                  key={b}
+                  type="button"
+                  className={`stg-chip ${barilga === b ? "!bg-emerald-50 !text-emerald-700" : ""}`}
+                  onClick={() => setBarilga(b)}
+                >
+                  {b || "—"}: {muruud.filter((m) => m.barilga === b).length}
+                </button>
+              ))}
+            </div>
+          ) : null}
+          <div className="max-h-[360px] overflow-auto rounded-lg border border-[color:var(--surface-border)]">
+            <table className="w-full text-[12px] border-collapse">
+              <thead className="sticky top-0 bg-[color:var(--surface-bg)]">
+                <tr className="text-left text-[color:var(--muted-text)]">
+                  <th className="py-1 px-2 font-medium">Барилга</th>
+                  <th className="py-1 px-2 font-medium">Тоот</th>
+                  <th className="py-1 px-2 font-medium">Нэр</th>
+                  <th className="py-1 px-2 font-medium">Утас</th>
+                  <th className="py-1 px-2 font-medium">Шалтгаан</th>
+                </tr>
+              </thead>
+              <tbody>
+                {kharuulakh.map((m) => (
+                  <tr key={m.gereeniiId} className="border-t border-[color:var(--surface-border)] text-[color:var(--panel-text)]">
+                    <td className="py-1 px-2 whitespace-nowrap">{m.barilga || "—"}</td>
+                    <td className="py-1 px-2 whitespace-nowrap">{m.toot}</td>
+                    <td className="py-1 px-2">{m.ner || "—"}</td>
+                    <td className="py-1 px-2 whitespace-nowrap">{m.utas || "—"}</td>
+                    <td className="py-1 px-2">{m.shaltgaan}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      ) : muruud ? (
+        <p className="text-xs mt-1 text-emerald-700">Бүх тоот холбогдсон.</p>
+      ) : null}
+    </SettingsItem>
   );
 }
