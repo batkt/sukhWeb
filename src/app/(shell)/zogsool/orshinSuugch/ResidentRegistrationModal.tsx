@@ -20,6 +20,8 @@ import {
 } from "lucide-react";
 import { toast } from "react-hot-toast";
 import uilchilgee from "@/lib/uilchilgee";
+import { ShaltgaanTalbar } from "@/components/ui/ShaltgaanDialog";
+import { shaltgaanTaviya, shaltgaanZuvEsekh } from "@/lib/shaltgaan";
 import { motion, AnimatePresence } from "framer-motion";
 import Button from "@/components/ui/Button";
 import useModalHotkeys from "@/lib/useModalHotkeys";
@@ -201,6 +203,10 @@ export default function ResidentRegistrationModal({
   );
 
   const [mashinUstgaj, setMashinUstgaj] = useState<string | null>(null);
+  // Машин устгахын өмнөх баталгаажуулалт — шалтгаан заавал
+  const [ustgakhMashin, setUstgakhMashin] = useState<{ _id: string; mashiniiDugaar: string } | null>(null);
+  const [mashinShaltgaan, setMashinShaltgaan] = useState("");
+  const [mashinShaltgaanOroldson, setMashinShaltgaanOroldson] = useState(false);
 
   const khyazgaarDuurenEsekh =
     !zasajBuiMashiniiId &&
@@ -553,6 +559,15 @@ export default function ResidentRegistrationModal({
     if (/^\d*$/.test(digits) && /^[А-ЯӨҮЁ]*$/.test(convertedChars)) {
       setFormData((prev) => ({ ...prev, plate: fullPlate }));
     }
+  };
+
+  const mashinUstgakhBatlaya = async (mashin: { _id: string; mashiniiDugaar: string }) => {
+    setMashinShaltgaanOroldson(true);
+    if (!shaltgaanZuvEsekh(mashinShaltgaan)) return;
+    // Шалтгааныг DELETE хүсэлтэд хавсаргана — ерөнхий цонх дахин асуухгүй
+    shaltgaanTaviya(mashinShaltgaan);
+    await mashinUstgaya(mashin);
+    setUstgakhMashin(null);
   };
 
   const handleSave = async () => {
@@ -1009,8 +1024,8 @@ export default function ResidentRegistrationModal({
                                 const ustgaj = mashinUstgaj === mashin._id;
 
                                 return (
+                                  <React.Fragment key={mashin._id}>
                                   <div
-                                    key={mashin._id}
                                     className={`flex items-center gap-2 pl-3 pr-2 py-2 rounded-xl border transition-colors ${
                                       zasajBui
                                         ? "border-theme bg-theme/10"
@@ -1040,7 +1055,11 @@ export default function ResidentRegistrationModal({
 
                                     <button
                                       type="button"
-                                      onClick={() => mashinUstgaya(mashin)}
+                                      onClick={() => {
+                                        setUstgakhMashin(mashin);
+                                        setMashinShaltgaan("");
+                                        setMashinShaltgaanOroldson(false);
+                                      }}
                                       disabled={ustgaj}
                                       title="Машины бүртгэлийг устгах"
                                       className="p-1.5 rounded-lg text-[color:var(--muted-text)] hover:text-danger hover:bg-danger/10 disabled:opacity-40 transition-colors cursor-pointer"
@@ -1052,6 +1071,44 @@ export default function ResidentRegistrationModal({
                                       )}
                                     </button>
                                   </div>
+                                  {/* Устгах баталгаажуулалт — шалтгаан заавал («Устгасан түүх»-д) */}
+                                  {ustgakhMashin?._id === mashin._id && (
+                                    <div
+                                      className="mt-1.5 space-y-2 rounded-xl border border-danger/30 bg-danger/5 p-3"
+                                      data-prevent-enter
+                                    >
+                                      <p className="text-xs text-[color:var(--panel-text)]">
+                                        <b>{mashin.mashiniiDugaar}</b> машины бүртгэлийг устгах уу?
+                                      </p>
+                                      <ShaltgaanTalbar
+                                        value={mashinShaltgaan}
+                                        onChange={setMashinShaltgaan}
+                                        aldaaKharuulakh={mashinShaltgaanOroldson}
+                                        autoFocus
+                                        onEnter={() => void mashinUstgakhBatlaya(mashin)}
+                                      />
+                                      <div className="flex justify-end gap-2">
+                                        <Button
+                                          type="button"
+                                          variant="secondary"
+                                          size="sm"
+                                          onClick={() => setUstgakhMashin(null)}
+                                        >
+                                          Болих
+                                        </Button>
+                                        <Button
+                                          type="button"
+                                          variant="danger"
+                                          size="sm"
+                                          isLoading={ustgaj}
+                                          onClick={() => void mashinUstgakhBatlaya(mashin)}
+                                        >
+                                          Устгах
+                                        </Button>
+                                      </div>
+                                    </div>
+                                  )}
+                                  </React.Fragment>
                                 );
                               })}
                             </div>
