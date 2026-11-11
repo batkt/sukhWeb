@@ -40,6 +40,8 @@ interface ResidentParking {
   zochinNiitUneguiMinut?: number;
   orshinSuugchTurul?: string;
   ezemshigchiinId?: string;
+  /** Нэг эзний бүх машины мөр (page.tsx эзнээр нь нэгтгэнэ). */
+  mashinMuruud?: ResidentParking[];
 }
 
 interface ZogsoolOrshinSuugchTableProps {
@@ -53,7 +55,12 @@ interface ZogsoolOrshinSuugchTableProps {
   ortsOptions?: string[];
   /** Бүртгэлгүй мөрөнд машины дугаар шууд хадгалах. Амжилттай бол true. */
   onMashinBurtgekh?: (resident: ResidentParking, dugaar: string) => Promise<boolean>;
+  /** Олон машинтай эзний машинуудын цонх нээх */
+  onOlonMashin?: (resident: ResidentParking) => void;
 }
+
+/** Нэг эзэнд хоёр ба түүнээс олон машин бүртгэлтэй эсэх */
+export const olonMashinteiEsekh = (r: ResidentParking) => (r.mashinMuruud?.length ?? 0) > 1;
 
 const mashinBurtgelgui = (d?: string) => !d || d === "БҮРТГЭЛГҮЙ" || d === "-";
 
@@ -73,7 +80,7 @@ const dugaarBuren = (d: string) => /^\d{4}[А-ЯӨҮЁ]{3}$/.test(d);
  * «Машин бүртгэх» товч → дармагц input болно. 7 тэмдэгт (1234УБА) бүрэн
  * бичигдмэгц өөрөө хадгална; Enter эсвэл гадагш дарахад мөн хадгална.
  */
-const MashinBurtgekhNud: React.FC<{
+export const MashinBurtgekhNud: React.FC<{
   onSave: (dugaar: string) => Promise<boolean>;
 }> = ({ onSave }) => {
   const [zasaj, setZasaj] = useState(false);
@@ -155,7 +162,7 @@ const MashinBurtgekhNud: React.FC<{
 
 export const ZogsoolOrshinSuugchTable: React.FC<
   ZogsoolOrshinSuugchTableProps
-> = ({ data, loading, page, pageSize, onEdit, onDelete, onFilterChange, ortsOptions = [], onMashinBurtgekh }) => {
+> = ({ data, loading, page, pageSize, onEdit, onDelete, onFilterChange, ortsOptions = [], onMashinBurtgekh, onOlonMashin }) => {
   const columns: ColumnsType<ResidentParking> = useMemo(
     () => [
       {
@@ -212,14 +219,6 @@ export const ZogsoolOrshinSuugchTable: React.FC<
             <p className="text-black dark:text-white font-sans">
               {record.ner || record.orshinSuugchNer || "Нэр тодорхойгүй"}
             </p>
-            {/* Олон машинтай эзэн нь машин тутамдаа нэг мөр эзэлдэг тул нэр
-                давтагдана — тоог хамт харуулж шалтгааныг тодруулна. */}
-            {(record.mashiniiToo ?? 0) > 1 && (
-              <span className="mt-0.5 inline-flex items-center gap-1 text-[11px] text-[color:var(--muted-text)]">
-                <Car className="w-3 h-3" />
-                {record.mashiniiToo} машин
-              </span>
-            )}
           </div>
         ),
       },
@@ -241,7 +240,17 @@ export const ZogsoolOrshinSuugchTable: React.FC<
         align: "center",
         render: (_: any, record: ResidentParking) => (
           <div className="flex flex-wrap gap-2 justify-center">
-            {!mashinBurtgelgui(record.mashiniiDugaar) ? (
+            {olonMashinteiEsekh(record) ? (
+              <button
+                type="button"
+                onClick={() => onOlonMashin?.(record)}
+                title={(record.mashinMuruud || []).map((m) => m.mashiniiDugaar).join(", ")}
+                className="inline-flex items-center gap-1 font-medium text-blue-600 underline underline-offset-2 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
+              >
+                <Car className="h-3.5 w-3.5" />
+                Олон ({record.mashinMuruud?.length})
+              </button>
+            ) : !mashinBurtgelgui(record.mashiniiDugaar) ? (
               <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-lg bg-success/10 border border-success/30">
                 <span className="font-medium tracking-wide text-success">
                   {record.mashiniiDugaar}
@@ -275,7 +284,25 @@ export const ZogsoolOrshinSuugchTable: React.FC<
         key: "action",
         width: 96,
         align: "center",
-        render: (_: any, record: ResidentParking) => (
+        render: (_: any, record: ResidentParking) =>
+          olonMashinteiEsekh(record) ? (
+          <div className="flex justify-center items-center gap-1">
+            <button
+              onClick={() => onOlonMashin?.(record)}
+              className="p-1.5 rounded-lg action-edit hover-surface transition-colors hover:bg-[color:var(--panel)] dark:hover:bg-white/20"
+              title="Машинуудыг засах"
+            >
+              <Edit className="w-4 h-4 text-black dark:text-white" />
+            </button>
+            <button
+              onClick={() => onOlonMashin?.(record)}
+              className="p-1.5 rounded-lg action-delete hover-surface hover:bg-danger/10 text-black dark:text-white hover:text-danger transition-all"
+              title="Машин устгах"
+            >
+              <Trash2 className="w-4 h-4" />
+            </button>
+          </div>
+          ) : (
           <div className="flex justify-center items-center gap-1">
             <button
               id="resident-edit-btn"
@@ -302,7 +329,7 @@ export const ZogsoolOrshinSuugchTable: React.FC<
         ),
       },
     ],
-    [page, pageSize, onEdit, onDelete, ortsOptions, onMashinBurtgekh],
+    [page, pageSize, onEdit, onDelete, ortsOptions, onMashinBurtgekh, onOlonMashin],
   );
 
   const handleTableChange = (pagination: any, filters: any) => {

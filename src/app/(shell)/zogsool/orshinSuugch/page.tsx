@@ -38,6 +38,7 @@ import deleteMethod from "../../../../../tools/function/deleteMethod";
 import { getResidentToot } from "@/lib/residentDataHelper";
 import ExcelButton from "@/components/ui/ExcelButton";
 import ZogsoolOrshinSuugchTable from "./ZogsoolOrshinSuugchTable";
+import EzniiMashinuudModal from "./EzniiMashinuudModal";
 import { StandardPagination } from "@/components/ui/StandardTable";
 import TusgaiZagvar from "../../../../../components/selectZagvar/tusgaiZagvar";
 import { useTourSteps } from "@/lib/useTourSteps";
@@ -91,6 +92,24 @@ interface ResidentParking {
   zochinNiitUneguiMinut?: number;
   orshinSuugchTurul?: string;
   orts?: string;
+  ezemshigchiinId?: string;
+  mashinMuruud?: ResidentParking[];
+}
+
+/** Backend машин тутамд нэг мөр буцаадаг — эзний түлхүүр */
+const ezniiTulkhuur = (r: any): string =>
+  String(r.ezemshigchiinId || r.orshinSuugchiinId || r._id || `${r.utas}|${r.ner}`);
+
+/** Нэг эзний олон машиныг нэг мөр болгоно (давхардсан мөргүй) */
+function ezenneerNegtgekh(muruud: ResidentParking[]): ResidentParking[] {
+  const map = new Map<string, ResidentParking>();
+  for (const r of muruud) {
+    const k = ezniiTulkhuur(r);
+    const ezen = map.get(k);
+    if (ezen) ezen.mashinMuruud!.push(r);
+    else map.set(k, { ...r, mashinMuruud: [r] });
+  }
+  return Array.from(map.values());
 }
 
 export default function OrshinSuugch() {
@@ -117,6 +136,8 @@ export default function OrshinSuugch() {
   const [editingResident, setEditingResident] =
     useState<ResidentParking | null>(null);
   const [pageSize, setPageSize] = useState(500);
+  /** «Олон» дээр дарсан эзний түлхүүр — машинуудын цонх */
+  const [mashinEzenKey, setMashinEzenKey] = useState<string | null>(null);
   
   // Filters
   const [turulFilter, setTurulFilter] = useState("Бүгд");
@@ -225,6 +246,12 @@ export default function OrshinSuugch() {
   );
 
   const residents: ResidentParking[] = residentsData?.jagsaalt || [];
+  const ezenMuruud = useMemo(() => ezenneerNegtgekh(residents), [residents]);
+  // Шинэчлэгдсэн өгөгдлөөс авна — устгасан/нэмсэн машин цонхонд шууд харагдана
+  const mashinEzen = useMemo(
+    () => (mashinEzenKey ? ezenMuruud.find((r) => ezniiTulkhuur(r) === mashinEzenKey) ?? null : null),
+    [ezenMuruud, mashinEzenKey],
+  );
   const totalCount = residentsData?.niitMur || 0;
   const totalPages = Math.ceil(totalCount / pageSize);
 
@@ -244,8 +271,15 @@ export default function OrshinSuugch() {
   };
 
   const categoryStats = useMemo(() => {
-    const list = statsData?.jagsaalt || [];
-    const total = list.length;
+    // Машин бүр биш, эзэн бүрийг тоолно (нэг эзэн ангилалд нэг удаа)
+    const muruud: any[] = statsData?.jagsaalt || [];
+    const ezenTurul = new Map<string, any>();
+    for (const it of muruud) {
+      const k = `${ezniiTulkhuur(it)}|${it.turul || it.zochinTurul || it.orshinSuugchTurul || ""}`;
+      if (!ezenTurul.has(k)) ezenTurul.set(k, it);
+    }
+    const list = Array.from(ezenTurul.values());
+    const total = new Set(muruud.map(ezniiTulkhuur)).size;
     
     return [
       { label: "Нийт бүртгэл", value: "Бүгд", count: total },
@@ -502,6 +536,16 @@ export default function OrshinSuugch() {
           </ModalPortal>
         )}
 
+        {mashinEzen && (
+          <EzniiMashinuudModal
+            ezen={mashinEzen}
+            onClose={() => setMashinEzenKey(null)}
+            onEdit={(m) => setEditingResident(m)}
+            onDelete={(m) => handleDelete(m)}
+            onMashinNemekh={handleMashinBurtgekh}
+          />
+        )}
+
         {showExcelImport && (
           <ExcelImportModal
             token={token || ""}
@@ -540,7 +584,7 @@ export default function OrshinSuugch() {
         {/* Content Table */}
         <div className="min-h-0 flex-1">
           <ZogsoolOrshinSuugchTable
-            data={residents}
+            data={ezenMuruud}
             loading={!residentsData && !residents.length}
             page={page}
             pageSize={pageSize}
@@ -549,6 +593,7 @@ export default function OrshinSuugch() {
             onFilterChange={handleFilterChange}
             ortsOptions={ortsOptions}
             onMashinBurtgekh={handleMashinBurtgekh}
+            onOlonMashin={(r) => setMashinEzenKey(ezniiTulkhuur(r))}
           />
         </div>
 
