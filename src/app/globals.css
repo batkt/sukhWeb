@@ -7908,6 +7908,25 @@ label:hover > .peer:not(:checked) + .tokh-switch {
   height: 12px;
 }
 
+/* ── Гэрээний хүснэгт (/geree/geree) — илүү нягт мөр (≈24px) ───────────
+   Мөрийн өндрийг 26px үйлдлийн товч тогтоодог байсан тул зөвхөн энэ
+   хүснэгтэд товчийг 20px, нүдний дээд/доод зайг 1px болгоно. */
+#geree-table .zt-table tbody td {
+  padding-top: 1px;
+  padding-bottom: 1px;
+}
+#geree-table .zt-table td button:has(> svg.lucide:only-child) {
+  width: 20px;
+  height: 20px;
+  min-width: 20px;
+  min-height: 20px;
+  border-radius: 6px;
+}
+#geree-table .zt-table td :is(button, a) > svg.lucide {
+  width: 14px;
+  height: 14px;
+}
+
 /* ── sonner мэдэгдэл — сонгосон загварын өнгөөр ─────────────────────── */
 [data-sonner-toaster] [data-sonner-toast] {
   background: var(--surface-bg) !important;

@@ -7,6 +7,7 @@ import type { ColumnsType } from "@/components/ui/table";
 import { FileText, Eye, CalendarX2, Edit, Trash2 } from "lucide-react";
 import { ALL_COLUMNS } from "./columns";
 import { StandardPagination } from "@/components/ui/StandardTable";
+import { negjiinTurul, negjiinTulkhuur, type NegjiinTurul } from "@/lib/negjiinTurul";
 
 type SortKey = string;
 
@@ -102,6 +103,8 @@ export const ContractsTable: React.FC<ContractsTableProps> = React.memo(({
           colWidth = 150;
         else if (
           columnKey === "toot" ||
+          columnKey === "garaazh" ||
+          columnKey === "aguulakh" ||
           columnKey === "orts" ||
           columnKey === "davkhar"
         )
@@ -115,14 +118,23 @@ export const ContractsTable: React.FC<ContractsTableProps> = React.memo(({
         else if (columnKey === "gereeniiDugaar") colWidth = 100;
         else colWidth = 120;
 
-        if (columnKey === "toot") {
-          const targetKey = "toot";
+        // Тоот / Гараж / Агуулах — тусдаа багана (оршин суугчийн хүснэгттэй ижил).
+        // Нэг гэрээний бүх нэгжийг цуглуулж, тухайн баганын төрлөөр шүүнэ.
+        const negjiinBaganaTurul: Record<string, NegjiinTurul> = {
+          toot: "Орон сууц",
+          garaazh: "Гараж",
+          aguulakh: "Агуулах",
+        };
+        if (negjiinBaganaTurul[columnKey]) {
+          const targetKey = columnKey;
+          const baganiinTurul = negjiinBaganaTurul[columnKey];
           const renderTootCell = (_: any, record: any) => {
-            const allUnits: { toot: string; turul: string }[] = [];
+            const allUnits: { toot: string; turul: string; davkhar?: string }[] = [];
             if (record.toot != null && String(record.toot).trim() !== "") {
               allUnits.push({
                 toot: String(record.toot).trim(),
                 turul: record.turul || "Орон сууц",
+                davkhar: record.davkhar,
               });
             }
             if (Array.isArray(record.nemeltTootnuud)) {
@@ -131,44 +143,56 @@ export const ContractsTable: React.FC<ContractsTableProps> = React.memo(({
                   allUnits.push({
                     toot: String(n.toot).trim(),
                     turul: n.turul || "Зогсоол",
+                    davkhar: n.davkhar,
                   });
                 }
               });
             }
 
-            if (allUnits.length === 0) {
+            if (allUnits.length === 0 && columnKey === "toot") {
               const rawVal = renderCellValue(record, "toot");
               return <span className="text-[color:var(--panel-text)] dark:text-white">{rawVal}</span>;
             }
 
-            if (allUnits.length === 1) {
+            // Зөвхөн энэ баганын төрөл, давхардалгүй
+            const uzsen = new Set<string>();
+            const units = allUnits.filter((u) => {
+              if (negjiinTurul(u) !== baganiinTurul) return false;
+              const tulkhuur = negjiinTulkhuur(u);
+              if (uzsen.has(tulkhuur)) return false;
+              uzsen.add(tulkhuur);
+              return true;
+            });
+
+            if (units.length === 0) {
+              return <span className="text-[color:var(--muted-text)]">-</span>;
+            }
+
+            if (units.length === 1) {
               return (
                 <span className="text-[color:var(--panel-text)] dark:text-white font-medium">
-                  {allUnits[0].toot}
+                  {units[0].toot}
                 </span>
               );
             }
 
             const tooltipContent = (
               <div className="space-y-1.5 p-1.5 max-w-[220px]">
-                {allUnits.map((u: any, idx: number) => {
-                  const label = u.turul === "Гараж" || u.turul === "Зогсоол" ? "Гараж" : u.turul;
-                  return (
-                    <div key={idx} className="flex items-center gap-3 py-0.5">
-                      <span className="font-medium text-[color:var(--panel-text)]">
-                        Тоот {u.toot} {label}
-                      </span>
-                    </div>
-                  );
-                })}
+                {units.map((u, idx: number) => (
+                  <div key={idx} className="flex items-center gap-3 py-0.5">
+                    <span className="font-medium text-[color:var(--panel-text)]">
+                      {baganiinTurul === "Орон сууц" ? "Тоот" : baganiinTurul} {u.toot}
+                    </span>
+                  </div>
+                ))}
               </div>
             );
 
             return (
               <Tooltip title={tooltipContent} placement="top" trigger="hover">
-                {/* Олон тоот — зогсоолын «Олон» машинтай ижил хэв маяг */}
+                {/* Олон нэгж — зогсоолын «Олон» машинтай ижил хэв маяг */}
                 <span className="inline-flex shrink-0 cursor-pointer items-center gap-1 whitespace-nowrap px-2 py-0.5 font-medium text-blue-600 underline underline-offset-2 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300">
-                  Олон ({allUnits.length})
+                  Олон ({units.length})
                 </span>
               </Tooltip>
             );
@@ -186,9 +210,10 @@ export const ContractsTable: React.FC<ContractsTableProps> = React.memo(({
             key: columnKey,
             align: alignClass as any,
             width: colWidth,
-            sorter: true,
+            // Эрэмбэлэлт зөвхөн үндсэн тоотоор
+            sorter: columnKey === "toot",
             sortOrder:
-              sortKey === targetKey
+              columnKey === "toot" && sortKey === targetKey
                 ? sortOrder === "asc"
                   ? "ascend"
                   : "descend"

@@ -10,6 +10,8 @@ export const ALL_COLUMNS = [
   { key: "orts", label: "Орц", default: true },
   { key: "davkhar", label: "Давхар", default: true },
   { key: "toot", label: "Тоот", default: true },
+  { key: "garaazh", label: "Гараж", default: true },
+  { key: "aguulakh", label: "Агуулах", default: true },
   { key: "utas", label: "Холбоо барих", default: true },
   { key: "tuluv", label: "Төлөв", default: true },
 
