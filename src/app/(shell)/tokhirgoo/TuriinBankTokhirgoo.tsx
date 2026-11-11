@@ -21,6 +21,7 @@ type Ajil = {
   duussan?: string | null;
   ur?: any;
   aldaa?: string | null;
+  yavts?: { niit: number; duussan: number };
 } | null;
 
 const aldaaZurvas = (e: any) =>
@@ -276,7 +277,11 @@ function TuriinBankKart() {
             title={idevkhtei ? undefined : "Эхлээд горимоо асаана уу"}
             onClick={() => ajilEkhluulekh("/bpay/khayagKholbokh")}
           >
-            {ajil.kholbokh?.ajillajBaina ? "Холбож байна…" : "Тоот холбох"}
+            {ajil.kholbokh?.ajillajBaina
+              ? ajil.kholbokh.yavts?.niit
+                ? `Холбож байна… ${ajil.kholbokh.yavts.duussan}/${ajil.kholbokh.yavts.niit}`
+                : "Бэлдэж байна…"
+              : "Тоот холбох"}
           </button>
         }
       >

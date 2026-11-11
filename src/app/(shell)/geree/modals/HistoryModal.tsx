@@ -2421,8 +2421,8 @@ export default function HistoryModal({
                 <div className="history-print-table-body flex-1 overflow-auto custom-scrollbar px-5 sm:px-6 print:px-0">
                   {/* Төрийн банк (BPay) горим: сар бүрийн билл + задаргаа (горимгүй үед юу ч зурахгүй) */}
                   <BpayKhuulga contract={contract} show={show} dateRange={dateRange} onIdevkhtei={setBpayIdevkhtei} />
-                  {/* BPay горимд хуучин Sukh журнал хоосон бол нуух; түүхтэй бол доор нь хэвээр */}
-                  {(!bpayIdevkhtei || data.length > 0) && (
+                  {/* Төрийн банк горимд зөвхөн банкны хуулга (нэг хүснэгт); Sukh журнал нуугдана */}
+                  {!bpayIdevkhtei && (
                   <table className="w-full text-[12px] border-collapse leading-tight">
                     <thead className="sticky top-0 z-10 bg-white dark:bg-[color:var(--panel)]">
                       <tr className="border-b border-[color:var(--surface-border)]">

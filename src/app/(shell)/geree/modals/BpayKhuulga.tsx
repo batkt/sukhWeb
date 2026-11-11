@@ -45,7 +45,7 @@ const ymd = (s?: string | null) => {
   const d = new Date(s);
   if (Number.isNaN(d.getTime())) return "";
   const p = (n: number) => String(n).padStart(2, "0");
-  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
+  return `${d.getFullYear()}.${p(d.getMonth() + 1)}.${p(d.getDate())}`;
 };
 
 /** HistoryModal-тай ижил дүрмээр гэрээний id-г олно. */
@@ -71,7 +71,7 @@ function murBolgokh(saruud: Sar[]): Mur2[] {
   };
   const erembelsen = [...saruud].sort((a, b) => a.sar.localeCompare(b.sar));
   for (const m of erembelsen) {
-    const ognoo = `${m.sar}-01`;
+    const ognoo = `${m.sar.replace("-", ".")}.01`;
     const zadargaatai = m.zadargaa?.length && m.taarsan;
     if (zadargaatai) {
       const muruud = [...m.zadargaa.filter((z) => !garaj(z.turul)), ...m.zadargaa.filter((z) => garaj(z.turul))];
