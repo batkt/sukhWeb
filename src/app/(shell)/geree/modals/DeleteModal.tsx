@@ -6,7 +6,12 @@ import { ModalPortal } from "../../../../../components/shell/ModalPortal";
 import { Trash2 } from "lucide-react";
 import useModalHotkeys from "@/lib/useModalHotkeys";
 import { ShaltgaanTalbar } from "@/components/ui/ShaltgaanDialog";
-import { shaltgaanTaviya, shaltgaanTseverle, shaltgaanZuvEsekh } from "@/lib/shaltgaan";
+import {
+  UILDEL_DUUSTAL_MS,
+  shaltgaanTaviya,
+  shaltgaanTseverle,
+  shaltgaanZuvEsekh,
+} from "@/lib/shaltgaan";
 
 interface DeleteConfirmModalProps {
   show: boolean;
@@ -49,7 +54,7 @@ export default function DeleteConfirmModal({
     if (!shaltgaanZuvEsekh(shaltgaan) || ajillajBaina) return;
     setAjillajBaina(true);
     // onConfirm доторх бүх өөрчлөх хүсэлтэд uilchilgee автоматаар хавсаргана
-    shaltgaanTaviya(shaltgaan);
+    shaltgaanTaviya(shaltgaan, UILDEL_DUUSTAL_MS);
     try {
       await onConfirm();
       onClose();

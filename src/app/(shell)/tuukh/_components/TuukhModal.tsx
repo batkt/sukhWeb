@@ -8,6 +8,7 @@ import { useZardalZadargaa } from "./useZardalZadargaa";
 import {
   type AuditMur,
   GOL_TALBAR,
+  KHIISEN_TURUL_NER,
   USTGASAN_NUUKH_TALBAR,
   dedUurchlultuud,
   massiviinUurchlult,
@@ -182,9 +183,14 @@ export default function TuukhModal({ mur, turul, idNer = {}, onClose }: Props) {
             <div className="space-y-1 sm:text-right">
               <div className="flex gap-1.5 sm:justify-end">
                 <span className="shrink-0 font-semibold text-[color:var(--muted-text)]">
-                  {zassan ? "Зассан" : "Устгасан"} ажилтан:
+                  {zassan ? "Зассан" : "Устгасан"}:
                 </span>
-                <span className="text-[color:var(--panel-text)]">{mur.ajiltniiNer}</span>
+                <span className="text-[color:var(--panel-text)]">
+                  {mur.ajiltniiNer}
+                  {KHIISEN_TURUL_NER[mur.khiisenTurul]
+                    ? ` (${KHIISEN_TURUL_NER[mur.khiisenTurul]})`
+                    : " (Ажилтан)"}
+                </span>
               </div>
               <div className="flex gap-1.5 sm:justify-end">
                 <span className="shrink-0 font-semibold text-[color:var(--muted-text)]">

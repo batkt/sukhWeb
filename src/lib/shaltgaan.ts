@@ -37,9 +37,18 @@ export function shaltgaanZuvEsekh(utga: string | null | undefined): boolean {
 const KHUGATSAA_MS = 20000;
 let tur: { utga: string; duusakh: number } | null = null;
 
-export function shaltgaanTaviya(utga: string) {
-  tur = { utga: utga.trim(), duusakh: Date.now() + KHUGATSAA_MS };
+/**
+ * Шалтгааныг дараагийн өөрчлөх хүсэлтүүдэд хавсаргахаар хадгална.
+ * Бөөнөөр устгал (олон тоот/давхар) удаан үргэлжилж болох тул баталгаажуулах
+ * цонх нь урт хугацаа өгөөд дуусмагц `shaltgaanTseverle` дуудна — ингэснээр
+ * нэг удаа бичсэн шалтгаан бүх устгагдсан бичлэгт хадгалагдана.
+ */
+export function shaltgaanTaviya(utga: string, khugatsaaMs: number = KHUGATSAA_MS) {
+  tur = { utga: utga.trim(), duusakh: Date.now() + khugatsaaMs };
 }
+
+/** Баталгаажуулалтын үйлдэл дуустал (дээд тал нь 10 минут) */
+export const UILDEL_DUUSTAL_MS = 10 * 60 * 1000;
 
 export function shaltgaanTseverle() {
   tur = null;

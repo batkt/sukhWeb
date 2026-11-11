@@ -16,6 +16,7 @@ import TuukhModal from "./TuukhModal";
 import {
   type AuditMur,
   type TuukhTurul,
+  KHIISEN_TURUL_NER,
   angilalaarSalgakh,
   angilaluudKhuudsaar,
   murKhailtTekst,
@@ -187,12 +188,19 @@ function AuditTuukhAgguulga({ turul }: { turul: TuukhTurul }) {
     const uildel: ColumnsType<AuditMur> = [
       {
         key: "ajiltan",
-        title: "Ажилтан",
+        title: "Хийсэн",
         width: 100,
         align: "center",
         sorter: (a, b) => textEremb(a.ajiltniiNer, b.ajiltniiNer),
         render: (_: unknown, r) => (
-          <span className="text-[color:var(--panel-text)]">{r.ajiltniiNer}</span>
+          <span className="text-[color:var(--panel-text)]">
+            {r.ajiltniiNer}
+            {KHIISEN_TURUL_NER[r.khiisenTurul] && (
+              <span className="ml-1.5 inline-block rounded-md bg-warning/15 px-1.5 py-0.5 text-[10px] text-warning">
+                {KHIISEN_TURUL_NER[r.khiisenTurul]}
+              </span>
+            )}
+          </span>
         ),
       },
       {

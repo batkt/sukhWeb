@@ -25,6 +25,8 @@ export interface AuditMur {
   bichlegiinOgnoo: string | null;
   ajiltniiId: string;
   ajiltniiNer: string;
+  /** Хэн хийсэн: ajiltan | orshinSuugch | khariltsagch */
+  khiisenTurul: string;
   /** Үйлдэл хийсэн огноо */
   uildelOgnoo: string | null;
   /** Засварын утга учиртай өөрчлөлтүүд (зассан) */
@@ -886,6 +888,7 @@ export function murKhailtTekst(m: AuditMur, turulNer = ""): string {
     m.ner,
     m.dugaar,
     m.ajiltniiNer,
+    KHIISEN_TURUL_NER[m.khiisenTurul] || "",
     ognooKharuulakh(m.uildelOgnoo, true),
     m.shaltgaan,
   ];
@@ -929,16 +932,11 @@ function tokhirgooZasvarEsekh(turul: string, uurchlultuud: AuditUurchlult[]): bo
   );
 }
 
-/**
- * «Шалтгаан» багана: ажилтны бичсэн шалтгаан (`shaltgaan`) түрүүнд, системийн
- * тайлбар (`reason`, ж: «Бөөнөөр устгасан») байвал хаалтанд.
- */
-function shaltgaanNiiluulekh(r: AnyRec): string {
-  const ajiltniikh = str(r.shaltgaan);
-  const sistem = str(r.reason);
-  if (ajiltniikh && sistem && ajiltniikh !== sistem) return `${ajiltniikh} (${sistem})`;
-  return ajiltniikh || sistem;
-}
+/** Хийсэн хүний төрлийн шошго — ажилтан бол хоосон */
+export const KHIISEN_TURUL_NER: Record<string, string> = {
+  orshinSuugch: "Оршин суугч",
+  khariltsagch: "Харилцагч",
+};
 
 export function murKhevjuulekh(r: AnyRec): AuditMur {
   const deletedData =
@@ -961,10 +959,13 @@ export function murKhevjuulekh(r: AnyRec): AuditMur {
     ),
     ajiltniiId: str(r.ajiltniiId || r.ajiltanId || r.ajiltan?._id),
     ajiltniiNer: str(r.ajiltniiNer || r.ajiltan?.ner) || "Систем",
+    khiisenTurul: str(r.khiisenTurul) || "ajiltan",
     uildelOgnoo: ognooStr(r.createdAt || r.ognoo),
     uurchlultuud: jagsaalt,
     niitUurchlult: niit,
-    shaltgaan: shaltgaanNiiluulekh(r),
+    // Зөвхөн хүний бичсэн шалтгаан. Системийн бичвэр (`reason`: «Admin delete»,
+    // «Бөөнөөр устгасан» г.м.) нь шалтгаан биш тул харуулахгүй.
+    shaltgaan: str(r.shaltgaan),
     deletedData,
     // Анхдагч: model-ийн нэрээр (Устгасан түүх). Зассан түүх нь
     // angilalaarSalgakh-аар өөрчлөлтийн төрлөөр дахин ангилна.

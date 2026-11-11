@@ -12,7 +12,12 @@ import { Trash2 } from "lucide-react";
 import { motion, AnimatePresence, useDragControls } from "framer-motion";
 import uilchilgee from "@/lib/uilchilgee";
 import { ShaltgaanTalbar } from "@/components/ui/ShaltgaanDialog";
-import { shaltgaanTaviya, shaltgaanZuvEsekh } from "@/lib/shaltgaan";
+import {
+  UILDEL_DUUSTAL_MS,
+  shaltgaanTaviya,
+  shaltgaanTseverle,
+  shaltgaanZuvEsekh,
+} from "@/lib/shaltgaan";
 import formatNumber, {
   formatCurrency,
 } from "../../../../../tools/function/formatNumber";
@@ -1997,7 +2002,8 @@ export default function HistoryModal({
     // Шалтгаан заавал — устгал болон дагалдах устгалуудад хавсарна
     setUstgakhOroldson(true);
     if (!shaltgaanZuvEsekh(ustgakhShaltgaan)) return;
-    shaltgaanTaviya(ustgakhShaltgaan);
+    // Дагалдах устгалууд дуустал нэг шалтгаан хүчинтэй
+    shaltgaanTaviya(ustgakhShaltgaan, UILDEL_DUUSTAL_MS);
     const { id } = deleteConfirm;
     const entry = data.find((e) => e._id === id);
     const inferSourceCollection = (row: any): string => {
@@ -2126,6 +2132,8 @@ export default function HistoryModal({
     } catch (error) {
       console.error("Delete failed:", error);
       alert("Алдаа гарлаа: " + (error as any).message);
+    } finally {
+      shaltgaanTseverle();
     }
   };
 
