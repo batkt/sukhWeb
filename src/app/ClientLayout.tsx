@@ -14,6 +14,7 @@ import { parseCookies, destroyCookie } from "nookies";
 import { SpinnerProvider, useSpinner } from "../../src/context/SpinnerContext";
 import { SuccessOverlayHost } from "@/components/ui/SuccessOverlay";
 import { ErrorOverlayHost } from "@/components/ui/ErrorOverlay";
+import { ShaltgaanDialogHost } from "@/components/ui/ShaltgaanDialog";
 import { mutate } from "swr";
 import { socket, OOR_TOKHOOROMJ_TULKHUUR } from "@/lib/uilchilgee";
 import { SocketProvider } from "../context/SocketContext";
@@ -324,6 +325,7 @@ function LayoutContent({ children }: { children: ReactNode }) {
         {/* Always mount overlay hosts so they can receive events during loading */}
         <SuccessOverlayHost />
         <ErrorOverlayHost />
+          <ShaltgaanDialogHost />
       </>
     );
   }
@@ -348,6 +350,7 @@ function LayoutContent({ children }: { children: ReactNode }) {
           <Toaster position="top-right" richColors closeButton />
           <SuccessOverlayHost />
           <ErrorOverlayHost />
+          <ShaltgaanDialogHost />
 
           {/* Explicit, app-driven loading overlay (not navigation) */}
           {spinnerLoading && (

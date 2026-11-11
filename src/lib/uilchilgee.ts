@@ -3,6 +3,13 @@ import { io, Socket } from "socket.io-client";
 import { t } from "i18next";
 import { openErrorOverlay } from "@/components/ui/ErrorOverlay";
 import { destroyCookie } from "nookies";
+import {
+  SHALTGAAN_KOD,
+  SHALTGAAN_TOLGOI,
+  shaltgaanAsuuya,
+  shaltgaanTolgoi,
+  turShaltgaan,
+} from "./shaltgaan";
 
 // Use environment variable for API URL
 // In production with nginx proxy, use /api (relative path)
@@ -327,10 +334,62 @@ const uilchilgee = (token?: string): AxiosInstance => {
     return config;
   });
 
+  // Устгах/засах баталгаажуулалтад бичсэн шалтгааныг өөрчлөх хүсэлтэд
+  // хавсаргана (lib/shaltgaan.ts).
+  instance.interceptors.request.use((config: InternalAxiosRequestConfig) => {
+    try {
+      const method = config.method?.toLowerCase();
+      if (method && method !== "get" && method !== "head" && method !== "options") {
+        const headers = config.headers as any;
+        const baigaa = headers?.get ? headers.get(SHALTGAAN_TOLGOI) : headers?.[SHALTGAAN_TOLGOI];
+        const shaltgaan = turShaltgaan();
+        if (!baigaa && shaltgaan) {
+          const t = shaltgaanTolgoi(shaltgaan);
+          if (headers?.set) headers.set(SHALTGAAN_TOLGOI, t[SHALTGAAN_TOLGOI]);
+          else config.headers = { ...(headers || {}), ...t } as any;
+        }
+      }
+    } catch { }
+    return config;
+  });
+
   // Remove offline queueing: if a request fails, just propagate the error
   instance.interceptors.response.use(
     (resp) => resp,
     async (error) => {
+      // ШАЛТГААН ШААРДЛАГАТАЙ (sukhBackv2 middleware/shaltgaan.js).
+      //
+      // Сервер ямар ч өөрчлөлт хийхээс ӨМНӨ татгалздаг тул шалтгааныг
+      // асуугаад ижил хүсэлтийг дахин илгээх нь аюулгүй. Ингэснээр
+      // шалтгааны талбаргүй дэлгэц ч ажилласаар байна.
+      const config = error?.config as (InternalAxiosRequestConfig & { _shaltgaanDakhin?: boolean }) | undefined;
+      if (
+        error?.response?.status === 400 &&
+        error?.response?.data?.kod === SHALTGAAN_KOD &&
+        config &&
+        !config._shaltgaanDakhin
+      ) {
+        const shaltgaan = await shaltgaanAsuuya({
+          title: "Шалтгаан бичнэ үү",
+          message:
+            "Устгах, засах үйлдэл «Устгасан / Зассан түүх»-д таны нэр, шалтгаантай хамт бүртгэгдэнэ.",
+        });
+        if (!shaltgaan) {
+          error.response.data = {
+            ...error.response.data,
+            aldaa: "Шалтгаан бичээгүй тул үйлдэл хийгдсэнгүй.",
+            message: "Шалтгаан бичээгүй тул үйлдэл хийгдсэнгүй.",
+          };
+          return Promise.reject(error);
+        }
+        config._shaltgaanDakhin = true;
+        const headers = config.headers as any;
+        const t = shaltgaanTolgoi(shaltgaan);
+        if (headers?.set) headers.set(SHALTGAAN_TOLGOI, t[SHALTGAAN_TOLGOI]);
+        else config.headers = { ...(headers || {}), ...t } as any;
+        return instance.request(config);
+      }
+
       // ӨӨР ТӨХӨӨРӨМЖӨӨС НЭВТЭРСЭН.
       //
       // Сервер (middleware/negSession.js) нэг эрхээр нэг л төхөөрөмж

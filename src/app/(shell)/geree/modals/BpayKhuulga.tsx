@@ -16,6 +16,7 @@ import { formatCurrency } from "../../../../../tools/function/formatNumber";
 
 type Mur = { ner: string; dun: number; turul?: string };
 type Sar = {
+  id?: string;
   sar: string;
   tuluv: "Төлөгдөөгүй" | "Төлөгдсөн";
   dun: number;
@@ -69,15 +70,17 @@ function murBolgokh(saruud: Sar[]): Mur2[] {
     uldegdel = Math.round((uldegdel + m.tulukh - m.tulsun) * 100) / 100;
     gars.push({ ...m, uldegdel });
   };
-  const erembelsen = [...saruud].sort((a, b) => a.sar.localeCompare(b.sar));
-  for (const m of erembelsen) {
+  // Сервер сарыг "2026-07" хэлбэрт буцаана; нэг сард хэд хэдэн билл байж болно (id-аар ялгана).
+  const erembelsen = [...saruud].sort((a, b) => a.sar.localeCompare(b.sar) || String(a.id || "").localeCompare(String(b.id || "")));
+  for (const [bi, m] of erembelsen.entries()) {
+    const k = `${m.sar}-${m.id || bi}`;
     const ognoo = `${m.sar.replace("-", ".")}.01`;
     const zadargaatai = m.zadargaa?.length && m.taarsan;
     if (zadargaatai) {
       const muruud = [...m.zadargaa.filter((z) => !garaj(z.turul)), ...m.zadargaa.filter((z) => garaj(z.turul))];
       muruud.forEach((z, i) =>
         nem({
-          key: `${m.sar}-z${i}`,
+          key: `${k}-z${i}`,
           sar: m.sar,
           ognoo,
           tulukh: Number(z.dun) || 0,
@@ -88,7 +91,7 @@ function murBolgokh(saruud: Sar[]): Mur2[] {
       );
     } else {
       nem({
-        key: `${m.sar}-d`,
+        key: `${k}-d`,
         sar: m.sar,
         ognoo,
         tulukh: Number(m.dun) || 0,
@@ -98,12 +101,12 @@ function murBolgokh(saruud: Sar[]): Mur2[] {
       });
     }
     if (m.aldangi > 0) {
-      nem({ key: `${m.sar}-a`, sar: m.sar, ognoo, tulukh: m.aldangi, tulsun: 0, khelber: "Алданги", tailbar: "Алданги" });
+      nem({ key: `${k}-a`, sar: m.sar, ognoo, tulukh: m.aldangi, tulsun: 0, khelber: "Алданги", tailbar: "Алданги" });
     }
     if (m.tuluv === "Төлөгдсөн") {
       const tulsun = Number(m.tulsunDun ?? m.aldangitaiDun ?? m.dun) || 0;
       nem({
-        key: `${m.sar}-t`,
+        key: `${k}-t`,
         sar: m.sar,
         ognoo: ymd(m.tulsunOgnoo) || ognoo,
         tulukh: 0,

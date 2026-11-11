@@ -5,6 +5,8 @@ import { motion, AnimatePresence, useDragControls } from "framer-motion";
 import { ModalPortal } from "../../../../../components/shell/ModalPortal";
 import { Trash2 } from "lucide-react";
 import useModalHotkeys from "@/lib/useModalHotkeys";
+import { ShaltgaanTalbar } from "@/components/ui/ShaltgaanDialog";
+import { shaltgaanTaviya, shaltgaanTseverle, shaltgaanZuvEsekh } from "@/lib/shaltgaan";
 
 interface DeleteConfirmModalProps {
   show: boolean;
@@ -29,8 +31,33 @@ export default function DeleteConfirmModal({
 }: DeleteConfirmModalProps) {
   const constraintsRef = React.useRef<HTMLDivElement | null>(null);
   const dragControls = useDragControls();
+  // Устгал/засвар бүрд шалтгаан заавал (sukhBackv2 middleware/shaltgaan.js)
+  const [shaltgaan, setShaltgaan] = React.useState("");
+  const [oroldson, setOroldson] = React.useState(false);
+  const [ajillajBaina, setAjillajBaina] = React.useState(false);
+  React.useEffect(() => {
+    if (show) {
+      setShaltgaan("");
+      setOroldson(false);
+    }
+  }, [show]);
   useModalHotkeys({ isOpen: show, onClose });
   if (!show) return null;
+
+  const batlaya = async () => {
+    setOroldson(true);
+    if (!shaltgaanZuvEsekh(shaltgaan) || ajillajBaina) return;
+    setAjillajBaina(true);
+    // onConfirm доторх бүх өөрчлөх хүсэлтэд uilchilgee автоматаар хавсаргана
+    shaltgaanTaviya(shaltgaan);
+    try {
+      await onConfirm();
+      onClose();
+    } finally {
+      setAjillajBaina(false);
+      setTimeout(shaltgaanTseverle, 1500);
+    }
+  };
 
   return (
     <AnimatePresence>
@@ -63,9 +90,18 @@ export default function DeleteConfirmModal({
                 {icon ?? <Trash2 className="h-6 w-6 text-danger" />}
               </div>
               <h3 className="text-[11px] font-medium mb-2">{title}</h3>
-              <p className="text-[11px] mb-6 font-normal opacity-85 whitespace-pre-line">
+              <p className="text-[11px] mb-4 font-normal opacity-85 whitespace-pre-line">
                 {message}
               </p>
+              <div className="mb-5 cursor-auto" onPointerDown={(e) => e.stopPropagation()}>
+                <ShaltgaanTalbar
+                  value={shaltgaan}
+                  onChange={setShaltgaan}
+                  aldaaKharuulakh={oroldson}
+                  autoFocus
+                  onEnter={batlaya}
+                />
+              </div>
               <div className="flex justify-center gap-3">
                 <button
                   type="button"
@@ -76,10 +112,8 @@ export default function DeleteConfirmModal({
                 </button>
                 <button
                   type="button"
-                  onClick={async () => {
-                    await onConfirm();
-                    onClose();
-                  }}
+                  onClick={batlaya}
+                  disabled={ajillajBaina}
                   className="btn-minimal btn-cancel btn-minimal-sm px-4 py-2 !text-[11px]"
                   data-modal-primary
                 >

@@ -50,6 +50,13 @@ export const AUDIT_ANGILAL_NER: Record<string, string> = {
   zogsoolGaraarOrlogo: "Зогсоол · Камер касс",
   udriinKhaalt: "Зогсоол · Камер касс",
   orshinSuugchMashin: "Зогсоол · Оршин суугч",
+  blockMashin: "Зогсоол · Блоклосон машин",
+  zurchilteiMashin: "Зогсоол · Зөрчилтэй машин",
+  zogsoolUilchluulegch: "Зогсоол · Жагсаалт",
+  parking: "Зогсоол",
+  zochinUrikh: "Зочин урих",
+  gerBuliinGishuun: "Гэр бүлийн гишүүн",
+  ashiglaltiinZardal: "Ашиглалтын зардал",
   zochinZogsooliinTuukh: "Зогсоол · Оршин суугч",
   // Тохиргоо
   tokhirgoo: "Тохиргоо",

@@ -1,5 +1,6 @@
 import dayjs from "dayjs";
 import { TOKHIRGOO_MODEL_NER, auditTurulNer } from "@/lib/auditTurluud";
+import { NEMELT_NUUKH_TALBAR, NEMELT_TALBARIIN_NER, latinKirill } from "./talbarToli";
 
 /** Гурван түүхийн хуудас нэг бүрдлийг ашиглана — ялгаа нь энэ төрөл. */
 export type TuukhTurul = "zassan" | "ustgasan";
@@ -177,6 +178,7 @@ const NUUTS_TALBAR = new Set(["nuutsUg", "password", "nuutsKod", "pinKod"]);
 /* ------------------------------ талбарууд ------------------------------ */
 
 export const TALBARIIN_NER: Record<string, string> = {
+  ...NEMELT_TALBARIIN_NER,
   ner: "Нэр",
   ovog: "Овог",
   utas: "Утас",
@@ -353,6 +355,7 @@ const NUUKH_TALBAR = new Set([
   "createdat", "updatedat", "__v", "_id",
   "kharsanesekh", "unshsanesekh", "kharsan", "unshsan", "kharsanognoo", "unshsanognoo",
   "kharsanajiltnuud", "unshsanajiltnuud", "isread", "readat", "seen", "seenat",
+  ...NEMELT_NUUKH_TALBAR,
 ]);
 
 /** Устгасан агшин зурагт харуулахгүй талбарууд */
@@ -363,6 +366,12 @@ export const USTGASAN_NUUKH_TALBAR = new Set([
   "barilgiinId",
   "nuutsUg",
   "password",
+  "firebaseToken",
+  "paymentToken",
+  "cameraPassword",
+  "mailPassword",
+  "msgIlgeekhKey",
+  "indexTalbar",
   "taniltsuulgaKharakhEsekh",
   "tanilsuulgaKharakhEsekh",
 ]);
@@ -376,11 +385,8 @@ export function nuukhTalbarEsekh(talbar: string): boolean {
   return NUUKH_TALBAR.has(suuliinKheseg(talbar).toLowerCase());
 }
 
-/** camelCase → «Niit khugatsaa» (толь бичигт байхгүй үед ядаж уншигдахуйц) */
-const camelUgNer = (t: string) => {
-  const ug = t.replace(/([a-z0-9])([A-Z])/g, "$1 $2").replace(/[_.]+/g, " ").trim().toLowerCase();
-  return ug.charAt(0).toUpperCase() + ug.slice(1);
-};
+/** Толинд байхгүй талбар: латин монгол нэрийг кирилл рүү («Niit khugatsaa» → «Ниит хугацаа») */
+const camelUgNer = (t: string) => latinKirill(t);
 
 export function talbariinNer(talbar: string, talbarNer?: string | null): string {
   const suul = suuliinKheseg(talbar);
@@ -923,6 +929,17 @@ function tokhirgooZasvarEsekh(turul: string, uurchlultuud: AuditUurchlult[]): bo
   );
 }
 
+/**
+ * «Шалтгаан» багана: ажилтны бичсэн шалтгаан (`shaltgaan`) түрүүнд, системийн
+ * тайлбар (`reason`, ж: «Бөөнөөр устгасан») байвал хаалтанд.
+ */
+function shaltgaanNiiluulekh(r: AnyRec): string {
+  const ajiltniikh = str(r.shaltgaan);
+  const sistem = str(r.reason);
+  if (ajiltniikh && sistem && ajiltniikh !== sistem) return `${ajiltniikh} (${sistem})`;
+  return ajiltniikh || sistem;
+}
+
 export function murKhevjuulekh(r: AnyRec): AuditMur {
   const deletedData =
     (r.deletedData || r.deletedDocument || null) as Record<string, unknown> | null;
@@ -947,7 +964,7 @@ export function murKhevjuulekh(r: AnyRec): AuditMur {
     uildelOgnoo: ognooStr(r.createdAt || r.ognoo),
     uurchlultuud: jagsaalt,
     niitUurchlult: niit,
-    shaltgaan: str(r.reason || r.shaltgaan),
+    shaltgaan: shaltgaanNiiluulekh(r),
     deletedData,
     // Анхдагч: model-ийн нэрээр (Устгасан түүх). Зассан түүх нь
     // angilalaarSalgakh-аар өөрчлөлтийн төрлөөр дахин ангилна.

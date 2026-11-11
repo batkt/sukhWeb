@@ -24,6 +24,7 @@ import {
   KeyRound,
 } from "lucide-react";
 import uilchilgee from "@/lib/uilchilgee";
+import { shaltgaanAsuuya } from "@/lib/shaltgaan";
 import { openSuccessOverlay } from "@/components/ui/SuccessOverlay";
 import { openErrorOverlay } from "@/components/ui/ErrorOverlay";
 import formatNumber from "../../../../../tools/function/formatNumber";
@@ -369,13 +370,13 @@ export const ResidentDetailModal: React.FC<Props> = ({
     if (!token || !residentId) return;
     setTovchMenuGishuunId(null);
     const nernuud = [g.ovog, g.ner].filter(Boolean).join(" ") || g.utas;
-    if (
-      !confirm(
-        `${nernuud ? `«${nernuud}» г` : "Г"}эр бүлийн гишүүнийг хасахдаа итгэлтэй байна уу?`,
-      )
-    ) {
-      return;
-    }
+    // Шалтгаан асуух нь баталгаажуулалт мөн (Устгасан түүхэнд хадгалагдана)
+    const shaltgaan = await shaltgaanAsuuya({
+      title: "Гэр бүлийн гишүүн хасах",
+      message: `${nernuud ? `«${nernuud}» г` : "Г"}эр бүлийн гишүүнийг хасна.`,
+      confirmLabel: "Хасах",
+    });
+    if (!shaltgaan) return;
     try {
       await uilchilgee(token).post("/gerBuliinGishuunUstgakh", {
         undsenId: residentId,
@@ -505,6 +506,14 @@ export const ResidentDetailModal: React.FC<Props> = ({
 
   const mashinUstgakh = async (index: number) => {
     if (!token || !residentId) return;
+    const dugaar = String(mashinJagsaalt[index]?.mashiniiDugaar || "");
+    // Машин хасахад шалтгаан заавал (сервер мөн шаардана)
+    const shaltgaan = await shaltgaanAsuuya({
+      title: "Машин хасах",
+      message: `${dugaar ? `«${dugaar}» ` : ""}машиныг энэ оршин суугчаас хасна.`,
+      confirmLabel: "Хасах",
+    });
+    if (!shaltgaan) return;
     const uldsenMashinuud = mashinJagsaalt.filter((_, i) => i !== index);
 
     setMashinUnshijBaina(true);
@@ -592,6 +601,15 @@ export const ResidentDetailModal: React.FC<Props> = ({
     const jagsaalt = mashinJagsaalt.map((m: any, i: number) =>
       i === zasajBaigaaMashin ? { ...m, mashiniiDugaar: cleaned } : m,
     );
+
+    // Дугаар засахад шалтгаан заавал (сервер мөн шаардана)
+    const shaltgaan = await shaltgaanAsuuya({
+      title: "Машины дугаар засах",
+      message: `«${mashinJagsaalt[zasajBaigaaMashin]?.mashiniiDugaar || ""}» → «${cleaned}»`,
+      confirmLabel: "Хадгалах",
+      danger: false,
+    });
+    if (!shaltgaan) return;
 
     setMashinUnshijBaina(true);
     try {

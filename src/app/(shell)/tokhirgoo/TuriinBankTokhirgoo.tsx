@@ -7,7 +7,6 @@ import { useAuth } from "@/lib/useAuth";
 import uilchilgee from "@/lib/uilchilgee";
 import { openSuccessOverlay } from "@/components/ui/SuccessOverlay";
 import { openErrorOverlay } from "@/components/ui/ErrorOverlay";
-import { StandardDatePicker } from "@/components/ui/StandardDatePicker";
 import { SettingsCard, SettingsItem, Switch } from "./SettingsRow";
 
 /**
@@ -70,7 +69,6 @@ function TuriinBankKart() {
   const { token } = useAuth();
   const [achaalj, setAchaalj] = useState(true);
   const [idevkhtei, setIdevkhtei] = useState(false);
-  const [ekhelsenOgnoo, setEkhelsenOgnoo] = useState("");
   const [barilguud, setBarilguud] = useState<Barilga[]>([]);
   const [kholboltToo, setKholboltToo] = useState(0);
   const [billToo, setBillToo] = useState(0);
@@ -86,7 +84,6 @@ function TuriinBankKart() {
       const { data } = await uilchilgee(token).get("/bpay/medeelel");
       const t = data?.tokhirgoo || {};
       setIdevkhtei(!!t.idevkhtei);
-      setEkhelsenOgnoo(t.ekhelsenOgnoo ? String(t.ekhelsenOgnoo).slice(0, 10) : "");
       setBarilguud(Array.isArray(t.barilguud) ? t.barilguud : []);
       setKholboltToo(data?.kholboltToo || 0);
       setBillToo(data?.billToo || 0);
@@ -125,7 +122,6 @@ function TuriinBankKart() {
     setKhadgalj(true);
     try {
       await uilchilgee(token).post("/bpay/medeelel", {
-        bpayEkhelsenOgnoo: ekhelsenOgnoo || null,
         barilguud: barilguud.map((b) => ({ barilgiinId: b.barilgiinId, bpayBairId: b.bpayBairId })),
       });
       openSuccessOverlay("Төрийн банкны тохиргоо хадгалагдлаа");
@@ -215,23 +211,6 @@ function TuriinBankKart() {
       onSave={khadgalakh}
       saving={khadgalj || achaalj}
     >
-      {/* 1. Билл эхлэх огноо */}
-      <SettingsItem
-        icon={<Landmark />}
-        title="Билл эхлэх огноо"
-        desc="Энэ огнооноос хойших төлбөрийг Төрийн банкаар тооцно."
-      >
-        <div className="stg-inline">
-          <StandardDatePicker
-            value={ekhelsenOgnoo || null}
-            onChange={(_d, dateStr) => setEkhelsenOgnoo(dateStr || "")}
-            placeholder="Огноо сонгох"
-            allowClear
-            style={{ width: "190px", height: "36px" }}
-          />
-        </div>
-      </SettingsItem>
-
       {/* 2. Барилгын хаяг */}
       <SettingsItem
         icon={<Search />}

@@ -2952,8 +2952,18 @@ export function useGereeActions(
 
           const updatedToots = [...existingToots, newUnitEntry];
 
+          // Машины талбаруудыг буцааж илгээхгүй — тоот холбоход машин
+          // хөндөгдөх ёсгүй. Хуучин `mashiniiDugaar` явбал сервер оршин
+          // суугчийн бүх машиныг тэр нэг дугаараар дарж бичдэг байв.
+          const {
+            mashiniiDugaar: _mashiniiDugaar,
+            dugaar: _dugaar,
+            mashinuud: _mashinuud,
+            ...residentMashingui
+          } = resident;
+
           const payload = {
-            ...resident,
+            ...residentMashingui,
             toots: updatedToots,
             units: updatedToots,
             toot: updatedToots[0]?.toot || resident.toot || "",

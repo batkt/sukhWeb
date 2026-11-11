@@ -37,6 +37,7 @@ import {
   PartyPopper,
 } from "lucide-react";
 import uilchilgee from "@/lib/uilchilgee";
+import { shaltgaanAsuuya } from "@/lib/shaltgaan";
 import { useAuth } from "@/lib/useAuth";
 import { useBuilding } from "@/context/BuildingContext";
 import { useSearch } from "@/context/SearchContext";
@@ -525,9 +526,13 @@ export default function SanalAsuulgaPage() {
 
   const ustgaya = async (a: Asuulga) => {
     if (!token || !baiguullagiinId) return;
-    if (!window.confirm(`"${a.garchig}" санал асуулгыг устгахдаа итгэлтэй байна уу?`)) {
-      return;
-    }
+    // Шалтгаан асуух нь баталгаажуулалт мөн — бичсэн шалтгаан хүсэлтэд хавсарна
+    const shaltgaan = await shaltgaanAsuuya({
+      title: "Санал асуулга устгах",
+      message: `"${a.garchig}" санал асуулгыг устгана.`,
+      confirmLabel: "Устгах",
+    });
+    if (!shaltgaan) return;
     try {
       await uilchilgee(token).delete(`/sanalAsuulga/${a._id}`, {
         data: { baiguullagiinId },

@@ -6,6 +6,8 @@ import { toast } from "react-hot-toast";
 import { AlertTriangle, FileText, Receipt, Wallet, X } from "lucide-react";
 import uilchilgee from "@/lib/uilchilgee";
 import Button from "@/components/ui/Button";
+import { ShaltgaanTalbar } from "@/components/ui/ShaltgaanDialog";
+import { shaltgaanTolgoi, shaltgaanZuvEsekh } from "@/lib/shaltgaan";
 
 interface Tootsoo {
   geree: number;
@@ -46,6 +48,7 @@ export default function AdminGereeUstgakhModal({
   const [ustgaj, setUstgaj] = useState(false);
   const [aldaa, setAldaa] = useState<string | null>(null);
   const [batalgaa, setBatalgaa] = useState("");
+  const [shaltgaan, setShaltgaan] = useState("");
 
   const ezemshigch =
     [contract?.ovog, contract?.ner].filter(Boolean).join(" ") || "—";
@@ -77,11 +80,13 @@ export default function AdminGereeUstgakhModal({
 
   const ustgakh = async () => {
     if (batalgaa.trim().toUpperCase() !== BATALGAA) return;
+    if (!shaltgaanZuvEsekh(shaltgaan)) return;
     setUstgaj(true);
     try {
       const res = await uilchilgee(token).post(
         `/geree/${gereeniiId}/adminUstgakh`,
         {},
+        { headers: shaltgaanTolgoi(shaltgaan) },
       );
       toast.success(res.data?.message || "Устгагдлаа.");
       onDeleted();
@@ -211,6 +216,12 @@ export default function AdminGereeUstgakhModal({
                   className="w-full h-11 px-3 rounded-xl bg-[color:var(--surface-hover)] border border-[color:var(--surface-border)] dark:border-white/10 text-sm text-[color:var(--panel-text)] dark:text-white focus:outline-none focus:ring-2 focus:ring-danger/20 focus:border-danger transition-all"
                 />
               </div>
+
+              <ShaltgaanTalbar
+                value={shaltgaan}
+                onChange={setShaltgaan}
+                aldaaKharuulakh={shaltgaan.length > 0}
+              />
             </>
           )}
         </div>
@@ -228,7 +239,11 @@ export default function AdminGereeUstgakhModal({
             onClick={ustgakh}
             variant="primary"
             isLoading={ustgaj}
-            disabled={!bolomjtoi || batalgaa.trim().toUpperCase() !== BATALGAA}
+            disabled={
+              !bolomjtoi ||
+              batalgaa.trim().toUpperCase() !== BATALGAA ||
+              !shaltgaanZuvEsekh(shaltgaan)
+            }
             className="h-9 px-4 rounded-[10px] text-[13px] !bg-danger hover:!bg-danger"
           >
             Гэрээг устгах

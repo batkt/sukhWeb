@@ -11,6 +11,7 @@ import {
   USTGASAN_NUUKH_TALBAR,
   dedUurchlultuud,
   massiviinUurchlult,
+  nuukhTalbarEsekh,
   ustgasanTovch,
   objectIdEsekh,
   ognooKharuulakh,
@@ -72,7 +73,7 @@ export default function TuukhModal({ mur, turul, idNer = {}, onClose }: Props) {
       };
       Object.entries(mur.deletedData || {})
         .filter(([k]) => !songolt || songolt.includes(k))
-        .filter(([k]) => !k.startsWith("_") && !USTGASAN_NUUKH_TALBAR.has(k) && !/(Id|Ids|Idnuud)$/.test(k))
+        .filter(([k]) => !k.startsWith("_") && !USTGASAN_NUUKH_TALBAR.has(k) && !nuukhTalbarEsekh(k) && !/(Id|Ids|Idnuud)$/.test(k))
         .sort(([a], [b]) => erembe(a) - erembe(b) || talbariinNer(a).localeCompare(talbariinNer(b), "mn"))
         .forEach(([k, v], i) => {
           const utga = kharuul(v);

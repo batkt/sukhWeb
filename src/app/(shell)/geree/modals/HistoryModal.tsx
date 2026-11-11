@@ -11,6 +11,8 @@ import { flushSync } from "react-dom";
 import { Trash2 } from "lucide-react";
 import { motion, AnimatePresence, useDragControls } from "framer-motion";
 import uilchilgee from "@/lib/uilchilgee";
+import { ShaltgaanTalbar } from "@/components/ui/ShaltgaanDialog";
+import { shaltgaanTaviya, shaltgaanZuvEsekh } from "@/lib/shaltgaan";
 import formatNumber, {
   formatCurrency,
 } from "../../../../../tools/function/formatNumber";
@@ -974,6 +976,8 @@ export default function HistoryModal({
     id: string;
     type: string;
   }>({ show: false, id: "", type: "" });
+  const [ustgakhShaltgaan, setUstgakhShaltgaan] = useState("");
+  const [ustgakhOroldson, setUstgakhOroldson] = useState(false);
   const [deleteSuccess, setDeleteSuccess] = useState(false);
   const [showInvoiceModal, setShowInvoiceModal] = useState(false);
   const [invoiceModalResident, setInvoiceModalResident] = useState<any>(null);
@@ -1985,9 +1989,15 @@ export default function HistoryModal({
 
   const handleDeleteClick = (id: string, type: string) => {
     setDeleteConfirm({ show: true, id, type });
+    setUstgakhShaltgaan("");
+    setUstgakhOroldson(false);
   };
 
   const handleDeleteConfirm = async () => {
+    // Шалтгаан заавал — устгал болон дагалдах устгалуудад хавсарна
+    setUstgakhOroldson(true);
+    if (!shaltgaanZuvEsekh(ustgakhShaltgaan)) return;
+    shaltgaanTaviya(ustgakhShaltgaan);
     const { id } = deleteConfirm;
     const entry = data.find((e) => e._id === id);
     const inferSourceCollection = (row: any): string => {
@@ -2782,10 +2792,19 @@ export default function HistoryModal({
                           <h3 className="text-lg  text-[color:var(--panel-text)] dark:text-white mb-2">
                             Устгах уу?
                           </h3>
-                          <p className="text-sm text-[color:var(--muted-text)] mb-6">
+                          <p className="text-sm text-[color:var(--muted-text)] mb-4">
                             Та энэ гүйлгээг устгахдаа итгэлтэй байна уу? Энэ
                             үйлдлийг буцаах боломжгүй.
                           </p>
+                          <div className="mb-5">
+                            <ShaltgaanTalbar
+                              value={ustgakhShaltgaan}
+                              onChange={setUstgakhShaltgaan}
+                              aldaaKharuulakh={ustgakhOroldson}
+                              autoFocus
+                              onEnter={handleDeleteConfirm}
+                            />
+                          </div>
                           <div className="flex gap-3">
                             <button
                               onClick={handleDeleteCancel}

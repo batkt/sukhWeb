@@ -118,8 +118,11 @@ function AuditTuukhAgguulga({ turul }: { turul: TuukhTurul }) {
       };
       if (aj) params.ajiltniiId = aj;
       if (ekh && duus) {
-        params.ekhlekhOgnoo = `${ekh} 00:00:00`;
-        params.duusakhOgnoo = `${duus} 23:59:59`;
+        // Цагийн бүстэй ISO-оор илгээнэ. Өмнө нь «YYYY-MM-DD 00:00:00» гэж
+        // илгээдэг тул сервер UTC гэж уншиж, Монголын цагаар 00:00–08:00-ийн
+        // үйлдлүүд өмнөх/дараагийн өдөрт орж, шүүлтүүр буруу ажилладаг байв.
+        params.ekhlekhOgnoo = dayjs(ekh).startOf("day").toISOString();
+        params.duusakhOgnoo = dayjs(duus).endOf("day").toISOString();
       }
       const resp = await uilchilgee(tkn).get(url, { params });
       return resp.data;
@@ -194,7 +197,7 @@ function AuditTuukhAgguulga({ turul }: { turul: TuukhTurul }) {
       },
       {
         key: "uildelOgnoo",
-        title: "Огноо",
+        title: turul === "zassan" ? "Зассан огноо" : "Устгасан огноо",
         width: 150,
         align: "center",
         defaultSortOrder: "descend",
@@ -259,7 +262,7 @@ function AuditTuukhAgguulga({ turul }: { turul: TuukhTurul }) {
         children: [
           {
             key: "bichlegiinOgnoo",
-            title: "Огноо",
+            title: "Анх бүртгэсэн",
             width: 110,
             align: "center",
             sorter: (a, b) => ognooEremb(a.bichlegiinOgnoo, b.bichlegiinOgnoo),

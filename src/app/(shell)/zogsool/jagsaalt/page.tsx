@@ -44,6 +44,7 @@ import { ConfigProvider } from "antd";
 import moment from "moment";
 import useSWR from "swr";
 import uilchilgee, { socket as getSocket } from "@/lib/uilchilgee";
+import { shaltgaanAsuuya } from "@/lib/shaltgaan";
 import { getDefaultDateRange } from "@/lib/utils";
 import formatNumber from "../../../../../tools/function/formatNumber";
 import { toast } from "react-hot-toast";
@@ -687,6 +688,13 @@ export default function Jagsaalt() {
   const blockGargaya = useCallback(
     async (blockRecord: any) => {
       if (!token || !blockRecord?._id) return;
+      const shaltgaan = await shaltgaanAsuuya({
+        title: "Блокоос гаргах",
+        message: `${blockRecord.dugaar || ""} дугаартай машиныг блокоос гаргана.`,
+        confirmLabel: "Гаргах",
+        danger: false,
+      });
+      if (!shaltgaan) return;
       try {
         await uilchilgee(token).delete(`/blockMashin/${blockRecord._id}`);
         toast.success(`${blockRecord.dugaar} блокоос гаргалаа`);

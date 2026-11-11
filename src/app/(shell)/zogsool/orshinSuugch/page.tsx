@@ -28,6 +28,8 @@ import {
 } from "@/components/ui/select";
 import useSWR from "swr";
 import uilchilgee from "@/lib/uilchilgee";
+import { ShaltgaanTalbar } from "@/components/ui/ShaltgaanDialog";
+import { shaltgaanTaviya, shaltgaanZuvEsekh } from "@/lib/shaltgaan";
 import moment from "moment";
 import { toast } from "react-hot-toast";
 import ResidentRegistrationModal from "./ResidentRegistrationModal";
@@ -103,6 +105,14 @@ export default function OrshinSuugch() {
   const [showRegistrationModal, setShowRegistrationModal] = useState(false);
   const [showExcelImport, setShowExcelImport] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [ustgakhShaltgaan, setUstgakhShaltgaan] = useState("");
+  const [ustgakhOroldson, setUstgakhOroldson] = useState(false);
+  useEffect(() => {
+    if (showDeleteModal) {
+      setUstgakhShaltgaan("");
+      setUstgakhOroldson(false);
+    }
+  }, [showDeleteModal]);
   const [itemToDelete, setItemToDelete] = useState<ResidentParking | null>(null);
   const [editingResident, setEditingResident] =
     useState<ResidentParking | null>(null);
@@ -281,6 +291,10 @@ export default function OrshinSuugch() {
     if (!itemToDelete || !token) return;
     const id = itemToDelete._id;
     if (!id) return;
+    // Шалтгаан заавал — «Устгасан түүх»-д хадгалагдана
+    setUstgakhOroldson(true);
+    if (!shaltgaanZuvEsekh(ustgakhShaltgaan)) return;
+    shaltgaanTaviya(ustgakhShaltgaan);
 
     try {
       // Мөр бүр НЭГ машины бүртгэл — тиймээс машиныг л устгана, оршин
@@ -388,6 +402,15 @@ export default function OrshinSuugch() {
                     </span>{" "}
                     -ийн мэдээллийг устгахыг зөвшөөрч байна уу?
                   </p>
+                  <div className="w-full mb-6 -mt-4">
+                    <ShaltgaanTalbar
+                      value={ustgakhShaltgaan}
+                      onChange={setUstgakhShaltgaan}
+                      aldaaKharuulakh={ustgakhOroldson}
+                      autoFocus
+                      onEnter={confirmDelete}
+                    />
+                  </div>
                   <div className="flex flex-col w-full gap-3">
                     <button
                       onClick={confirmDelete}
