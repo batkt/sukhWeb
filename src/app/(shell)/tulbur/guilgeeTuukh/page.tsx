@@ -537,6 +537,9 @@ export default function DansniiKhuulga() {
           barilgiinId: branch || undefined,
           khuudasniiDugaar: 1,
           khuudasniiKhemjee: 20000,
+          // Схемд virtual/getter байхгүй тул lean() ашиглавал 20,000 мөрийг
+          // Mongoose баримт болгон hydrate хийхгүй, зөвхөн plain объект буцаана.
+          lean: true,
         },
       });
       return resp.data;
@@ -2333,79 +2336,67 @@ export default function DansniiKhuulga() {
     // серверийн утгаар солигдож, буруу харагддаг байсан.)
     const duusaagui = new Set(pending);
 
-    // One request per contract, so a 100-row page meant 100 POSTs — each with
-    // its own CORS preflight — and 100 separate state updates. The previous
-    // "batch" loop never awaited, so every request still fired at once.
-    //
-    // Now: a real concurrency window, and results flushed to state in groups
-    // rather than one setState per response.
-    const CONCURRENCY = 6;
-    const FLUSH_MS = 120;
+    // Өмнө нь гэрээ тус бүрд тусдаа POST явуулдаг байсан тул 100 мөртэй
+    // хуудас = 100 HTTP хүсэлт (тус бүр нь сервер дээр бүтэн сарын ledger-ийг
+    // дамждаг) болж, цонх маш удаан ачаалж байв. Одоо backend /uldegdelBodyo
+    // нь `gereeniiIds` массив хүлээн авч бүгдийг НЭГ (эсвэл цомхон хэдэн)
+    // query-гээр боддог тул энд ч гэрээнүүдийг багцаар дамжуулна.
+    const CHUNK_SIZE = 200;
+    const CONCURRENCY = 3;
+
+    const chunks: string[][] = [];
+    for (let i = 0; i < pending.length; i += CHUNK_SIZE) {
+      chunks.push(pending.slice(i, i + CHUNK_SIZE));
+    }
 
     let cancelled = false;
-    let buffer: Record<string, number | null> = {};
-    let flushTimer: number | null = null;
 
-    const flush = () => {
-      flushTimer = null;
-      if (cancelled) return;
-      const batch = buffer;
-      buffer = {};
-      if (Object.keys(batch).length === 0) return;
-      setLatestRowUldegdelByGereeId((prev) => ({ ...prev, ...batch }));
-    };
-
-    const queueResult = (gid: string, value: number | null) => {
-      buffer[gid] = value;
-      if (flushTimer == null) {
-        flushTimer = window.setTimeout(flush, FLUSH_MS);
-      }
-    };
-
-    const fetchOne = async (gid: string) => {
+    const fetchChunk = async (gids: string[]) => {
       try {
         const resp = await uilchilgee(token).post(`/uldegdelBodyo`, {
           baiguullagiinId,
           barilgiinId: effectiveBarilgiinId || undefined,
-          gereeniiId: gid,
+          gereeniiIds: gids,
           ognoo: billingCycleRange,
           // Энд зөвхөн summary.uldegdel хэрэгтэй. Үүнгүйгээр хариу бүр
-          // тухайн гэрээний бүх гүйлгээг (12-50 kB) авчирдаг.
+          // тухайн гэрээ бүрийн бүх гүйлгээг (12-50 kB) авчирдаг.
           summaryOnly: true,
         });
-        const summary = resp.data?.summary;
-        const uldegdel =
-          summary?.uldegdel != null && Number.isFinite(Number(summary.uldegdel))
-            ? Number(summary.uldegdel)
-            : null;
-        queueResult(gid, uldegdel);
-        duusaagui.delete(gid);
+        const summaries = resp.data?.summaries || {};
+        const batch: Record<string, number | null> = {};
+        gids.forEach((gid) => {
+          const summary = summaries[gid];
+          const uldegdel =
+            summary?.uldegdel != null && Number.isFinite(Number(summary.uldegdel))
+              ? Number(summary.uldegdel)
+              : null;
+          batch[gid] = uldegdel;
+          duusaagui.delete(gid);
+        });
+        if (!cancelled) {
+          setLatestRowUldegdelByGereeId((prev) => ({ ...prev, ...batch }));
+        }
       } catch {
-        duusaagui.delete(gid);
-        latestRowUldegdelRequestedRef.current.delete(gid);
+        gids.forEach((gid) => {
+          duusaagui.delete(gid);
+          latestRowUldegdelRequestedRef.current.delete(gid);
+        });
       }
     };
 
     let cursor = 0;
     const worker = async () => {
-      while (!cancelled && cursor < pending.length) {
-        await fetchOne(pending[cursor++]);
+      while (!cancelled && cursor < chunks.length) {
+        await fetchChunk(chunks[cursor++]);
       }
     };
 
     void Promise.all(
-      Array.from({ length: Math.min(CONCURRENCY, pending.length) }, worker),
-    ).then(() => {
-      if (flushTimer != null) {
-        window.clearTimeout(flushTimer);
-        flushTimer = null;
-      }
-      flush();
-    });
+      Array.from({ length: Math.min(CONCURRENCY, chunks.length) }, worker),
+    );
 
     return () => {
       cancelled = true;
-      if (flushTimer != null) window.clearTimeout(flushTimer);
       // Таслагдсан гэрээнүүдийг дараагийн ажиллагаанд дахин татах боломжтой
       // болгож тэмдэглэгээг нь буцааж авна.
       duusaagui.forEach((gid) =>
