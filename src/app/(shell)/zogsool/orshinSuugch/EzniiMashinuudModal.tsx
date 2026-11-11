@@ -88,10 +88,15 @@ export default function EzniiMashinuudModal({
                   className="grid grid-cols-[32px_minmax(0,1fr)_110px_minmax(0,1fr)_76px] items-center gap-3 border-t border-[color:var(--ctl-border)] px-4 py-2 text-[13px]"
                 >
                   <span className="tabular-nums text-[color:var(--muted-text)]">{i + 1}</span>
-                  <span className="inline-flex w-fit items-center gap-1.5 rounded-lg border border-success/30 bg-success/10 px-2 py-0.5 font-medium tracking-wide text-success">
-                    <Car className="h-3.5 w-3.5" />
+                  <button
+                    type="button"
+                    onClick={() => onEdit(m)}
+                    title="Засах"
+                    className="inline-flex w-fit items-center gap-1.5 whitespace-nowrap rounded-lg border border-success/30 bg-success/10 px-2 py-0.5 font-medium tracking-wide text-success transition-colors hover:border-success/60 hover:bg-success/20"
+                  >
+                    <Car className="h-3.5 w-3.5 shrink-0" />
                     {m.mashiniiDugaar || "-"}
-                  </span>
+                  </button>
                   <span className="truncate text-[color:var(--panel-text)]">
                     {m.zochinTurul || m.turul || "Оршин суугч"}
                   </span>

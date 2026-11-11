@@ -120,10 +120,10 @@ export const MashinBurtgekhNud: React.FC<{
       <button
         type="button"
         onClick={() => setZasaj(true)}
-        className="inline-flex items-center gap-1 rounded-lg border border-dashed border-warning/50 bg-warning/10 px-2 py-0.5 text-warning transition-colors hover:bg-warning/20"
+        className="inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-lg border border-dashed border-warning/50 bg-warning/10 px-2 py-0.5 text-warning transition-colors hover:bg-warning/20"
         title="Машины дугаар бүртгэх"
       >
-        <Plus className="h-3.5 w-3.5" />
+        <Plus className="h-3.5 w-3.5 shrink-0" />
         Машин бүртгэх
       </button>
     );
@@ -236,26 +236,31 @@ export const ZogsoolOrshinSuugchTable: React.FC<
       {
         title: "Дугаар",
         key: "dugaar",
-        width: 150,
+        width: 160,
         align: "center",
         render: (_: any, record: ResidentParking) => (
-          <div className="flex flex-wrap gap-2 justify-center">
+          <div className="flex flex-nowrap gap-2 justify-center whitespace-nowrap">
             {olonMashinteiEsekh(record) ? (
               <button
                 type="button"
                 onClick={() => onOlonMashin?.(record)}
                 title={(record.mashinMuruud || []).map((m) => m.mashiniiDugaar).join(", ")}
-                className="inline-flex items-center gap-1 font-medium text-blue-600 underline underline-offset-2 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
+                className="inline-flex shrink-0 items-center gap-1 whitespace-nowrap px-2 py-0.5 font-medium text-blue-600 underline underline-offset-2 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
               >
-                <Car className="h-3.5 w-3.5" />
+                <Car className="h-3.5 w-3.5 shrink-0" />
                 Олон ({record.mashinMuruud?.length})
               </button>
             ) : !mashinBurtgelgui(record.mashiniiDugaar) ? (
-              <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-lg bg-success/10 border border-success/30">
+              <button
+                type="button"
+                onClick={() => onEdit(record)}
+                title="Засах"
+                className="flex items-center gap-1.5 px-2 py-0.5 rounded-lg bg-success/10 border border-success/30 transition-colors hover:bg-success/20 hover:border-success/60"
+              >
                 <span className="font-medium tracking-wide text-success">
                   {record.mashiniiDugaar}
                 </span>
-              </div>
+              </button>
             ) : onMashinBurtgekh ? (
               <MashinBurtgekhNud onSave={(d) => onMashinBurtgekh(record, d)} />
             ) : (
