@@ -3,7 +3,7 @@
 import React, { useMemo, useState, useRef, useEffect } from "react";
 import Table from "@/components/ui/table";
 import type { ColumnsType } from "@/components/ui/table";
-import { Car, Edit, Trash2, Plus, Loader2 } from "lucide-react";
+import { Car, Edit, Pencil, Trash2, Plus, Loader2 } from "lucide-react";
 import { getResidentToot } from "@/lib/residentDataHelper";
 import { LATIN_TO_CYRILLIC } from "./ResidentRegistrationModal";
 
@@ -123,8 +123,8 @@ export const MashinBurtgekhNud: React.FC<{
         className="inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-lg border border-dashed border-warning/50 bg-warning/10 px-2 py-0.5 text-warning transition-colors hover:bg-warning/20"
         title="Машины дугаар бүртгэх"
       >
-        <Plus className="h-3.5 w-3.5 shrink-0" />
-        Машин бүртгэх
+        <Plus className="!h-3.5 !w-3.5 shrink-0" />
+        <span>Машин бүртгэх</span>
       </button>
     );
   }
@@ -247,16 +247,17 @@ export const ZogsoolOrshinSuugchTable: React.FC<
                 title={(record.mashinMuruud || []).map((m) => m.mashiniiDugaar).join(", ")}
                 className="inline-flex shrink-0 items-center gap-1 whitespace-nowrap px-2 py-0.5 font-medium text-blue-600 underline underline-offset-2 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
               >
-                <Car className="h-3.5 w-3.5 shrink-0" />
-                Олон ({record.mashinMuruud?.length})
+                <Car className="!h-3.5 !w-3.5 shrink-0" />
+                <span>Олон ({record.mashinMuruud?.length})</span>
               </button>
             ) : !mashinBurtgelgui(record.mashiniiDugaar) ? (
               <button
                 type="button"
                 onClick={() => onEdit(record)}
                 title="Засах"
-                className="flex items-center gap-1.5 px-2 py-0.5 rounded-lg bg-success/10 border border-success/30 transition-colors hover:bg-success/20 hover:border-success/60"
+                className="group inline-flex items-center gap-1.5 whitespace-nowrap px-2 py-0.5 rounded-lg bg-success/10 border border-success/30 transition-colors hover:bg-success/20 hover:border-success/60"
               >
+                <Pencil className="!h-3 !w-3 shrink-0 text-success opacity-60 transition-opacity group-hover:opacity-100" />
                 <span className="font-medium tracking-wide text-success">
                   {record.mashiniiDugaar}
                 </span>

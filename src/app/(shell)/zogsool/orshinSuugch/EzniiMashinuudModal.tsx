@@ -2,7 +2,7 @@
 
 import React, { useEffect } from "react";
 import moment from "moment";
-import { Car, Edit, Trash2, X } from "lucide-react";
+import { Edit, Pencil, Trash2, X } from "lucide-react";
 import ModalPortal from "../../../../../components/shell/ModalPortal";
 import { MashinBurtgekhNud } from "./ZogsoolOrshinSuugchTable";
 
@@ -92,10 +92,10 @@ export default function EzniiMashinuudModal({
                     type="button"
                     onClick={() => onEdit(m)}
                     title="Засах"
-                    className="inline-flex w-fit items-center gap-1.5 whitespace-nowrap rounded-lg border border-success/30 bg-success/10 px-2 py-0.5 font-medium tracking-wide text-success transition-colors hover:border-success/60 hover:bg-success/20"
+                    className="group inline-flex w-fit items-center gap-1.5 whitespace-nowrap rounded-lg border border-success/30 bg-success/10 px-2 py-0.5 font-medium tracking-wide text-success transition-colors hover:border-success/60 hover:bg-success/20"
                   >
-                    <Car className="h-3.5 w-3.5 shrink-0" />
-                    {m.mashiniiDugaar || "-"}
+                    <Pencil className="h-3 w-3 shrink-0 opacity-60 transition-opacity group-hover:opacity-100" />
+                    <span>{m.mashiniiDugaar || "-"}</span>
                   </button>
                   <span className="truncate text-[color:var(--panel-text)]">
                     {m.zochinTurul || m.turul || "Оршин суугч"}
