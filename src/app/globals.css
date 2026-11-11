@@ -6803,6 +6803,18 @@ body,
   color: var(--muted-text, var(--panel-text));
 }
 
+/* Өнгөтэй дашбоард карт: анхдагч дэвсгэр зөөлөн ногоон, hover/сонгогдсон
+   үед картын өөрийн өнгө (--kart-ungu = "R, G, B"). Дотоод .stat-card дээр
+   тавина — neu-panel-ийн градиент дэвсгэр Tailwind hover-ийг дардаг. */
+.stat-card-unguttei > .stat-card {
+  background: rgba(34, 197, 94, 0.08);
+  transition: background-color 150ms ease;
+}
+.stat-card-unguttei:hover > .stat-card,
+.stat-card-unguttei[data-songogdson="true"] > .stat-card {
+  background: rgba(var(--kart-ungu), 0.14);
+}
+
 /* Толгойн хэсгийг шахах — хүснэгт дээшээ ойртоно. */
 .stat-cards-grid {
   gap: 0.625rem;

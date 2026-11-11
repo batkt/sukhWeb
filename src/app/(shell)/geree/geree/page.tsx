@@ -51,15 +51,17 @@ export default function GereeGereePage() {
     key: "all" | "active" | "cancelled" | "khariltsagch" | "orshinSuugch";
     ner: string;
     too: number;
-    unguClass: string;
+    // Картын өнгө (RGB) — тоо, hover, сонгогдсон хүрээнд хэрэглэнэ.
+    // Оршин суугч / харилцагч нь хүснэгтийн нэрийн өнгөтэй ижил.
+    ungu: string;
     // Дахин дарахад анхдагч «Идэвхтэй» рүү буцна.
     togglekh?: boolean;
   }[] = [
-    { key: "all", ner: "Бүгд", too: toonuud.bugd, unguClass: "text-[color:var(--panel-text)]" },
-    { key: "active", ner: "Идэвхтэй", too: toonuud.idevkhtei, unguClass: "text-success" },
-    { key: "khariltsagch", ner: "Харилцагч", too: toonuud.khariltsagch, unguClass: "text-[color:var(--panel-text)]", togglekh: true },
-    { key: "orshinSuugch", ner: "Оршин суугч", too: toonuud.orshinSuugch, unguClass: "text-[color:var(--panel-text)]", togglekh: true },
-    { key: "cancelled", ner: "Идэвхгүй", too: toonuud.idevkhgui, unguClass: "text-danger" },
+    { key: "all", ner: "Бүгд", too: toonuud.bugd, ungu: "100, 116, 139" },
+    { key: "active", ner: "Идэвхтэй", too: toonuud.idevkhtei, ungu: "22, 163, 74" },
+    { key: "khariltsagch", ner: "Харилцагч", too: toonuud.khariltsagch, ungu: "168, 85, 247", togglekh: true },
+    { key: "orshinSuugch", ner: "Оршин суугч", too: toonuud.orshinSuugch, ungu: "59, 130, 246", togglekh: true },
+    { key: "cancelled", ner: "Идэвхгүй", too: toonuud.idevkhgui, ungu: "239, 68, 68" },
   ];
 
   // Tour steps
@@ -105,14 +107,19 @@ export default function GereeGereePage() {
                 state.setStatusFilter(k.togglekh && songogdson ? "active" : k.key);
                 state.setCurrentPage?.(1);
               }}
-              className={`relative rounded-2xl neu-panel text-left transition-all select-none cursor-pointer ${
-                songogdson ? "ring-2 ring-theme shadow-lg" : "hover:bg-[color:var(--surface-hover)]"
+              className={`stat-card-unguttei relative rounded-2xl neu-panel text-left transition-all select-none cursor-pointer ${
+                songogdson ? "ring-2 shadow-lg" : ""
               }`}
+              data-songogdson={songogdson ? "true" : undefined}
+              style={
+                {
+                  "--kart-ungu": k.ungu,
+                  "--tw-ring-color": `rgb(${k.ungu})`,
+                } as React.CSSProperties
+              }
             >
               <div className="stat-card">
-                <div
-                  className={`stat-card-value ${k.unguClass}`}
-                >
+                <div className="stat-card-value" style={{ color: `rgb(${k.ungu})` }}>
                   {k.too.toLocaleString("mn-MN")}</div>
                 <div className="stat-card-title">{k.ner} гэрээ</div>
               </div>
