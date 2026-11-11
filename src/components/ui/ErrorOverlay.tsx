@@ -2,6 +2,7 @@
 
 import React from "react";
 import toast, { Toaster, ToastBar } from "react-hot-toast";
+import { ANHAARUULGA_GARCHIG, aldaaniiUgKhasakh } from "@/lib/anhaaruulga";
 
 export function openErrorOverlay(message: string, duration = 3000) {
   toast.error(message, {
@@ -39,10 +40,11 @@ export function ErrorOverlayHost() {
           padding: "12px 14px",
           boxShadow: "0 12px 32px -12px rgba(0, 0, 0, 0.25)",
         },
+        // Алдааг улаан «Алдаа гарлаа» биш, улбар шар «Анхааруулга» болгоно
         error: {
-          iconTheme: { primary: "var(--danger)", secondary: "#fff" },
+          icon: "⚠️",
           style: {
-            borderLeft: "4px solid var(--danger)",
+            borderLeft: "4px solid var(--warning)",
           }
         },
         success: {
@@ -55,7 +57,28 @@ export function ErrorOverlayHost() {
     >
       {(t) => (
         <div onClick={() => toast.dismiss(t.id)} style={{ cursor: 'pointer' }}>
-          <ToastBar toast={t} />
+          <ToastBar toast={t}>
+            {({ icon, message }) =>
+              t.type === "error" ? (
+                <>
+                  {icon}
+                  <div style={{ margin: "0 4px 0 10px", flex: 1, minWidth: 0 }}>
+                    <div style={{ color: "var(--warning)", fontWeight: 500 }}>
+                      {ANHAARUULGA_GARCHIG}
+                    </div>
+                    <div style={{ whiteSpace: "pre-line" }}>
+                      {typeof t.message === "string" ? aldaaniiUgKhasakh(t.message) : message}
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <>
+                  {icon}
+                  {message}
+                </>
+              )
+            }
+          </ToastBar>
         </div>
       )}
     </Toaster>

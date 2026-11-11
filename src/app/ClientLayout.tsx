@@ -5,6 +5,7 @@ import { MantineProvider, createTheme } from "@mantine/core";
 import { ConfigProvider, theme as antdTheme } from "antd";
 import mn_MN from "antd/lib/locale/mn_MN";
 import { Toaster, toast } from "sonner";
+import { sonnerAldaagAnhaaruulgaBolgokh } from "@/lib/anhaaruulga";
 import "@mantine/core/styles.css";
 // Removed Mantine dates styles; using custom DatePicker component
 import dayjs from "dayjs";
@@ -26,6 +27,9 @@ import TourHost from "@/components/ui/TourHost";
 import type { Socket } from "socket.io-client";
 import ChatWidget from "@/components/ChatWidget";
 import AiTuslakh from "@/components/AiTuslakh";
+
+// Бүх sonner алдааны мэдэгдэл → улбар шар «Анхааруулга»
+sonnerAldaagAnhaaruulgaBolgokh();
 
 function parseJwt(token: string) {
   try {
