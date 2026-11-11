@@ -79,8 +79,8 @@ export function useGereeState(searchParams: any, didInitRef: any) {
     useState<string>("");
   const [propertyTab, setPropertyTab] = useState<"Тоот" | "Зогсоол" | "Агуулах">("Тоот");
   const [statusFilter, setStatusFilter] = useState<
-    "all" | "active" | "cancelled"
-  >("all");
+    "all" | "active" | "cancelled" | "khariltsagch" | "orshinSuugch"
+  >("active");
   const [unitStatusFilter, setUnitStatusFilter] = useState<
     "all" | "occupied" | "free"
   >("all");
@@ -160,7 +160,13 @@ export function useGereeState(searchParams: any, didInitRef: any) {
       setActiveTab(t as any);
     }
     const status = searchParams.get("status");
-    if (status === "all" || status === "active" || status === "cancelled") {
+    if (
+      status === "all" ||
+      status === "active" ||
+      status === "cancelled" ||
+      status === "khariltsagch" ||
+      status === "orshinSuugch"
+    ) {
       setStatusFilter(status as any);
     }
     didInitRef.current = true;

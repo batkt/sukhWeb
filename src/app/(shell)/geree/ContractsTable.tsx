@@ -246,16 +246,12 @@ export const ContractsTable: React.FC<ContractsTableProps> = React.memo(({
               const ungu = khariltsagch ? "168, 85, 247" : "59, 130, 246";
               return (
                 <span
-                  className="inline-flex min-w-0 max-w-full items-center gap-1.5 rounded-md py-0.5 pl-1.5 pr-3"
+                  className="inline-flex min-w-0 max-w-full items-center rounded-md py-0.5 pl-2 pr-3"
                   style={{
                     background: `linear-gradient(90deg, rgba(${ungu}, 0.28) 0%, rgba(${ungu}, 0.10) 60%, rgba(${ungu}, 0) 100%)`,
                   }}
                   title={khariltsagch ? "Харилцагчийн гэрээ" : "Оршин суугчийн гэрээ"}
                 >
-                  <span
-                    className="h-2.5 w-2.5 shrink-0 rounded-full"
-                    style={{ backgroundColor: `rgb(${ungu})` }}
-                  />
                   <span className="min-w-0 truncate text-[color:var(--panel-text)] dark:text-white">
                     {renderCellValue(record, columnKey)}
                   </span>

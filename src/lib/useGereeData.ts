@@ -71,7 +71,7 @@ export function useGereeData(
   unitPageSize: number,
   selectedDawkhar?: string,
   selectedOrtsForContracts?: string,
-  statusFilter?: "all" | "active" | "cancelled",
+  statusFilter?: "all" | "active" | "cancelled" | "khariltsagch" | "orshinSuugch",
   propertyTab?: "Тоот" | "Зогсоол" | "Агуулах",
 ) {
   // Stick strictly to selectedBuildingId from context to prevent data leakage from cookie-based barilgiinId
@@ -828,6 +828,9 @@ export function useGereeData(
         // Дашбоардын тоотой ижил: цуцлагдаагүй бүх гэрээ идэвхтэй.
         if (statusFilter === "active") return !isCancelled;
         if (statusFilter === "cancelled") return isCancelled;
+        // Харилцагчийн гэрээ khariltsagchId-тай үүсдэг (ContractsTable-тай ижил).
+        if (statusFilter === "khariltsagch") return !!c?.khariltsagchId;
+        if (statusFilter === "orshinSuugch") return !c?.khariltsagchId;
         return true;
       });
     }
@@ -1141,6 +1144,9 @@ export function useGereeData(
     davkharOptions,
     ortsOptions,
     tootMap: maps.outToot,
+    // Барилгын тохиргоон дахь гараж/агуулахын дугаарууд (давхар → дугаарууд)
+    garaazhMap: maps.outZogsool,
+    aguulakhMap: maps.outAguulakh,
     selectedBarilga,
     zagvaruud,
     socketCtx,

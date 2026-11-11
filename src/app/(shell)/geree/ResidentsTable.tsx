@@ -1,10 +1,10 @@
 "use client";
 
 import React, { useMemo } from "react";
-import { Tooltip } from "antd";
+import { Select, Tooltip } from "antd";
 import Table from "@/components/ui/table";
 import type { ColumnsType } from "@/components/ui/table";
-import { Edit, Eye, Trash2, ChevronUp, ChevronDown, X, KeyRound } from "lucide-react";
+import { Edit, Eye, Trash2, ChevronUp, ChevronDown, X, KeyRound, Plus, Loader2 } from "lucide-react";
 import { getPaymentStatusLabel } from "@/lib/utils";
 import { negjiinTurul, negjiinTulkhuur } from "@/lib/negjiinTurul";
 import DeleteConfirmModal from "./modals/DeleteModal";
@@ -46,13 +46,142 @@ interface ResidentsTableProps {
   onResetPassword?: (resident: ResidentItem) => void;
   onRemoveToot?: (residentId: string, baiguullagiinId: string, barilgiinId: string, toot: string, turul?: string) => void;
   onSort?: (key: SortKey, order?: "ascend" | "descend" | null) => void;
+  /** Байвал «Гараж», «Агуулах» нүдэнд «+ Нэмэх» товч гарна. */
+  negjNemekh?: NegjNemekhTokhirgoo;
 }
+
+/** Гараж/агуулахын сонгож болох дугаар (барилгын тохиргооноос, эзэнгүй нь). */
+export interface NegjiinSongolt {
+  davkhar: string;
+  toot: string;
+}
+
+export type NegjNemekhTurul = "Гараж" | "Агуулах";
+
+export interface NegjNemekhTokhirgoo {
+  /** Төрөл бүрийн сул дугаарууд. Хоосон бол дугаарыг гараар бичнэ. */
+  songoltuud: Record<NegjNemekhTurul, NegjiinSongolt[]>;
+  /** Амжилттай холбогдвол true буцаана. */
+  onNemekh: (
+    resident: ResidentItem,
+    turul: NegjNemekhTurul,
+    davkhar: string,
+    toot: string,
+  ) => Promise<boolean>;
+}
+
+/**
+ * «Машин бүртгэх»-тэй ижил: «+» дарахад нүдэн дээр шууд сонголт гарна.
+ * Барилгын тохиргоонд дугаар бүртгэгдсэн бол сул дугааруудаас сонгоно,
+ * үгүй бол дугаарыг гараар бичээд Enter дарна.
+ */
+const NegjNemekh: React.FC<{
+  turul: NegjNemekhTurul;
+  songoltuud: NegjiinSongolt[];
+  /** Оршин суугч аль хэдийн гараж/агуулахтай бол жижиг «+» л харуулна. */
+  jijig?: boolean;
+  onSave: (davkhar: string, toot: string) => Promise<boolean>;
+}> = ({ turul, songoltuud, jijig, onSave }) => {
+  const [neelttei, setNeelttei] = React.useState(false);
+  const [khadgalj, setKhadgalj] = React.useState(false);
+  const [utga, setUtga] = React.useState("");
+
+  const khadgalakh = async (davkhar: string, toot: string) => {
+    if (khadgalj || !toot.trim()) return;
+    setKhadgalj(true);
+    const ok = await onSave(davkhar, toot.trim());
+    setKhadgalj(false);
+    if (ok) {
+      setNeelttei(false);
+      setUtga("");
+    }
+  };
+
+  const khaakh = () => {
+    if (khadgalj) return;
+    setNeelttei(false);
+    setUtga("");
+  };
+
+  if (!neelttei) {
+    return (
+      <button
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation();
+          setNeelttei(true);
+        }}
+        className={
+          jijig
+            ? "inline-flex shrink-0 items-center justify-center rounded-md border border-dashed border-brand/50 p-0.5 text-brand transition-colors hover:bg-brand/10"
+            : "inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-lg border border-dashed border-brand/50 bg-brand/5 px-2 py-0.5 text-brand transition-colors hover:bg-brand/15"
+        }
+        title={`${turul} нэмэх`}
+      >
+        <Plus className="!h-3.5 !w-3.5 shrink-0" />
+        {!jijig && <span>Нэмэх</span>}
+      </button>
+    );
+  }
+
+  if (songoltuud.length > 0) {
+    return (
+      <span onClick={(e) => e.stopPropagation()}>
+        <Select
+          autoFocus
+          defaultOpen
+          showSearch
+          size="small"
+          loading={khadgalj}
+          disabled={khadgalj}
+          placeholder={`${turul} сонгох`}
+          style={{ width: 130 }}
+          popupMatchSelectWidth={false}
+          optionFilterProp="label"
+          options={songoltuud.map((s) => ({
+            value: `${s.davkhar}|${s.toot}`,
+            label: s.davkhar ? `${s.toot} (${s.davkhar} давхар)` : s.toot,
+          }))}
+          onChange={(v: string) => {
+            const [davkhar, toot] = String(v).split("|");
+            void khadgalakh(davkhar || "", toot || "");
+          }}
+          onBlur={khaakh}
+        />
+      </span>
+    );
+  }
+
+  return (
+    <span className="relative inline-flex items-center" onClick={(e) => e.stopPropagation()}>
+      <input
+        autoFocus
+        value={utga}
+        disabled={khadgalj}
+        placeholder={`${turul} дугаар`}
+        maxLength={12}
+        onChange={(e) => setUtga(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") void khadgalakh("", utga);
+          if (e.key === "Escape") khaakh();
+        }}
+        onBlur={() => {
+          if (!utga.trim()) khaakh();
+        }}
+        className="w-[100px] rounded-lg border border-brand/60 bg-[color:var(--surface-bg)] px-2 py-0.5 text-center text-[color:var(--panel-text)] outline-none focus:ring-2 focus:ring-brand/30"
+      />
+      {khadgalj && <Loader2 className="absolute -right-5 h-3.5 w-3.5 animate-spin text-brand" />}
+    </span>
+  );
+};
+
 
 /** «Гараж», «Агуулах» тусдаа багана — ижил дүрслэл, зөвхөн төрлөөр шүүнэ. */
 function negjiinBagana(
   turul: "Гараж" | "Агуулах",
   currentBaiguullagiinId: string | undefined,
   onKhasakh: (record: ResidentItem, t: any) => void,
+  negjNemekh?: NegjNemekhTokhirgoo,
 ): ColumnsType<ResidentItem>[number] {
   return {
     title: turul,
@@ -80,7 +209,16 @@ function negjiinBagana(
       // Зөвхөн энэ баганын төрөл (Гараж эсвэл Агуулах)
       toots = toots.filter((t: any) => negjiinTurul(t) === turul);
 
-      if (toots.length === 0) return "-";
+      const nemekhTovch = negjNemekh ? (
+        <NegjNemekh
+          turul={turul}
+          songoltuud={negjNemekh.songoltuud[turul] || []}
+          jijig={toots.length > 0}
+          onSave={(davkhar, toot) => negjNemekh.onNemekh(record, turul, davkhar, toot)}
+        />
+      ) : null;
+
+      if (toots.length === 0) return nemekhTovch || "-";
 
       const tooltipContent = (
         <div className="space-y-1.5 p-1.5 max-w-[220px]">
@@ -106,7 +244,7 @@ function negjiinBagana(
         </div>
       );
 
-      return (
+      const chip = (
         <Tooltip title={tooltipContent} placement="top" trigger="hover">
           <span className="inline-flex items-center gap-1.5 cursor-pointer px-2.5 py-0.5 rounded-md bg-[color:var(--surface-hover)] font-medium text-[color:var(--panel-text)] border border-[color:var(--surface-border)] hover:bg-[color:var(--surface-hover)] transition-colors">
             {toots[0].toot}
@@ -117,6 +255,13 @@ function negjiinBagana(
             )}
           </span>
         </Tooltip>
+      );
+      if (!nemekhTovch) return chip;
+      return (
+        <span className="inline-flex items-center gap-1">
+          {chip}
+          {nemekhTovch}
+        </span>
       );
     },
   };
@@ -136,6 +281,7 @@ export const ResidentsTable: React.FC<ResidentsTableProps> = React.memo(({
   onResetPassword,
   onRemoveToot,
   onSort,
+  negjNemekh,
 }) => {
   // Тоот хасахаас өмнө батлуулах (window.confirm-ийн оронд).
   const [khasakhAsuult, setKhasakhAsuult] = React.useState<{ record: ResidentItem; t: any } | null>(null);
@@ -296,8 +442,8 @@ export const ResidentsTable: React.FC<ResidentsTableProps> = React.memo(({
           );
         },
       },
-      negjiinBagana("Гараж", currentBaiguullagiinId, (record, t) => setKhasakhAsuult({ record, t })),
-      negjiinBagana("Агуулах", currentBaiguullagiinId, (record, t) => setKhasakhAsuult({ record, t })),
+      negjiinBagana("Гараж", currentBaiguullagiinId, (record, t) => setKhasakhAsuult({ record, t }), negjNemekh),
+      negjiinBagana("Агуулах", currentBaiguullagiinId, (record, t) => setKhasakhAsuult({ record, t }), negjNemekh),
       {
         title: "Утас",
         dataIndex: "utas",
@@ -398,6 +544,8 @@ export const ResidentsTable: React.FC<ResidentsTableProps> = React.memo(({
       onResetPassword,
       onRemoveToot,
       onSort,
+      currentBaiguullagiinId,
+      negjNemekh,
     ],
   );
 

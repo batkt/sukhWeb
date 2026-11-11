@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { ResidentsTable, ResidentItem } from "./ResidentsTable";
+import { ResidentsTable, ResidentItem, NegjNemekhTokhirgoo } from "./ResidentsTable";
 import { StandardPagination } from "@/components/ui/StandardTable";
 
 type SortKey = string;
@@ -24,6 +24,8 @@ interface ResidentsSectionProps {
   currentBaiguullagiinId?: string;
   setResPageSize: (size: number) => void;
   setResPage: (page: number) => void;
+  /** «Гараж», «Агуулах» нүдэнд дарж нэмэх */
+  negjNemekh?: NegjNemekhTokhirgoo;
 }
 
 const ResidentsSection: React.FC<ResidentsSectionProps> = ({
@@ -44,6 +46,7 @@ const ResidentsSection: React.FC<ResidentsSectionProps> = ({
   currentBaiguullagiinId,
   setResPageSize,
   setResPage,
+  negjNemekh,
 }) => {
   return (
     <>
@@ -68,6 +71,7 @@ const ResidentsSection: React.FC<ResidentsSectionProps> = ({
               onDelete={onRequestDeleteResident}
               onRemoveToot={onRemoveToot}
               onSort={(key, order) => toggleSortFor?.(key, order)}
+              negjNemekh={negjNemekh}
             />
           </div>
           <div id="resident-pagination">

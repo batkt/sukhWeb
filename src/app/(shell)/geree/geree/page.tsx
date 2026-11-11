@@ -27,20 +27,39 @@ export default function GereeGereePage() {
     return { khariltsagch, orshinSuugch: jagsaalt.length - khariltsagch };
   }, [(data as any).filteredContracts]);
 
-  // Дашбоард: Бүгд / Идэвхтэй / Идэвхгүй — дарахад жагсаалтыг шүүнэ.
+  // Дашбоард: Бүгд / Идэвхтэй / Харилцагч / Оршин суугч / Идэвхгүй — дарахад жагсаалтыг шүүнэ.
   // (Цуцалсан гэрээ = Идэвхгүй; «Бүгд» дээр цуцалсан нь улаан дэвсгэртэй.)
   const toonuud = useMemo(() => {
     const jagsaalt: any[] = Array.isArray(data.contracts) ? data.contracts : [];
     let idevkhgui = 0;
+    let khariltsagch = 0;
     jagsaalt.forEach((c: any) => {
       const t = String(c?.tuluv || c?.status || "").trim().toLowerCase();
       if (t === "цуцалсан" || t === "tsutlsasan" || t === "идэвхгүй") idevkhgui++;
+      // Харилцагчийн гэрээ khariltsagchId-тай үүсдэг, бусад нь оршин суугчийнх.
+      if (c?.khariltsagchId) khariltsagch++;
     });
-    return { bugd: jagsaalt.length, idevkhtei: jagsaalt.length - idevkhgui, idevkhgui };
+    return {
+      bugd: jagsaalt.length,
+      idevkhtei: jagsaalt.length - idevkhgui,
+      idevkhgui,
+      khariltsagch,
+      orshinSuugch: jagsaalt.length - khariltsagch,
+    };
   }, [data.contracts]);
-  const kartuud: { key: "all" | "active" | "cancelled"; ner: string; too: number; unguClass: string }[] = [
+  const kartuud: {
+    key: "all" | "active" | "cancelled" | "khariltsagch" | "orshinSuugch";
+    ner: string;
+    too: number;
+    unguClass: string;
+    ungu?: string;
+    // Дахин дарахад анхдагч «Идэвхтэй» рүү буцна.
+    togglekh?: boolean;
+  }[] = [
     { key: "all", ner: "Бүгд", too: toonuud.bugd, unguClass: "text-[color:var(--panel-text)]" },
     { key: "active", ner: "Идэвхтэй", too: toonuud.idevkhtei, unguClass: "text-success" },
+    { key: "khariltsagch", ner: "Харилцагч", too: toonuud.khariltsagch, unguClass: "", ungu: "rgb(168, 85, 247)", togglekh: true },
+    { key: "orshinSuugch", ner: "Оршин суугч", too: toonuud.orshinSuugch, unguClass: "", ungu: "rgb(59, 130, 246)", togglekh: true },
     { key: "cancelled", ner: "Идэвхгүй", too: toonuud.idevkhgui, unguClass: "text-danger" },
   ];
 
@@ -74,9 +93,9 @@ export default function GereeGereePage() {
 
   return (
     <>
-      <div className="stat-cards-grid mb-3 grid grid-cols-1 sm:grid-cols-3" role="tablist" aria-label="Гэрээний төлөв">
+      <div className="stat-cards-grid mb-3 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5" role="tablist" aria-label="Гэрээний төлөв">
         {kartuud.map((k) => {
-          const songogdson = (state.statusFilter || "all") === k.key;
+          const songogdson = (state.statusFilter || "active") === k.key;
           return (
             <button
               key={k.key}
@@ -84,7 +103,7 @@ export default function GereeGereePage() {
               role="tab"
               aria-selected={songogdson}
               onClick={() => {
-                state.setStatusFilter(k.key);
+                state.setStatusFilter(k.togglekh && songogdson ? "active" : k.key);
                 state.setCurrentPage?.(1);
               }}
               className={`relative rounded-2xl neu-panel text-left transition-all select-none cursor-pointer ${
@@ -92,7 +111,11 @@ export default function GereeGereePage() {
               }`}
             >
               <div className="stat-card">
-                <div className={`stat-card-value ${k.unguClass}`}>{k.too.toLocaleString("mn-MN")}</div>
+                <div
+                  className={`stat-card-value ${k.unguClass}`}
+                  style={k.ungu ? { color: k.ungu } : undefined}
+                >
+                  {k.too.toLocaleString("mn-MN")}</div>
                 <div className="stat-card-title">{k.ner} гэрээ</div>
               </div>
             </button>
@@ -120,12 +143,18 @@ export default function GereeGereePage() {
         {/* Нэрийн баганын өнгөний тайлбар */}
         <div className="flex items-center gap-4 px-1 text-sm text-[color:var(--panel-text)]">
           {[
-            { ner: "Оршин суугч", ungu: "rgb(59, 130, 246)", too: gereeniiToo.orshinSuugch },
-            { ner: "Харилцагч", ungu: "rgb(168, 85, 247)", too: gereeniiToo.khariltsagch },
+            { ner: "Оршин суугч", ungu: "59, 130, 246", too: gereeniiToo.orshinSuugch },
+            { ner: "Харилцагч", ungu: "168, 85, 247", too: gereeniiToo.khariltsagch },
           ].map((t) => (
-            <span key={t.ner} className="inline-flex items-center gap-1.5 whitespace-nowrap">
-              {t.ner} :
-              <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: t.ungu }} />
+            // Хүснэгтийн нэрийн нүдний өнгөт дэвсгэртэй ижил хэв маяг.
+            <span
+              key={t.ner}
+              className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-md py-0.5 pl-2 pr-3"
+              style={{
+                background: `linear-gradient(90deg, rgba(${t.ungu}, 0.28) 0%, rgba(${t.ungu}, 0.10) 60%, rgba(${t.ungu}, 0) 100%)`,
+              }}
+            >
+              {t.ner}
               <span className="text-[color:var(--muted-text)]">({t.too})</span>
             </span>
           ))}

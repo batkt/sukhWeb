@@ -21,8 +21,8 @@ interface GereeHeaderProps {
     tab: "contracts" | "residents" | "employees" | "units" | "clients",
   ) => void;
   onShowMassKwtModal?: () => void;
-  statusFilter: "all" | "active" | "cancelled";
-  setStatusFilter: (val: "all" | "active" | "cancelled") => void;
+  statusFilter: "all" | "active" | "cancelled" | "khariltsagch" | "orshinSuugch";
+  setStatusFilter: (val: "all" | "active" | "cancelled" | "khariltsagch" | "orshinSuugch") => void;
   unitStatusFilter: "all" | "occupied" | "free";
   setUnitStatusFilter: (val: "all" | "occupied" | "free") => void;
   ajiltan: any;
