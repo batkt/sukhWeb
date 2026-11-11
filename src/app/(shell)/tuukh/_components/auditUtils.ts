@@ -40,6 +40,8 @@ export interface AuditMur {
   angilal: string;
   /** Төрлийн харагдах нэр: «Бүртгэл», «Өмч бүртгэл» … */
   angilalNer: string;
+  /** Нэг үйлдлээр устгагдсан олон бичлэгийг нэгтгэсэн мөр бол гишүүд */
+  buleg?: AuditMur[];
 }
 
 /* ------------------------- засварын төрөл ------------------------- */
@@ -357,6 +359,8 @@ const NUUKH_TALBAR = new Set([
   "createdat", "updatedat", "__v", "_id",
   "kharsanesekh", "unshsanesekh", "kharsan", "unshsan", "kharsanognoo", "unshsanognoo",
   "kharsanajiltnuud", "unshsanajiltnuud", "isread", "readat", "seen", "seenat",
+  // Апп-ын танилцуулга харсан эсэх — хүний засвар биш
+  "taniltsuulgakharakhesekh", "tanilsuulgakharakhesekh",
   ...NEMELT_NUUKH_TALBAR,
 ]);
 
@@ -817,8 +821,20 @@ function uurchlultuudAvya(r: AnyRec): { jagsaalt: AuditUurchlult[]; niit: number
   // Тоотуудын жагсаалт өөрчлөгдсөн бол харилцагчийн toot/davkhar/orts нь
   // зөвхөн «сүүлийн тоот»-ын хуулбар — «Гараж 11 → 106» мэт буруу ойлгогдоно
   const tootJagsaaltTai = raw.some((c) => TOOT_JAGSAALT.has(str(c.talbar || c.field)));
+  // «Тоотууд» хоосон байсан ч «toot» талбар өөрчлөгдөөгүй бол оршин суугч
+  // тэр тоотод аль хэдийн байсан — хадгалахад хуучин тоотыг жагсаалт руу
+  // хуулсан төдий, шинэ тоот НЭМСЭН биш.
+  const tootUurchlugdsun = raw.some((c) => str(c.talbar || c.field) === "toot");
   const jagsaalt = raw
     .filter((c) => !(tootJagsaaltTai && TOOT_KHUULBAR.has(str(c.talbar || c.field))))
+    .filter(
+      (c) =>
+        !(
+          TOOT_JAGSAALT.has(str(c.talbar || c.field)) &&
+          !tootUurchlugdsun &&
+          utgaFormat(c.umnukhUtga ?? c.oldValue) === null
+        ),
+    )
     .map((c) => {
       const talbar = str(c.talbar || c.field) || "-";
       return {
@@ -976,3 +992,62 @@ export function murKhevjuulekh(r: AnyRec): AuditMur {
 
 export const ognooKharuulakh = (iso: string | null, tsagtai = false) =>
   iso ? dayjs(iso).format(tsagtai ? "YYYY-MM-DD HH:mm" : "YYYY-MM-DD") : "-";
+
+/* ----------------------------- бүлэглэх ----------------------------- */
+
+/** Устгасан бичлэгийн дүн (нэхэмжлэх, гүйлгээ) — байхгүй бол null */
+export function ustgasanDun(m: AuditMur): number | null {
+  const d = (m.deletedData || {}) as Record<string, unknown>;
+  for (const k of ["dun", "tulukhDun", "tulsunDun", "niitTulbur", "undsenDun"]) {
+    const n = Number(d[k]);
+    if (d[k] !== null && d[k] !== undefined && d[k] !== "" && Number.isFinite(n)) return n;
+  }
+  return null;
+}
+
+/** Бүлгийн жагсаалтад нэг мөрийн товч тайлбар */
+export function ustgasanMurTailbar(m: AuditMur): string {
+  const tovch = ustgasanTovch(m);
+  if (tovch) return tovch.delgerengui ? `${tovch.garchig} — ${tovch.delgerengui}` : tovch.garchig;
+  const ner = [m.ner, m.dugaar].filter((x, i, a) => x && a.indexOf(x) === i).join(" · ");
+  return ner ? `${m.angilalNer}: ${ner}` : m.angilalNer;
+}
+
+/**
+ * Нэг үйлдлээр устгагдсан бичлэгүүдийг (ж: цуцлагдсан гэрээний 50 нэхэмжлэх)
+ * нэг мөр болгоно: ижил ажилтан, ижил шалтгаан, ижил минут, ижил нэр/дугаар.
+ */
+export function ustgaltaarBuleglekh(murnuud: AuditMur[]): AuditMur[] {
+  const bulguud = new Map<string, AuditMur[]>();
+  const daraalal: string[] = [];
+  murnuud.forEach((m) => {
+    const minut = m.uildelOgnoo ? dayjs(m.uildelOgnoo).format("YYYY-MM-DD HH:mm") : "";
+    const tulkhuur = [
+      m.ajiltniiId || m.ajiltniiNer,
+      m.shaltgaan,
+      minut,
+      m.dugaar || m.ner,
+    ].join("|");
+    if (!bulguud.has(tulkhuur)) {
+      bulguud.set(tulkhuur, []);
+      daraalal.push(tulkhuur);
+    }
+    bulguud.get(tulkhuur)!.push(m);
+  });
+  return daraalal.map((tulkhuur) => {
+    const gishuud = bulguud.get(tulkhuur)!;
+    if (gishuud.length === 1) return gishuud[0];
+    const turluud = Array.from(new Set(gishuud.map((g) => g.angilalNer))).join(", ");
+    const ognoonuud = gishuud
+      .map((g) => g.bichlegiinOgnoo)
+      .filter((x): x is string => !!x)
+      .sort();
+    return {
+      ...gishuud[0],
+      _id: `buleg:${gishuud[0]._id}`,
+      angilalNer: turluud,
+      bichlegiinOgnoo: ognoonuud[0] || gishuud[0].bichlegiinOgnoo,
+      buleg: gishuud,
+    };
+  });
+}

@@ -22,6 +22,7 @@ import {
   murKhailtTekst,
   murKhevjuulekh,
   ognooKharuulakh,
+  ustgaltaarBuleglekh,
 } from "./auditUtils";
 
 /** Хуудас бүрийн ялгаатай хэсэг — бусад нь бүгд нэг */
@@ -167,11 +168,14 @@ function AuditTuukhAgguulga({ turul }: { turul: TuukhTurul }) {
 
   const shuugdsen = useMemo(() => {
     const q = khailt.trim().toLowerCase();
-    if (!q) return murnuud;
-    return murnuud.filter((m) =>
-      murKhailtTekst(m, `${m.angilalNer} ${auditAngilalNer(m.turul)}`).includes(q),
-    );
-  }, [murnuud, khailt]);
+    const tokhirson = !q
+      ? murnuud
+      : murnuud.filter((m) =>
+          murKhailtTekst(m, `${m.angilalNer} ${auditAngilalNer(m.turul)}`).includes(q),
+        );
+    // Нэг үйлдлээр устгагдсан олон бичлэг (гэрээний бүх нэхэмжлэх г.м.) — нэг мөр
+    return turul === "ustgasan" ? ustgaltaarBuleglekh(tokhirson) : tokhirson;
+  }, [murnuud, khailt, turul]);
 
   // Тогтмол жагсаалт, энэ дарааллаар — тоо нь сонгосон хугацааных
   const turulOptions = useMemo(() => {
@@ -305,6 +309,11 @@ function AuditTuukhAgguulga({ turul }: { turul: TuukhTurul }) {
                   <span className="text-[color:var(--panel-text)]">{khesguud[0]}</span>
                   {khesguud[1] && (
                     <span className="text-[color:var(--muted-text)]"> · {khesguud[1]}</span>
+                  )}
+                  {r.buleg && (
+                    <span className="ml-1.5 inline-block rounded-md bg-danger/10 px-1.5 py-0.5 text-[10px] text-danger">
+                      {r.buleg.length} бичлэг
+                    </span>
                   )}
                 </span>
               );

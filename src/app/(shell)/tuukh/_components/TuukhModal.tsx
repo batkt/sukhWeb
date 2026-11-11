@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
-import { ArrowRight, Search, X } from "lucide-react";
+import { ArrowLeft, ArrowRight, Search, X } from "lucide-react";
 import { ModalPortal } from "../../../../../components/shell/ModalPortal";
 import useModalHotkeys from "@/lib/useModalHotkeys";
 import { useZardalZadargaa } from "./useZardalZadargaa";
@@ -17,6 +17,8 @@ import {
   objectIdEsekh,
   ognooKharuulakh,
   talbariinNer,
+  ustgasanDun,
+  ustgasanMurTailbar,
   utgaFormat,
 } from "./auditUtils";
 
@@ -46,7 +48,13 @@ const Utga = ({ utga }: { utga: string | null }) =>
     <span className="whitespace-pre-wrap [overflow-wrap:anywhere]">{utga}</span>
   );
 
-export default function TuukhModal({ mur, turul, idNer = {}, onClose }: Props) {
+export default function TuukhModal({ mur: songogdson, turul, idNer = {}, onClose }: Props) {
+  // Нэгтгэсэн мөр (нэг үйлдлээр олон бичлэг устгасан) бол эхлээд жагсаалт,
+  // мөр дээр дарвал тухайн бичлэгийн дэлгэрэнгүй
+  const bulegMur = songogdson?.buleg ? songogdson : null;
+  const [dotood, setDotood] = useState<AuditMur | null>(null);
+  useEffect(() => setDotood(null), [songogdson]);
+  const mur = dotood ?? (bulegMur ? null : songogdson);
   // Утга: огноо/төлөв хөрвүүлсэн мөр; ID бол ажилтны нэр эсвэл товч ID
   const kharuul = (v: unknown): string | null => {
     const u = typeof v === "string" && v.length === 24 ? v : utgaFormat(v);
@@ -54,7 +62,7 @@ export default function TuukhModal({ mur, turul, idNer = {}, onClose }: Props) {
     if (objectIdEsekh(u)) return idNer[u] || `ID …${u.slice(-6)}`;
     return u;
   };
-  useModalHotkeys({ isOpen: !!mur, onClose });
+  useModalHotkeys({ isOpen: !!songogdson, onClose });
 
   const zassan = turul === "zassan";
   const [khailt, setKhailt] = useState("");
@@ -137,6 +145,9 @@ export default function TuukhModal({ mur, turul, idNer = {}, onClose }: Props) {
     return [...zardal, ...undsenMuruud];
   }, [zadargaa, undsenMuruud, khailt]);
 
+  if (!mur && bulegMur) {
+    return <BulegTsonkh mur={bulegMur} zassan={zassan} onSongo={setDotood} onClose={onClose} />;
+  }
   if (!mur) return null;
 
   const dedGarchig = [mur.ner, mur.dugaar].filter((x, i, a) => x && a.indexOf(x) === i).join(" · ");
@@ -153,7 +164,18 @@ export default function TuukhModal({ mur, turul, idNer = {}, onClose }: Props) {
         >
           {/* Гарчиг */}
           <div className="flex items-center justify-between gap-4 border-b border-[color:var(--ctl-border)] px-6 py-4">
-            <div className="text-[15px] font-semibold text-[color:var(--panel-text)]">
+            <div className="flex items-center gap-2 text-[15px] font-semibold text-[color:var(--panel-text)]">
+              {dotood && (
+                <button
+                  type="button"
+                  onClick={() => setDotood(null)}
+                  aria-label="Буцах"
+                  title="Жагсаалт руу буцах"
+                  className="-ml-2 rounded-lg p-1.5 text-[color:var(--muted-text)] transition-colors hover:bg-[color:var(--surface-hover)] hover:text-[color:var(--panel-text)]"
+                >
+                  <ArrowLeft className="h-4 w-4" />
+                </button>
+              )}
               Дэлгэрэнгүй Мэдээлэл
             </div>
             <button
@@ -294,8 +316,146 @@ export default function TuukhModal({ mur, turul, idNer = {}, onClose }: Props) {
             {mur.shaltgaan && (
               <div>
                 <div className="mb-1.5 text-[13px] text-[color:var(--muted-text)]">
-                  {zassan ? "Тайлбар" : "Устгасан шалтгаан"}
+                  {zassan ? "Зассан шалтгаан" : "Устгасан шалтгаан"}
                 </div>
+                <div className="rounded-xl bg-[color:var(--surface-hover)] px-4 py-3 text-[13px] text-[color:var(--panel-text)] [overflow-wrap:anywhere]">
+                  {mur.shaltgaan}
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div className="flex justify-end border-t border-[color:var(--ctl-border)] px-6 py-3">
+            <button
+              type="button"
+              onClick={onClose}
+              className="btn-minimal inline-flex h-9 items-center !px-5 text-[13px]"
+            >
+              Хаах
+            </button>
+          </div>
+        </div>
+      </div>
+    </ModalPortal>
+  );
+}
+
+/** Нэг үйлдлээр устгагдсан олон бичлэгийн жагсаалт — мөр дээр дарвал дэлгэрэнгүй */
+function BulegTsonkh({
+  mur,
+  zassan,
+  onSongo,
+  onClose,
+}: {
+  mur: AuditMur;
+  zassan: boolean;
+  onSongo: (m: AuditMur) => void;
+  onClose: () => void;
+}) {
+  const gishuud = mur.buleg || [];
+  const niitDun = gishuud.reduce((a, g) => a + (ustgasanDun(g) || 0), 0);
+  const dedGarchig = [mur.ner, mur.dugaar].filter((x, i, a) => x && a.indexOf(x) === i).join(" · ");
+  return (
+    <ModalPortal>
+      <div className="fixed inset-0 z-[9999] flex items-center justify-center px-4 py-6">
+        <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
+        <div
+          className="relative flex max-h-[88vh] w-full max-w-3xl flex-col overflow-hidden rounded-2xl border border-[color:var(--ctl-border)] bg-[color:var(--surface-bg)] shadow-2xl"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="flex items-center justify-between gap-4 border-b border-[color:var(--ctl-border)] px-6 py-4">
+            <div className="text-[15px] font-semibold text-[color:var(--panel-text)]">
+              Дэлгэрэнгүй Мэдээлэл
+            </div>
+            <button
+              type="button"
+              onClick={onClose}
+              aria-label="Хаах"
+              className="-mr-2 rounded-lg p-1.5 text-[color:var(--muted-text)] transition-colors hover:bg-[color:var(--surface-hover)] hover:text-[color:var(--panel-text)]"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+
+          <div className="flex flex-wrap items-start justify-between gap-x-6 gap-y-2 border-b border-[color:var(--ctl-border)] px-6 py-3 text-[13px]">
+            <div className="min-w-0 space-y-1">
+              <div className="flex min-w-0 gap-1.5">
+                <span className="shrink-0 font-semibold text-[color:var(--muted-text)]">Төрөл:</span>
+                <span className="truncate text-[color:var(--panel-text)]">{mur.angilalNer}</span>
+              </div>
+              <div className="flex min-w-0 gap-1.5">
+                <span className="shrink-0 font-semibold text-[color:var(--muted-text)]">Нэр:</span>
+                <span className="truncate text-brand">{dedGarchig || "-"}</span>
+              </div>
+            </div>
+            <div className="space-y-1 sm:text-right">
+              <div className="flex gap-1.5 sm:justify-end">
+                <span className="shrink-0 font-semibold text-[color:var(--muted-text)]">
+                  {zassan ? "Зассан" : "Устгасан"}:
+                </span>
+                <span className="text-[color:var(--panel-text)]">
+                  {mur.ajiltniiNer}
+                  {KHIISEN_TURUL_NER[mur.khiisenTurul]
+                    ? ` (${KHIISEN_TURUL_NER[mur.khiisenTurul]})`
+                    : " (Ажилтан)"}
+                </span>
+              </div>
+              <div className="flex gap-1.5 sm:justify-end">
+                <span className="shrink-0 font-semibold text-[color:var(--muted-text)]">
+                  {zassan ? "Зассан" : "Устгасан"} огноо:
+                </span>
+                <span className="tabular-nums text-[color:var(--panel-text)]">
+                  {ognooKharuulakh(mur.uildelOgnoo, true)}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex-1 space-y-4 overflow-y-auto px-6 py-5 custom-scrollbar">
+            <div className="rounded-xl border border-danger/25 bg-danger/5 px-4 py-3">
+              <div className="text-[14px] font-medium text-[color:var(--panel-text)]">
+                Нэг үйлдлээр {gishuud.length} бичлэг устгасан
+              </div>
+              {niitDun > 0 && (
+                <div className="mt-0.5 text-[13px] text-danger">
+                  Нийт дүн: {niitDun.toLocaleString("en-US")}₮
+                </div>
+              )}
+            </div>
+
+            <div className="overflow-hidden rounded-xl border border-[color:var(--ctl-border)]">
+              <div className="grid grid-cols-[36px_100px_minmax(0,1fr)_110px] gap-3 bg-[color:var(--surface-hover)] px-4 py-2.5 text-[12px] text-[color:var(--muted-text)]">
+                <span>#</span>
+                <span>Анх бүртгэсэн</span>
+                <span>Устгасан бичлэг</span>
+                <span className="text-right">Дүн</span>
+              </div>
+              {gishuud.map((g, i) => {
+                const dun = ustgasanDun(g);
+                return (
+                  <button
+                    type="button"
+                    key={g._id || i}
+                    onClick={() => onSongo(g)}
+                    title="Дэлгэрэнгүй үзэх"
+                    className="grid w-full grid-cols-[36px_100px_minmax(0,1fr)_110px] items-center gap-3 border-t border-[color:var(--ctl-border)] px-4 py-2 text-left text-[13px] transition-colors hover:bg-[color:var(--surface-hover)]"
+                  >
+                    <span className="tabular-nums text-[color:var(--muted-text)]">{i + 1}</span>
+                    <span className="tabular-nums text-[color:var(--panel-text)]">
+                      {ognooKharuulakh(g.bichlegiinOgnoo)}
+                    </span>
+                    <span className="truncate text-[color:var(--panel-text)]">{ustgasanMurTailbar(g)}</span>
+                    <span className="text-right tabular-nums text-[color:var(--panel-text)]">
+                      {dun !== null ? `${dun.toLocaleString("en-US")}₮` : "-"}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+
+            {mur.shaltgaan && (
+              <div>
+                <div className="mb-1.5 text-[13px] text-[color:var(--muted-text)]">Устгасан шалтгаан</div>
                 <div className="rounded-xl bg-[color:var(--surface-hover)] px-4 py-3 text-[13px] text-[color:var(--panel-text)] [overflow-wrap:anywhere]">
                   {mur.shaltgaan}
                 </div>
