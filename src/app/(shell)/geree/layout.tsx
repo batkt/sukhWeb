@@ -6,7 +6,6 @@ import { GereeProvider, useGereeContext } from "./GereeContext";
 import GereeModals from "./GereeModals";
 import GereeHeader from "./GereeHeader";
 import { hasPermission } from "@/lib/permissionUtils";
-import BpayGorimBanner from "@/components/BpayGorimBanner";
 
 function GereeLayoutWrapper({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -151,7 +150,6 @@ function GereeLayoutWrapper({ children }: { children: React.ReactNode }) {
         clientExcelInputRef={state.clientExcelInputRef}
         onClientsExcelFileChange={actions.onClientsExcelFileChange}
       />
-      <BpayGorimBanner />
       {children}
     </div>
   );

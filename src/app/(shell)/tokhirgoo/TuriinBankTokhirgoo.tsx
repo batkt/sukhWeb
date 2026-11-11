@@ -113,10 +113,10 @@ function TuriinBankKart() {
   const asaakhUntraakh = async (utga: boolean) => {
     if (!token) return;
     const batalgaa = utga
-      ? "Төрийн банк (BPay) горимыг асаах уу?\n\n" +
-        "• СӨХ-ийн төлбөрийг зөвхөн BPay нэхэмжилнэ.\n" +
+      ? "Төрийн банк горимыг асаах уу?\n\n" +
+        "• СӨХ-ийн төлбөрийг зөвхөн Төрийн банк нэхэмжилнэ.\n" +
         "• Sukh нэхэмжлэх, QPay, алданги зөвхөн лавлагаа болно.\n" +
-        "• Тоотуудыг BPay-д бүрэн холбосон эсэхээ шалгана уу."
+        "• Тоотуудыг Төрийн банкинд бүрэн холбосон эсэхээ шалгана уу."
       : "Төрийн банк горимыг унтраах уу?";
     if (!window.confirm(batalgaa)) return;
     const umnukh = idevkhtei;
@@ -163,7 +163,7 @@ function TuriinBankKart() {
   };
 
   const khuchneerSync = () => {
-    if (window.confirm("BPay-ээс бүх биллийг албадан синк хийх үү?")) {
+    if (window.confirm("Төрийн банкнаас бүх биллийг албадан синк хийх үү?")) {
       ajilEkhluulekh("/bpay/sync", { albadakh: true });
     }
   };
@@ -176,8 +176,8 @@ function TuriinBankKart() {
       id="nemelt-turiin-bank-box"
       className="stg-card-wide"
       icon={<Landmark />}
-      title="Төрийн банк (BPay)"
-      subtitle="СӨХ-ийн төлбөрийг BPay-ээр дамжуулах нэгдсэн горим."
+      title="Төрийн банк"
+      subtitle="СӨХ-ийн төлбөрийг Төрийн банкаар дамжуулах горим."
       toggle={
         <Switch
           checked={idevkhtei}
@@ -192,7 +192,7 @@ function TuriinBankKart() {
       <SettingsItem
         icon={<Landmark />}
         title="Билл эхлэх огноо"
-        desc="Энэ огнооноос хойших төлбөрийг BPay-ээр тооцно."
+        desc="Энэ огнооноос хойших төлбөрийг Төрийн банкаар тооцно."
       >
         <div className="stg-inline">
           <StandardDatePicker
@@ -209,7 +209,7 @@ function TuriinBankKart() {
       <SettingsItem
         icon={<Search />}
         title="Барилгын хаяг"
-        desc="Барилга тус бүрийг BPay-ийн хаягтай холбох."
+        desc="Барилга тус бүрийг Төрийн банкны хаягтай холбох."
       >
         <div className="flex flex-col gap-2.5">
           {barilguud.map((b) => (
@@ -228,7 +228,7 @@ function TuriinBankKart() {
                   placeholder="Байр хайх..."
                   size="xs"
                   className="w-44"
-                  aria-label={`${b.ner} BPay хаяг хайх`}
+                  aria-label={`${b.ner} хаяг хайх`}
                 />
                 <button type="button" className="stg-btn" onClick={() => bairKhaikh(b.barilgiinId)}>
                   Хайх
@@ -288,7 +288,7 @@ function TuriinBankKart() {
             <span className="stg-chip">Өмнөх: {kholbokhUr.umnukh}</span>
             {kholbokhUr.oldoogui?.length ? (
               <span className="stg-chip" title={kholbokhUr.oldoogui.join(", ")}>
-                BPay-д алга: {kholbokhUr.oldoogui.length}
+                Банкинд алга: {kholbokhUr.oldoogui.length}
               </span>
             ) : null}
             {kholbokhUr.salgasan?.length ? (

@@ -242,7 +242,7 @@ export const ALL_PERMISSIONS: PermissionItem[] = [
       {
         id: "tokhirgoo.turiinBank",
         label: "Төрийн банк",
-        description: "Төрийн банк (BPay) горим, тоот холбох, синк",
+        description: "Төрийн банк горим, тоот холбох, синк",
       },
       {
         id: "tokhirgoo.tuslamj",
