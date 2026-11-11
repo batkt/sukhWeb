@@ -117,6 +117,7 @@ const ModalPortal = ({ children }: { children: React.ReactNode }) => {
 };
 
 import { openSuccessOverlay } from "@/components/ui/SuccessOverlay";
+import { kartiinUnguStyle } from "@/lib/kartiinUngu";
 
 export default function DansniiKhuulga() {
   const searchParams = useSearchParams();
@@ -3875,6 +3876,7 @@ export default function DansniiKhuulga() {
                   }
                 }}
                 title={`${b.ner} — үлдэгдэл ${Math.round(b.uldegdel).toLocaleString("mn-MN")}₮`}
+                style={kartiinUnguStyle(b.ner)}
                 className={`relative group rounded-2xl neu-panel transition-all cursor-pointer ${
                   songogdson ? "ring-2 ring-theme shadow-lg" : "hover:bg-[color:var(--surface-hover)] hover:scale-105"
                 }`}
@@ -3922,6 +3924,7 @@ export default function DansniiKhuulga() {
                   }
                 }}
                 title={stat.title === "Хөнгөлөлт" ? "Сонгосон хугацаанд хөнгөлөлт авсан эзэмшигчдийг харуулна" : undefined}
+                style={kartiinUnguStyle(stat.title)}
                 className={`relative group rounded-2xl neu-panel transition-all cursor-pointer ${
                   isActive
                     ? "ring-2 ring-theme shadow-lg"

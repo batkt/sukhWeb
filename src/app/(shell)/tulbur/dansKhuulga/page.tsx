@@ -56,6 +56,7 @@ type TableItem = {
 type DateRangeValue = [string | null, string | null] | undefined;
 
 import { hasPermission } from "@/lib/permissionUtils";
+import { kartiinUnguStyle } from "@/lib/kartiinUngu";
 
 export default function DansniiKhuulga() {
   const { searchTerm } = useSearch();
@@ -798,6 +799,7 @@ export default function DansniiKhuulga() {
               <div
                 key={idx}
                 onClick={() => { setActiveStatFilter(activeStatFilter === idx ? null : idx); setPage(1); }}
+                style={kartiinUnguStyle(stat.title)}
                 className={`relative group rounded-2xl neu-panel transition-all cursor-pointer select-none ${
                   activeStatFilter === idx
                     ? "ring-2 ring-theme shadow-lg"

@@ -26,6 +26,7 @@ import { useSearch } from "@/context/SearchContext";
 import uilchilgee from "@/lib/uilchilgee";
 import { useSWRConfig } from "swr";
 import ZogsoolAguulakhExcel from "./ZogsoolAguulakhExcel";
+import { kartiinUnguStyle } from "@/lib/kartiinUngu";
 
 interface UnitsSectionProps {
   davkharOptions: string[];
@@ -2044,6 +2045,7 @@ export default function UnitsSection({
                           role="tab"
                           aria-selected={k.active}
                           onClick={k.onClick}
+                          style={kartiinUnguStyle(k.ner)}
                           className={`relative rounded-2xl neu-panel text-left transition-all select-none cursor-pointer ${
                             k.active ? "ring-2 ring-theme shadow-lg" : "hover:bg-[color:var(--surface-hover)]"
                           }`}

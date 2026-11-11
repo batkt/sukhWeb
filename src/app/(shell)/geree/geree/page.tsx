@@ -51,7 +51,7 @@ export default function GereeGereePage() {
     key: "all" | "active" | "cancelled" | "khariltsagch" | "orshinSuugch";
     ner: string;
     too: number;
-    // Картын өнгө (RGB) — тоо, hover, сонгогдсон хүрээнд хэрэглэнэ.
+    // Картын өнгө (RGB) — hover болон сонгогдсон хүрээнд хэрэглэнэ (тоо хар).
     // Оршин суугч / харилцагч нь хүснэгтийн нэрийн өнгөтэй ижил.
     ungu: string;
     // Дахин дарахад анхдагч «Идэвхтэй» рүү буцна.
@@ -107,19 +107,11 @@ export default function GereeGereePage() {
                 state.setStatusFilter(k.togglekh && songogdson ? "active" : k.key);
                 state.setCurrentPage?.(1);
               }}
-              className={`stat-card-unguttei relative rounded-2xl neu-panel text-left transition-all select-none cursor-pointer ${
-                songogdson ? "ring-2 shadow-lg" : ""
-              }`}
-              data-songogdson={songogdson ? "true" : undefined}
-              style={
-                {
-                  "--kart-ungu": k.ungu,
-                  "--tw-ring-color": `rgb(${k.ungu})`,
-                } as React.CSSProperties
-              }
+              className="relative neu-panel text-left transition-all select-none cursor-pointer"
+              style={{ "--kart-ungu": k.ungu } as React.CSSProperties}
             >
               <div className="stat-card">
-                <div className="stat-card-value" style={{ color: `rgb(${k.ungu})` }}>
+                <div className="stat-card-value">
                   {k.too.toLocaleString("mn-MN")}</div>
                 <div className="stat-card-title">{k.ner} гэрээ</div>
               </div>

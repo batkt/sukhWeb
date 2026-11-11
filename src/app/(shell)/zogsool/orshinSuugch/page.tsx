@@ -44,6 +44,7 @@ import TusgaiZagvar from "../../../../../components/selectZagvar/tusgaiZagvar";
 import { useTourSteps } from "@/lib/useTourSteps";
 import { useRegisterTourSteps } from "@/context/TourContext";
 import ModalPortal from "../../../../../components/shell/ModalPortal";
+import { kartiinUnguStyle } from "@/lib/kartiinUngu";
 
 const RealTimeClock = () => {
   const [time, setTime] = useState(moment());
@@ -439,6 +440,7 @@ export default function OrshinSuugch() {
                 key={stat.value}
                 type="button"
                 aria-pressed={isActive}
+                style={kartiinUnguStyle(stat.label)}
                 onClick={() => {
                   setTurulFilter(stat.value);
                   setPage(1);
