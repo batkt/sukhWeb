@@ -70,6 +70,11 @@ export type ShaltgaanAsuultOpts = {
   confirmLabel?: string;
   /** Улаан (устгах) товч эсэх. Анхдагч: true */
   danger?: boolean;
+  /**
+   * Баталсан шалтгааныг дараагийн хүсэлтүүдэд хэр удаан хавсаргах (мс).
+   * Анхдагч 20 сек. Тохиргооны сонголт бүрд дахин асуухын тулд богино.
+   */
+  turKhugatsaaMs?: number;
 };
 
 type Sonsogch = (opts: ShaltgaanAsuultOpts, khariu: (utga: string | null) => void) => void;
@@ -88,7 +93,7 @@ export function shaltgaanAsuuya(opts: ShaltgaanAsuultOpts = {}): Promise<string 
   return new Promise((resolve) => {
     const duusgaya = (utga: string | null) => {
       if (utga && shaltgaanZuvEsekh(utga)) {
-        shaltgaanTaviya(utga);
+        shaltgaanTaviya(utga, opts.turKhugatsaaMs);
         resolve(utga.trim());
       } else {
         resolve(null);
@@ -105,4 +110,98 @@ export function shaltgaanAsuuya(opts: ShaltgaanAsuultOpts = {}): Promise<string 
     }
     resolve(null);
   });
+}
+
+/* ── Аль хүсэлтэд шалтгаан шаардах вэ ───────────────────────────────────
+ * sukhBackv2 `middleware/shaltgaan.js`-ийн дүрэмтэй ИЖИЛ байх ёстой.
+ * Вэб хүсэлт илгээхээс ӨМНӨ асуудаг тул сервер 400 буцаахыг хүлээхгүй;
+ * ялгаа гарвал сервер 400 буцааж, uilchilgee дахин асуугаад илгээнэ.
+ */
+const KHAMAARAKHGUI: { method?: string; zam: RegExp }[] = [
+  { zam: /^\/medegdel\/[^/]+\/kharsanEsekh\/?$/ },
+  { method: "put", zam: /^\/medegdel\/[^/]+\/?$/ },
+  { zam: /^\/(zogsoolUilchluulegch|uilchluulegch|kassCameraKhaalt)(\/|$)/ },
+  { zam: /^\/wallet(\/|$)/ },
+  { zam: /^\/(session|nevtreltiinTuukh|backTuukh)(\/|$)/ },
+  { zam: /^\/audit(\/|$)/ },
+];
+
+const POST_ZAMUUD: RegExp[] = [
+  /^\/(geree|khariltsagch)\/[^/]+\/adminUstgakh\/?$/,
+  /^\/deleteInvoice\/?$/,
+  /^\/nekhemjlekhiinTuukh\/deleteZardal\/?$/,
+  /^\/(khariltsagch|orshinSuugch)\/remove-toot\/?$/,
+  /^\/zogsoolUstgay\/?$/,
+  /^\/ashiglaltiinZardalUstgaya\/?$/,
+  /^\/gerBuliinGishuun(Ustgakh|Zasakh)\/?$/,
+  /^\/mashiniiDugaarZasakh\/?$/,
+  /^\/davkharBarimtZasakh\/?$/,
+  /^\/ebarimtButsaaya\/?$/,
+  /^\/easyRegister\/user\/(delete|hardDelete)\/?$/,
+  /^\/baiguullaga\/[^/]+\/?$/,
+  /^\/bpay\/medeelel\/?$/,
+  /^\/gereeTsutslakh\/?$/,
+  /^\/gereeNemeltTootKhasya\/?$/,
+  /^\/zogsoolAguulakhTuluv\/?$/,
+  /^\/guilgeeSalgaya\/?$/,
+  /^\/khungulultZasvarlaya\/?$/,
+  /^\/zardalTseverlekhiya\/?$/,
+  /^\/orshinSuugch\/massUpdateKwt\/?$/,
+];
+
+/** axios-ийн url-ыг «/zam» хэлбэрт оруулна (baseURL, query, /api/ хасна) */
+function zamAvya(url: string, baseURL?: string): string {
+  let z = url || "";
+  if (baseURL && z.startsWith(baseURL)) z = z.slice(baseURL.length);
+  try {
+    if (/^https?:\/\//.test(z)) z = new URL(z).pathname;
+  } catch {
+    /* хэвээр */
+  }
+  z = z.split("?")[0].split("#")[0];
+  if (!z.startsWith("/")) z = `/${z}`;
+  return z.replace(/^\/api(?=\/)/, "");
+}
+
+export function shaltgaanShaardakhEsekh(
+  method: string | undefined,
+  url: string,
+  baseURL?: string,
+  data?: unknown,
+): boolean {
+  const m = (method || "get").toLowerCase();
+  const zam = zamAvya(url, baseURL);
+  if (m === "delete" || m === "put" || m === "patch") {
+    return !KHAMAARAKHGUI.some((d) => (!d.method || d.method === m) && d.zam.test(zam));
+  }
+  if (m === "post") {
+    // Админ устгалын «зөвхөн тоолох» шалгалт (zovkhonShalgakh) нь өөрчлөлт хийхгүй
+    if (/\/adminUstgakh\/?$/.test(zam) && (data as { zovkhonShalgakh?: boolean } | null)?.zovkhonShalgakh === true) {
+      return false;
+    }
+    return POST_ZAMUUD.some((r) => r.test(zam));
+  }
+  return false;
+}
+
+/** Зэрэг ирсэн хэд хэдэн хүсэлтэд нэг л цонх гаргана */
+let khuleegdejBuiAsuult: Promise<string | null> | null = null;
+
+/** Тохиргооны сонголт бүрд дахин асуухын тулд богино хугацаа */
+const NEG_UILDLIIN_MS = 3000;
+
+export function khuseltiinShaltgaanAsuuya(): Promise<string | null> {
+  if (!khuleegdejBuiAsuult) {
+    khuleegdejBuiAsuult = shaltgaanAsuuya({
+      title: "Шалтгаан бичнэ үү",
+      message:
+        "Энэ өөрчлөлт «Зассан / Устгасан түүх»-д таны нэр, шалтгаантай хамт бүртгэгдэнэ.",
+      confirmLabel: "Хадгалах",
+      danger: false,
+      turKhugatsaaMs: NEG_UILDLIIN_MS,
+    }).finally(() => {
+      khuleegdejBuiAsuult = null;
+    });
+  }
+  return khuleegdejBuiAsuult;
 }

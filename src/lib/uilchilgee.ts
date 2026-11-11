@@ -6,7 +6,9 @@ import { destroyCookie } from "nookies";
 import {
   SHALTGAAN_KOD,
   SHALTGAAN_TOLGOI,
+  khuseltiinShaltgaanAsuuya,
   shaltgaanAsuuya,
+  shaltgaanShaardakhEsekh,
   shaltgaanTolgoi,
   turShaltgaan,
 } from "./shaltgaan";
@@ -335,21 +337,37 @@ const uilchilgee = (token?: string): AxiosInstance => {
   });
 
   // Устгах/засах баталгаажуулалтад бичсэн шалтгааныг өөрчлөх хүсэлтэд
-  // хавсаргана (lib/shaltgaan.ts).
-  instance.interceptors.request.use((config: InternalAxiosRequestConfig) => {
-    try {
-      const method = config.method?.toLowerCase();
-      if (method && method !== "get" && method !== "head" && method !== "options") {
-        const headers = config.headers as any;
-        const baigaa = headers?.get ? headers.get(SHALTGAAN_TOLGOI) : headers?.[SHALTGAAN_TOLGOI];
-        const shaltgaan = turShaltgaan();
-        if (!baigaa && shaltgaan) {
-          const t = shaltgaanTolgoi(shaltgaan);
-          if (headers?.set) headers.set(SHALTGAAN_TOLGOI, t[SHALTGAAN_TOLGOI]);
-          else config.headers = { ...(headers || {}), ...t } as any;
-        }
-      }
-    } catch { }
+  // хавсаргана (lib/shaltgaan.ts). Шалтгаангүй бөгөөд шалтгаан шаардах
+  // хүсэлт (тохиргооны сонголт, засвар, устгал) бол ИЛГЭЭХЭЭС ӨМНӨ асууна.
+  instance.interceptors.request.use(async (config: InternalAxiosRequestConfig) => {
+    const method = config.method?.toLowerCase();
+    if (!method || method === "get" || method === "head" || method === "options") return config;
+    const headers = config.headers as any;
+    const tolgoiTaviya = (utga: string) => {
+      const t = shaltgaanTolgoi(utga);
+      if (headers?.set) headers.set(SHALTGAAN_TOLGOI, t[SHALTGAAN_TOLGOI]);
+      else config.headers = { ...(headers || {}), ...t } as any;
+    };
+    const baigaa = headers?.get ? headers.get(SHALTGAAN_TOLGOI) : headers?.[SHALTGAAN_TOLGOI];
+    if (baigaa) return config;
+    const tur = turShaltgaan();
+    if (tur) {
+      tolgoiTaviya(tur);
+      return config;
+    }
+    // Зөвхөн нэвтэрсэн ажилтны хүсэлт (нийтийн QR төлбөрийн хуудас г.м. биш)
+    const nevtersen = !!(headers?.get ? headers.get("Authorization") : headers?.Authorization);
+    if (!nevtersen || !shaltgaanShaardakhEsekh(method, config.url || "", config.baseURL, config.data)) return config;
+    const shaltgaan = await khuseltiinShaltgaanAsuuya();
+    if (!shaltgaan) {
+      const zurvas = "Шалтгаан бичээгүй тул өөрчлөлт хадгалагдсангүй.";
+      const aldaa: any = new Error(zurvas);
+      aldaa.config = config;
+      aldaa.shaltgaanTsutsalsan = true;
+      aldaa.response = { status: 400, data: { kod: SHALTGAAN_KOD, aldaa: zurvas, message: zurvas } };
+      throw aldaa;
+    }
+    tolgoiTaviya(shaltgaan);
     return config;
   });
 
@@ -367,7 +385,8 @@ const uilchilgee = (token?: string): AxiosInstance => {
         error?.response?.status === 400 &&
         error?.response?.data?.kod === SHALTGAAN_KOD &&
         config &&
-        !config._shaltgaanDakhin
+        !config._shaltgaanDakhin &&
+        !error?.shaltgaanTsutsalsan
       ) {
         const shaltgaan = await shaltgaanAsuuya({
           title: "Шалтгаан бичнэ үү",
