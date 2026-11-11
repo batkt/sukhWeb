@@ -287,6 +287,77 @@ export default function OrshinSuugch() {
     setShowDeleteModal(true);
   };
 
+  // Хүснэгтийн «Машин бүртгэх» нүднээс шууд хадгалах — «Засах» цонхны
+  // хадгалалттай ижил `/zochinHadgalya` хүсэлт. `mashinMedeelel._id`-г
+  // илгээхгүй: backend эзний «БҮРТГЭЛГҮЙ» бичлэгийг олж дугаарыг нь шинэчилнэ.
+  const handleMashinBurtgekh = React.useCallback(
+    async (r: any, dugaar: string): Promise<boolean> => {
+      const baiguullagiinId = ajiltan?.baiguullagiinId;
+      if (!token || !baiguullagiinId) {
+        toast.error("Нэвтэрсэн эсэхээ шалгана уу");
+        return false;
+      }
+      const ezemshigchiinId = r.ezemshigchiinId || r.orshinSuugchiinId || r._id;
+      const turul = r.orshinSuugchTurul || r.zochinTurul || r.turul || "Оршин суугч";
+      const barId = r.barilgiinId || effectiveBarilgiinId;
+      const ezenToot = r.ezenToot || r.toot || r.burtgeliinDugaar || "";
+      try {
+        const resp = await uilchilgee(token).post("/zochinHadgalya", {
+          baiguullagiinId,
+          barilgiinId: barId,
+          mashiniiDugaar: dugaar,
+          ezemshigchiinUtas: r.utas,
+          turul,
+          khariltsagchMedeelel: {
+            _id: ezemshigchiinId,
+            ner: r.ner || r.orshinSuugchNer,
+            ovog: r.ovog || r.ner,
+            register: r.register || "00000000",
+            utas: r.utas,
+            turul: "Иргэн",
+            baiguullagiinId,
+            barilgiinId: barId,
+            davtamjiinTurul: r.davtamjiinTurul || "saraar",
+            ezenToot,
+            idevkhiteiEsekh: true,
+            mashiniiDugaar: dugaar,
+            zochinErkhiinToo: r.zochinErkhiinToo ?? 1,
+            zochinTailbar: r.zochinTailbar || "",
+            zochinTurul: turul,
+            zochinTusBurUneguiMinut: r.zochinTusBurUneguiMinut ?? 8,
+            zochinUrikhEsekh: true,
+          },
+          mashinMedeelel: {
+            dugaar,
+            ezemshigchiinNer: r.ner || r.orshinSuugchNer,
+            ezemshigchiinRegister: r.register || "00000000",
+            ezemshigchiinUtas: r.utas,
+            turul,
+            ezemshigchiinTalbainDugaar: ezenToot,
+            baiguullagiinId,
+            barilgiinId: barId,
+            orshinSuugchTurul: r.orshinSuugchTurul || undefined,
+          },
+          ezemshigchiinId,
+          tukhainBaaziinKholbolt: null,
+        });
+        if (resp.status === 200 || resp.status === 201 || resp.data?.success) {
+          toast.success(`${dugaar} бүртгэгдлээ`);
+          mutate();
+          return true;
+        }
+        toast.error("Амжилтгүй боллоо");
+        return false;
+      } catch (err: any) {
+        toast.error(
+          err?.response?.data?.aldaa || err?.response?.data?.message || "Алдаа гарлаа",
+        );
+        return false;
+      }
+    },
+    [token, ajiltan?.baiguullagiinId, effectiveBarilgiinId, mutate],
+  );
+
   const confirmDelete = async () => {
     if (!itemToDelete || !token) return;
     const id = itemToDelete._id;
@@ -477,6 +548,7 @@ export default function OrshinSuugch() {
             onDelete={(resident) => handleDelete(resident)}
             onFilterChange={handleFilterChange}
             ortsOptions={ortsOptions}
+            onMashinBurtgekh={handleMashinBurtgekh}
           />
         </div>
 

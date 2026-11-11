@@ -26,7 +26,7 @@ import useModalHotkeys from "@/lib/useModalHotkeys";
 import { useAuth } from "@/lib/useAuth";
 import ModalPortal from "../../../../../components/shell/ModalPortal";
 
-const LATIN_TO_CYRILLIC: Record<string, string> = {
+export const LATIN_TO_CYRILLIC: Record<string, string> = {
   A: "А",
   B: "В",
   C: "С",
