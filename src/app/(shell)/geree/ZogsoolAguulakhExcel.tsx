@@ -10,7 +10,7 @@
  * Одоо байгаа дугаарыг хэзээ ч хасахгүй — зөвхөн нэмнэ.
  */
 import React from "react";
-import { ChevronDown, Download, FileUp, X } from "lucide-react";
+import { ChevronDown, Download, FileSpreadsheet, FileUp, X } from "lucide-react";
 import { useSWRConfig } from "swr";
 import { useAuth } from "@/lib/useAuth";
 import { useBuilding } from "@/context/BuildingContext";
@@ -26,6 +26,8 @@ import {
   ParsedUnit,
   PersonGroup,
   RowIssue,
+  JagsaaltMur,
+  buildJagsaalt,
   buildOwnerMap,
   buildTemplate,
   floorsFor,
@@ -69,9 +71,12 @@ const unitLabel = (u: { turul: string; davkhar: string; toot: string }) =>
 export default function ZogsoolAguulakhExcel({
   turul,
   idPrefix = "",
+  jagsaalt,
 }: {
   turul: EzemshikhTurul;
   idPrefix?: string;
+  /** Хүснэгтэд харагдаж буй мөрүүд — «Жагсаалт татах»-д ашиглана. */
+  jagsaalt?: { davkhar?: string | null; rows: JagsaaltMur[] };
 }) {
   const { token, baiguullaga, barilgiinId, ajiltan } = useAuth();
   const { selectedBuildingId } = useBuilding();
@@ -160,6 +165,31 @@ export default function ZogsoolAguulakhExcel({
       } else {
         openSuccessOverlay("Загвар татагдлаа");
       }
+    } catch (err) {
+      openErrorOverlay(getErrorMessage(err));
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  // ── Жагсаалт татах ─────────────────────────────────────────────────
+  const handleJagsaaltTatakh = async () => {
+    if (!jagsaalt || jagsaalt.rows.length === 0) {
+      openErrorOverlay("Татах мөр алга байна.");
+      return;
+    }
+    setBusy("list");
+    try {
+      const blob = await buildJagsaalt({ turul, davkhar: jagsaalt.davkhar, rows: jagsaalt.rows });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${turulNer(turul)} жагсаалт${jagsaalt.davkhar ? ` ${jagsaalt.davkhar} давхар` : ""}.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+      openSuccessOverlay("Excel файл татагдлаа");
     } catch (err) {
       openErrorOverlay(getErrorMessage(err));
     } finally {
@@ -474,6 +504,19 @@ export default function ZogsoolAguulakhExcel({
               <FileUp className="h-4 w-4 shrink-0 text-success" />
               Загвар оруулах
             </button>
+            {jagsaalt && (
+              <button
+                type="button"
+                onClick={() => {
+                  setIsMenuOpen(false);
+                  void handleJagsaaltTatakh();
+                }}
+                className="flex h-10 w-full items-center gap-2.5 rounded-lg px-3 text-left text-sm text-[color:var(--panel-text)] transition-colors hover:bg-[color:var(--surface-hover)]"
+              >
+                <FileSpreadsheet className="h-4 w-4 shrink-0 text-brand" />
+                Жагсаалт татах
+              </button>
+            )}
           </div>
         )}
       </div>

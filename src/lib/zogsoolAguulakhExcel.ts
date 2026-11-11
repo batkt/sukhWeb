@@ -278,6 +278,84 @@ export async function buildTemplate(opts: {
   });
 }
 
+// ── Жагсаалт татах (хүснэгтэд харагдаж буй мөрүүд) ───────────────────
+
+export type JagsaaltMur = {
+  zogsoolDugaar?: string;
+  ner?: string;
+  orts?: string;
+  toot?: string;
+  dugaar?: string;
+  nekhemjilsenDun?: number;
+  tulbur?: number;
+  isOccupied?: boolean;
+  isInvoiceSent?: boolean;
+  tuluvText?: string;
+  ognoo?: string;
+};
+
+/** Гараж/Агуулахын хүснэгтийг дэлгэц дээрх дараалал, шүүлтүүрээр нь Excel болгоно. */
+export async function buildJagsaalt(opts: {
+  turul: EzemshikhTurul;
+  davkhar?: string | null;
+  rows: JagsaaltMur[];
+}): Promise<Blob> {
+  const { turul, davkhar, rows } = opts;
+  const ExcelJSMod: any = await import("exceljs");
+  const ExcelJS = ExcelJSMod.default || ExcelJSMod;
+  const wb = new ExcelJS.Workbook();
+  const ws = wb.addWorksheet(turulNer(turul), { views: [{ state: "frozen", ySplit: 1 }] });
+
+  const busad = (v: any) => (v && v !== "-" ? String(v) : "");
+  ws.columns = [
+    { header: "№", key: "no", width: 6 },
+    { header: turulNer(turul), key: "dugaar", width: 12, style: { numFmt: "@" } },
+    { header: "Давхар", key: "davkhar", width: 10 },
+    { header: "Эзэмшигч", key: "ner", width: 26 },
+    { header: "Орц", key: "orts", width: 8 },
+    { header: "Тоот", key: "toot", width: 10, style: { numFmt: "@" } },
+    { header: "Утас", key: "utas", width: 14, style: { numFmt: "@" } },
+    { header: "Нэхэмжилсэн", key: "nekhemjilsen", width: 15, style: { numFmt: "#,##0.00" } },
+    { header: "Үлдэгдэл", key: "uldegdel", width: 15, style: { numFmt: "#,##0.00" } },
+    { header: "Нэхэмжлэх", key: "nekhemjlekh", width: 14 },
+    { header: "Төлөв", key: "tuluv", width: 18 },
+    { header: "Огноо", key: "ognoo", width: 12 },
+  ];
+
+  rows.forEach((r, i) => {
+    ws.addRow({
+      no: i + 1,
+      dugaar: busad(r.zogsoolDugaar),
+      davkhar: busad(davkhar),
+      ner: r.isOccupied ? busad(r.ner) : "",
+      orts: r.isOccupied ? busad(r.orts) : "",
+      toot: r.isOccupied ? busad(r.toot) : "",
+      utas: r.isOccupied ? busad(r.dugaar) : "",
+      nekhemjilsen: r.isOccupied && r.isInvoiceSent ? Number(r.nekhemjilsenDun) || 0 : null,
+      uldegdel: Number(r.tulbur) || 0,
+      nekhemjlekh: !r.isOccupied ? "" : r.isInvoiceSent ? "Илгээсэн" : "Илгээгээгүй",
+      tuluv: !r.isOccupied ? "Чөлөөтэй" : String(r.tuluvText || "Төлөөгүй"),
+      ognoo: busad(r.ognoo),
+    });
+  });
+
+  const COLS = ws.columns.length;
+  const header = ws.getRow(1);
+  header.height = 26;
+  for (let c = 1; c <= COLS; c++) {
+    const cell = header.getCell(c);
+    cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF059669" } };
+    cell.font = { bold: true, color: { argb: "FFFFFFFF" }, size: 11 };
+    cell.alignment = { vertical: "middle", horizontal: "center" };
+  }
+  ws.autoFilter = { from: { row: 1, column: 1 }, to: { row: 1, column: COLS } };
+
+  const buf = await wb.xlsx.writeBuffer();
+  return new Blob([buf], {
+    type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  });
+}
+
 // ── Импорт: задлах, шалгах ────────────────────────────────────────────
 
 export type RowIssue = { row: number; message: string };

@@ -2109,7 +2109,10 @@ export default function UnitsSection({
                           Устгах ({checkedUnits.length})
                         </Button>
                       )}
-                      <ZogsoolAguulakhExcel turul={propertyTab} />
+                      <ZogsoolAguulakhExcel
+                        turul={propertyTab}
+                        jagsaalt={{ davkhar: selectedFloor, rows: zogsoolTableRows }}
+                      />
                       <Button
                         onClick={handleSendCheckedInvoices}
                         variant="secondary"
