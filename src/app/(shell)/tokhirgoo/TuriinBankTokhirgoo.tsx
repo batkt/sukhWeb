@@ -472,6 +472,11 @@ function KholbogdooguiTootuud({ token, idevkhtei }: { token?: string | null; ide
               ))}
             </div>
           ) : null}
+          {kharuulakh.length === 0 ? (
+            <p className="text-xs mb-2 text-emerald-700">
+              {tuluvShuult === "kholbogdoogui" ? "Бүх тоот холбогдсон." : "Тоот алга."}
+            </p>
+          ) : null}
           <div className="max-h-[360px] overflow-auto rounded-lg border border-[color:var(--surface-border)]">
             <table className="w-full text-[12px] border-collapse">
               <thead className="sticky top-0 bg-[color:var(--surface-bg)]">
@@ -532,9 +537,9 @@ function KholbogdooguiTootuud({ token, idevkhtei }: { token?: string | null; ide
           token={token}
           mur={songogdson}
           onClose={() => setSongogdson(null)}
-          onKholbogdson={(gereeniiId) => {
-            setMuruud((prev) => (prev ? prev.filter((x) => x.gereeniiId !== gereeniiId) : prev));
+          onKholbogdson={() => {
             setSongogdson(null);
+            void achaalakh(); // төлөв, хэрэглэгчийг шинэчилнэ
           }}
         />
       )}
@@ -559,7 +564,8 @@ function GaraarKholbokhTsonkh({
   onClose: () => void;
   onKholbogdson: (gereeniiId: string) => void;
 }) {
-  const [utas, setUtas] = useState(mur.utas.split(",")[0]?.trim() || "");
+  const [utas, setUtas] = useState(mur.syncUtas || mur.utas.split(",")[0]?.trim() || "");
+  const [odoogiin, setOdoogiin] = useState<{ customerId: string; customerCode: string; customerName: string } | null>(null);
   const [doorNo, setDoorNo] = useState(mur.toot);
   const [bairId, setBairId] = useState("");
   const [barilguud, setBarilguud] = useState<{ ner: string; bpayBairId: string }[]>([]);
@@ -580,14 +586,20 @@ function GaraarKholbokhTsonkh({
           params: anhnii ? { gereeniiId: mur.gereeniiId } : { gereeniiId: mur.gereeniiId, utas, doorNo, bairId },
         });
         if (anhnii) {
-          if (data.utas) setUtas(data.utas);
+          // Холбогдсон тоот бол синкийн утсыг, эс бөгөөс оршин суугчийнхыг
+          if (data.odoogiin?.syncUtas) setUtas(data.odoogiin.syncUtas);
+          else if (data.utas) setUtas(data.utas);
           if (data.doorNo) setDoorNo(data.doorNo);
           if (data.bairId) setBairId(data.bairId);
         }
+        if (data.odoogiin !== undefined) setOdoogiin(data.odoogiin || null);
         setBarilguud(Array.isArray(data.barilguud) ? data.barilguud : []);
         const list: Songolt[] = Array.isArray(data.songoltuud) ? data.songoltuud : [];
         setSongoltuud(list);
-        if (list.length === 1) setSongoson(list[0].customerId);
+        // Одоогийн холболтыг урьдчилан сонгоно, эс бөгөөс ганц сонголт байвал түүнийг
+        const odoo = data.odoogiin?.customerId && list.find((s) => s.customerId === data.odoogiin.customerId);
+        if (odoo) setSongoson(odoo.customerId);
+        else if (list.length === 1) setSongoson(list[0].customerId);
         if (data.aldaa) setZurvas(data.aldaa);
         else if (!list.length) setZurvas("Энэ хаягаар Төрийн банкинд хэрэглэгч олдсонгүй. Байр, тоотоо шалгана уу.");
       } catch (e) {
@@ -620,10 +632,11 @@ function GaraarKholbokhTsonkh({
         bairId,
       });
       const shineBill = data?.sync?.shineBill;
+      const salgasan = Number(data?.salgasanBill || 0);
       openSuccessOverlay(
-        `${mur.barilga ? mur.barilga + " · " : ""}${mur.toot} тоот холбогдлоо${
+        `${mur.barilga ? mur.barilga + " · " : ""}${mur.toot} тоот ${mur.kholbogdson ? "шинэчлэгдлээ" : "холбогдлоо"}${
           typeof shineBill === "number" ? ` (${shineBill} билл татлаа)` : ""
-        }`,
+        }${salgasan ? `. Хуучин хэрэглэгчийн ${salgasan} төлөгдөөгүй биллийг гэрээнээс салгав.` : ""}`,
       );
       onKholbogdson(mur.gereeniiId);
     } catch (e) {
@@ -646,7 +659,13 @@ function GaraarKholbokhTsonkh({
         </h3>
         <p className="mt-1 text-xs text-[color:var(--muted-text)]">
           {mur.ner || "Оршин суугч"} — апп-аас «хаяг нэмэх»-тэй ижил: хаягаар хайж, хэрэглэгчээ сонгоод холбоно.
+          Зөвхөн энэ тоотод нөлөөлнө.
         </p>
+        {odoogiin ? (
+          <p className="mt-2 rounded-lg bg-emerald-50/60 px-3 py-1.5 text-xs text-emerald-800">
+            Одоо холбогдсон: {odoogiin.customerName || "—"} · {odoogiin.customerCode}
+          </p>
+        ) : null}
 
         <div className="mt-3 grid grid-cols-3 gap-2">
           <label className="col-span-3 text-[11px] text-[color:var(--muted-text)]">
@@ -709,7 +728,7 @@ function GaraarKholbokhTsonkh({
             disabled={!songoson || kholboj || khaij}
             onClick={() => void kholbokh()}
           >
-            <Link2 className="h-3.5 w-3.5" /> {kholboj ? "Холбож байна…" : "Холбох"}
+            <Link2 className="h-3.5 w-3.5" /> {kholboj ? "Холбож байна…" : odoogiin ? "Хадгалах" : "Холбох"}
           </button>
         </div>
       </div>
