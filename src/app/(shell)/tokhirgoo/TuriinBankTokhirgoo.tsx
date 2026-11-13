@@ -380,6 +380,7 @@ function KholbogdooguiTootuud({ token, idevkhtei }: { token?: string | null; ide
   const [muruud, setMuruud] = useState<KholbogdooguiMur[] | null>(null);
   const [achaalj, setAchaalj] = useState(false);
   const [barilga, setBarilga] = useState("");
+  const [songogdson, setSongogdson] = useState<KholbogdooguiMur | null>(null);
 
   const achaalakh = async () => {
     if (!token) return;
@@ -443,6 +444,7 @@ function KholbogdooguiTootuud({ token, idevkhtei }: { token?: string | null; ide
                   <th className="py-1 px-2 font-medium">Нэр</th>
                   <th className="py-1 px-2 font-medium">Утас</th>
                   <th className="py-1 px-2 font-medium">Шалтгаан</th>
+                  <th className="py-1 px-2 font-medium" />
                 </tr>
               </thead>
               <tbody>
@@ -453,6 +455,16 @@ function KholbogdooguiTootuud({ token, idevkhtei }: { token?: string | null; ide
                     <td className="py-1 px-2">{m.ner || "—"}</td>
                     <td className="py-1 px-2 whitespace-nowrap">{m.utas || "—"}</td>
                     <td className="py-1 px-2">{m.shaltgaan}</td>
+                    <td className="py-1 px-2 text-right">
+                      <button
+                        type="button"
+                        className="stg-btn !py-0.5 !px-2 !text-[11px]"
+                        onClick={() => setSongogdson(m)}
+                        title="Оршин суугчийн нэрийн өмнөөс Төрийн банкинд холбох"
+                      >
+                        <Link2 className="h-3.5 w-3.5" /> Холбох
+                      </button>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -462,6 +474,192 @@ function KholbogdooguiTootuud({ token, idevkhtei }: { token?: string | null; ide
       ) : muruud ? (
         <p className="text-xs mt-1 text-emerald-700">Бүх тоот холбогдсон.</p>
       ) : null}
+      {songogdson && (
+        <GaraarKholbokhTsonkh
+          token={token}
+          mur={songogdson}
+          onClose={() => setSongogdson(null)}
+          onKholbogdson={(gereeniiId) => {
+            setMuruud((prev) => (prev ? prev.filter((x) => x.gereeniiId !== gereeniiId) : prev));
+            setSongogdson(null);
+          }}
+        />
+      )}
     </SettingsItem>
+  );
+}
+
+type Songolt = { customerId: string; customerCode: string; customerName: string; customerAddress: string };
+
+/**
+ * Нэг тоотыг гараар холбох — оршин суугч апп-аас «хаяг нэмэх»-тэй ижил:
+ * Төрийн банкнаас хаягаар хайж → хэрэглэгчээ сонгож → холбоно (шууд синк).
+ */
+function GaraarKholbokhTsonkh({
+  token,
+  mur,
+  onClose,
+  onKholbogdson,
+}: {
+  token?: string | null;
+  mur: KholbogdooguiMur;
+  onClose: () => void;
+  onKholbogdson: (gereeniiId: string) => void;
+}) {
+  const [utas, setUtas] = useState(mur.utas.split(",")[0]?.trim() || "");
+  const [doorNo, setDoorNo] = useState(mur.toot);
+  const [bairId, setBairId] = useState("");
+  const [barilguud, setBarilguud] = useState<{ ner: string; bpayBairId: string }[]>([]);
+  const [songoltuud, setSongoltuud] = useState<Songolt[] | null>(null);
+  const [songoson, setSongoson] = useState("");
+  const [khaij, setKhaij] = useState(false);
+  const [kholboj, setKholboj] = useState(false);
+  const [zurvas, setZurvas] = useState("");
+
+  const khaikh = useCallback(
+    async (anhnii = false) => {
+      if (!token) return;
+      setKhaij(true);
+      setZurvas("");
+      setSongoson("");
+      try {
+        const { data } = await uilchilgee(token).get("/bpay/garaarKhaikh", {
+          params: anhnii ? { gereeniiId: mur.gereeniiId } : { gereeniiId: mur.gereeniiId, utas, doorNo, bairId },
+        });
+        if (anhnii) {
+          if (data.utas) setUtas(data.utas);
+          if (data.doorNo) setDoorNo(data.doorNo);
+          if (data.bairId) setBairId(data.bairId);
+        }
+        setBarilguud(Array.isArray(data.barilguud) ? data.barilguud : []);
+        const list: Songolt[] = Array.isArray(data.songoltuud) ? data.songoltuud : [];
+        setSongoltuud(list);
+        if (list.length === 1) setSongoson(list[0].customerId);
+        if (data.aldaa) setZurvas(data.aldaa);
+        else if (!list.length) setZurvas("Энэ хаягаар Төрийн банкинд хэрэглэгч олдсонгүй. Байр, тоотоо шалгана уу.");
+      } catch (e) {
+        setSongoltuud([]);
+        setZurvas(aldaaZurvas(e));
+      } finally {
+        setKhaij(false);
+      }
+    },
+    [token, mur.gereeniiId, utas, doorNo, bairId],
+  );
+
+  // Нээгдэхэд гэрээний анхдагч утгуудаар шууд хайна
+  const ekhelsen = useRef(false);
+  useEffect(() => {
+    if (ekhelsen.current) return;
+    ekhelsen.current = true;
+    void khaikh(true);
+  }, [khaikh]);
+
+  const kholbokh = async () => {
+    if (!token || !songoson) return;
+    setKholboj(true);
+    try {
+      const { data } = await uilchilgee(token).post("/bpay/garaarKholbokh", {
+        gereeniiId: mur.gereeniiId,
+        customerId: songoson,
+        utas,
+        doorNo,
+        bairId,
+      });
+      const shineBill = data?.sync?.shineBill;
+      openSuccessOverlay(
+        `${mur.barilga ? mur.barilga + " · " : ""}${mur.toot} тоот холбогдлоо${
+          typeof shineBill === "number" ? ` (${shineBill} билл татлаа)` : ""
+        }`,
+      );
+      onKholbogdson(mur.gereeniiId);
+    } catch (e) {
+      setZurvas(aldaaZurvas(e));
+    } finally {
+      setKholboj(false);
+    }
+  };
+
+  const input =
+    "w-full rounded-lg border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] px-2.5 py-1.5 text-[13px] text-[color:var(--panel-text)] outline-none focus:border-[color:var(--theme)]";
+
+  return (
+    <div className="fixed inset-0 z-[12000] flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-black/50" onClick={kholboj ? undefined : onClose} />
+      <div className="relative w-full max-w-md rounded-2xl border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] p-5 shadow-2xl">
+        <h3 className="text-sm font-medium text-[color:var(--panel-text)]">
+          Төрийн банкинд холбох — {mur.barilga ? `${mur.barilga} · ` : ""}
+          {mur.toot} тоот
+        </h3>
+        <p className="mt-1 text-xs text-[color:var(--muted-text)]">
+          {mur.ner || "Оршин суугч"} — апп-аас «хаяг нэмэх»-тэй ижил: хаягаар хайж, хэрэглэгчээ сонгоод холбоно.
+        </p>
+
+        <div className="mt-3 grid grid-cols-3 gap-2">
+          <label className="col-span-3 text-[11px] text-[color:var(--muted-text)]">
+            Оршин суугчийн утас (Төрийн банкны бүртгэл)
+            <input className={input} value={utas} onChange={(e) => setUtas(e.target.value)} maxLength={8} />
+          </label>
+          <label className="col-span-2 text-[11px] text-[color:var(--muted-text)]">
+            Банкны байр
+            <select className={input} value={bairId} onChange={(e) => setBairId(e.target.value)}>
+              {barilguud.map((b) => (
+                <option key={b.bpayBairId} value={b.bpayBairId}>
+                  {b.ner}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="text-[11px] text-[color:var(--muted-text)]">
+            Тоот
+            <input className={input} value={doorNo} onChange={(e) => setDoorNo(e.target.value)} />
+          </label>
+        </div>
+        <button type="button" className="stg-btn mt-2" disabled={khaij} onClick={() => void khaikh(false)}>
+          <Search className="h-3.5 w-3.5" /> {khaij ? "Хайж байна…" : "Дахин хайх"}
+        </button>
+
+        <div className="mt-3 max-h-56 space-y-1.5 overflow-auto">
+          {songoltuud?.map((s) => (
+            <label
+              key={s.customerId}
+              className={`flex cursor-pointer items-start gap-2 rounded-lg border px-3 py-2 text-[12px] ${
+                songoson === s.customerId
+                  ? "border-[color:var(--theme)] bg-emerald-50/60"
+                  : "border-[color:var(--surface-border)]"
+              }`}
+            >
+              <input
+                type="radio"
+                name="bpaySongolt"
+                className="mt-0.5"
+                checked={songoson === s.customerId}
+                onChange={() => setSongoson(s.customerId)}
+              />
+              <span className="text-[color:var(--panel-text)]">
+                {s.customerName || "—"} · <span className="text-[color:var(--muted-text)]">{s.customerCode}</span>
+                <br />
+                <span className="text-[color:var(--muted-text)]">{s.customerAddress}</span>
+              </span>
+            </label>
+          ))}
+        </div>
+        {zurvas && <p className="mt-2 text-xs text-[color:var(--warning,#d97706)]">{zurvas}</p>}
+
+        <div className="mt-4 flex justify-end gap-2">
+          <button type="button" className="stg-btn" disabled={kholboj} onClick={onClose}>
+            Болих
+          </button>
+          <button
+            type="button"
+            className="stg-btn stg-btn-primary"
+            disabled={!songoson || kholboj || khaij}
+            onClick={() => void kholbokh()}
+          >
+            <Link2 className="h-3.5 w-3.5" /> {kholboj ? "Холбож байна…" : "Холбох"}
+          </button>
+        </div>
+      </div>
+    </div>
   );
 }
