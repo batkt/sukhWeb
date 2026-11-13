@@ -22,6 +22,11 @@ type KholbogdooguiMur = {
   ner: string;
   utas: string;
   shaltgaan: string;
+  kholbogdson?: boolean;
+  customerCode?: string;
+  customerName?: string;
+  syncUtas?: string;
+  suuldSync?: string | null;
 };
 
 /** Холбогдоогүй тоотуудыг CSV (Excel-д нээгдэнэ) болгож татна. */
@@ -381,12 +386,14 @@ function KholbogdooguiTootuud({ token, idevkhtei }: { token?: string | null; ide
   const [achaalj, setAchaalj] = useState(false);
   const [barilga, setBarilga] = useState("");
   const [songogdson, setSongogdson] = useState<KholbogdooguiMur | null>(null);
+  // Анхдагч нь холбогдоогүй — өмнөх шиг. «Холбогдсон»-оор засах тоотоо олно.
+  const [tuluvShuult, setTuluvShuult] = useState<"kholbogdoogui" | "kholbogdson" | "bugd">("kholbogdoogui");
 
   const achaalakh = async () => {
     if (!token) return;
     setAchaalj(true);
     try {
-      const { data } = await uilchilgee(token).get("/bpay/kholbogdoogui");
+      const { data } = await uilchilgee(token).get("/bpay/kholbogdoogui", { params: { bugd: 1 } });
       setMuruud(Array.isArray(data?.jagsaalt) ? data.jagsaalt : []);
     } catch (e) {
       openErrorOverlay(aldaaZurvas(e));
@@ -395,14 +402,23 @@ function KholbogdooguiTootuud({ token, idevkhtei }: { token?: string | null; ide
     }
   };
 
-  const barilguud = muruud ? [...new Set(muruud.map((m) => m.barilga))] : [];
-  const kharuulakh = (muruud || []).filter((m) => !barilga || m.barilga === barilga);
+  const tuluvaar = (muruud || []).filter((m) =>
+    tuluvShuult === "bugd" ? true : tuluvShuult === "kholbogdson" ? !!m.kholbogdson : !m.kholbogdson,
+  );
+  const barilguud = [...new Set(tuluvaar.map((m) => m.barilga))];
+  const kharuulakh = tuluvaar.filter((m) => !barilga || m.barilga === barilga);
+  const kholbogdsonToo = (muruud || []).filter((m) => m.kholbogdson).length;
+  const kholbogdooguiToo = (muruud || []).length - kholbogdsonToo;
 
   return (
     <SettingsItem
       icon={<ListX />}
-      title="Холбогдоогүй тоот"
-      desc={muruud ? `${muruud.length} тоот` : "Бүх барилгын холбогдоогүй тоот, шалтгаантай"}
+      title="Тоотын холболт"
+      desc={
+        muruud
+          ? `${kholbogdooguiToo} холбогдоогүй · ${kholbogdsonToo} холбогдсон`
+          : "Бүх барилгын тоот — холбогдоогүйг холбох, холбогдсоныг засах"
+      }
       control={
         <div className="stg-inline">
           {muruud?.length ? (
@@ -418,10 +434,31 @@ function KholbogdooguiTootuud({ token, idevkhtei }: { token?: string | null; ide
     >
       {muruud && muruud.length ? (
         <div className="mt-2">
+          <div className="flex items-center gap-1.5 flex-wrap text-xs mb-2">
+            {(
+              [
+                ["kholbogdoogui", `Холбогдоогүй: ${kholbogdooguiToo}`],
+                ["kholbogdson", `Холбогдсон: ${kholbogdsonToo}`],
+                ["bugd", `Бүгд: ${muruud.length}`],
+              ] as const
+            ).map(([k, label]) => (
+              <button
+                key={k}
+                type="button"
+                className={`stg-chip ${tuluvShuult === k ? "!bg-emerald-50 !text-emerald-700" : ""}`}
+                onClick={() => {
+                  setTuluvShuult(k);
+                  setBarilga("");
+                }}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
           {barilguud.length > 1 ? (
             <div className="flex items-center gap-1.5 flex-wrap text-xs mb-2">
               <button type="button" className={`stg-chip ${!barilga ? "!bg-emerald-50 !text-emerald-700" : ""}`} onClick={() => setBarilga("")}>
-                Бүгд: {muruud.length}
+                Бүх барилга: {tuluvaar.length}
               </button>
               {barilguud.map((b) => (
                 <button
@@ -430,7 +467,7 @@ function KholbogdooguiTootuud({ token, idevkhtei }: { token?: string | null; ide
                   className={`stg-chip ${barilga === b ? "!bg-emerald-50 !text-emerald-700" : ""}`}
                   onClick={() => setBarilga(b)}
                 >
-                  {b || "—"}: {muruud.filter((m) => m.barilga === b).length}
+                  {b || "—"}: {tuluvaar.filter((m) => m.barilga === b).length}
                 </button>
               ))}
             </div>
@@ -443,7 +480,7 @@ function KholbogdooguiTootuud({ token, idevkhtei }: { token?: string | null; ide
                   <th className="py-1 px-2 font-medium">Тоот</th>
                   <th className="py-1 px-2 font-medium">Нэр</th>
                   <th className="py-1 px-2 font-medium">Утас</th>
-                  <th className="py-1 px-2 font-medium">Шалтгаан</th>
+                  <th className="py-1 px-2 font-medium">Төлөв</th>
                   <th className="py-1 px-2 font-medium" />
                 </tr>
               </thead>
@@ -454,15 +491,31 @@ function KholbogdooguiTootuud({ token, idevkhtei }: { token?: string | null; ide
                     <td className="py-1 px-2 whitespace-nowrap">{m.toot}</td>
                     <td className="py-1 px-2">{m.ner || "—"}</td>
                     <td className="py-1 px-2 whitespace-nowrap">{m.utas || "—"}</td>
-                    <td className="py-1 px-2">{m.shaltgaan}</td>
+                    <td className="py-1 px-2">
+                      {m.kholbogdson ? (
+                        <span className="text-emerald-700">
+                          {m.customerName || "Холбогдсон"}
+                          {m.customerCode ? <span className="text-[color:var(--muted-text)]"> · {m.customerCode}</span> : null}
+                          {m.shaltgaan !== "Холбогдсон" ? (
+                            <span className="block text-[color:var(--warning,#d97706)]">{m.shaltgaan.replace("Холбогдсон · ", "")}</span>
+                          ) : null}
+                        </span>
+                      ) : (
+                        m.shaltgaan
+                      )}
+                    </td>
                     <td className="py-1 px-2 text-right">
                       <button
                         type="button"
                         className="stg-btn !py-0.5 !px-2 !text-[11px]"
                         onClick={() => setSongogdson(m)}
-                        title="Оршин суугчийн нэрийн өмнөөс Төрийн банкинд холбох"
+                        title={
+                          m.kholbogdson
+                            ? "Холболтыг засах — өөр хэрэглэгч, утас руу солих"
+                            : "Оршин суугчийн нэрийн өмнөөс Төрийн банкинд холбох"
+                        }
                       >
-                        <Link2 className="h-3.5 w-3.5" /> Холбох
+                        <Link2 className="h-3.5 w-3.5" /> {m.kholbogdson ? "Засах" : "Холбох"}
                       </button>
                     </td>
                   </tr>
