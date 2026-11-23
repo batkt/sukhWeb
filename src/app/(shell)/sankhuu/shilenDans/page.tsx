@@ -25,12 +25,15 @@ import formatNumber from "../../../../../tools/function/formatNumber";
  * Банкны хуулга (CGW) ашиглахгүй, бүгд гараар:
  *  - Эхний үлдэгдлийг ажилтан огноотой нь оруулна.
  *  - Орлого = оршин суугчдын төлсөн мөнгө, авлага = төлөөгүй мөнгө.
- *  - Зарлагыг ажилтан гараар бүртгэнэ; үлдэгдлээс хасагдана.
+ *  - Бусад орлого, зарлагыг ажилтан «Гүйлгээ нэмэх»-ээр гараар бүртгэнэ.
  * Өгөгдөл: sukhBackv2 controller/shilenDans.js.
  */
 
-interface ZarlagaMur {
+type GuilgeeTurul = "orlogo" | "zarlaga";
+
+interface GuilgeeMur {
   _id: string;
+  turul: GuilgeeTurul;
   ognoo: string;
   dun: number;
   angilal: string;
@@ -40,13 +43,17 @@ interface ZarlagaMur {
 
 interface ShilenDansKhariu {
   zarlagiinAngilaluud: string[];
+  orlogiinAngilaluud: string[];
   ekhniiUldegdelBichlel: { ognoo: string; dun: number; ajiltniiNer: string } | null;
   ekhniiUldegdel: number | null;
   orlogo: number;
+  tulsunOrlogo: number;
+  garOrlogo: number;
   zarlaga: number;
   etssiinUldegdel: number | null;
   avlaga: number;
-  zarlaguud: ZarlagaMur[];
+  guilgeenuud: GuilgeeMur[];
+  orlogoAngilalaar: { angilal: string; dun: number }[];
   zarlagaAngilalaar: { angilal: string; dun: number }[];
   zogsool: {
     niit: number;
@@ -120,6 +127,48 @@ function MurUtga({ ner, utga, ungu }: { ner: string; utga: string; ungu?: string
       <span className={`font-medium tabular-nums ${ungu || "text-[color:var(--panel-text)]"}`}>
         {utga}
       </span>
+    </div>
+  );
+}
+
+/** Ангиллын задаргаа — мөр бүрт нийтэд эзлэх хувь. */
+function AngilalZadargaa({
+  garchig,
+  niit,
+  jagsaalt,
+  ungu,
+}: {
+  garchig: string;
+  niit: number;
+  jagsaalt: { angilal: string; dun: number }[];
+  ungu: string;
+}) {
+  return (
+    <div className="flex flex-col gap-2">
+      <div className="text-[12px] font-medium text-[color:var(--muted-text)]">{garchig}</div>
+      {jagsaalt.length === 0 ? (
+        <div className="text-[13px] text-[color:var(--muted-text)]">—</div>
+      ) : (
+        jagsaalt.map((a) => {
+          const khuvi = niit ? Math.round((a.dun / niit) * 100) : 0;
+          return (
+            <div key={a.angilal} className="flex items-center gap-3 text-[13px]">
+              <span className="w-40 shrink-0 truncate text-[color:var(--panel-text)]">
+                {a.angilal}
+              </span>
+              <div className="h-2 flex-1 overflow-hidden rounded-full bg-theme/10">
+                <div className={`h-full rounded-full ${ungu}`} style={{ width: `${khuvi}%` }} />
+              </div>
+              <span className="w-28 shrink-0 text-right tabular-nums">
+                {formatNumber(a.dun, 2)}
+              </span>
+              <span className="w-10 shrink-0 text-right text-[color:var(--muted-text)]">
+                {khuvi}%
+              </span>
+            </div>
+          );
+        })
+      )}
     </div>
   );
 }
@@ -260,9 +309,10 @@ export default function ShilenDansPage() {
   const [aldaa, setAldaa] = useState<string | null>(null);
   const [shinechlekh, setShinechlekh] = useState(0);
 
-  // Зарлагын цонх
+  // Гүйлгээний (орлого/зарлага) цонх
   const [zarlagaTsonkh, setZarlagaTsonkh] = useState<null | {
     _id?: string;
+    turul: GuilgeeTurul;
     ognoo: string;
     dun: string;
     angilal: string;
@@ -310,6 +360,7 @@ export default function ShilenDansPage() {
     }
     const body = {
       barilgiinId: selectedBuildingId,
+      turul: zarlagaTsonkh.turul,
       ognoo: zarlagaTsonkh.ognoo,
       dun,
       angilal: zarlagaTsonkh.angilal,
@@ -318,11 +369,11 @@ export default function ShilenDansPage() {
     setKhadgalj(true);
     try {
       if (zarlagaTsonkh._id) {
-        await uilchilgee(token).put(`/shilenDansZarlaga/${zarlagaTsonkh._id}`, body);
+        await uilchilgee(token).put(`/shilenDansGuilgee/${zarlagaTsonkh._id}`, body);
       } else {
-        await uilchilgee(token).post("/shilenDansZarlaga", body);
+        await uilchilgee(token).post("/shilenDansGuilgee", body);
       }
-      openSuccessOverlay(zarlagaTsonkh._id ? "Зарлага засагдлаа" : "Зарлага нэмэгдлээ");
+      openSuccessOverlay(zarlagaTsonkh._id ? "Гүйлгээ засагдлаа" : "Гүйлгээ нэмэгдлээ");
       setZarlagaTsonkh(null);
       dakhinAchaalakh();
     } catch (err: any) {
@@ -332,17 +383,17 @@ export default function ShilenDansPage() {
     }
   };
 
-  const zarlagaUstgakh = async (mur: ZarlagaMur) => {
+  const zarlagaUstgakh = async (mur: GuilgeeMur) => {
     if (!token) return;
     const shaltgaan = await shaltgaanAsuuya({
-      title: "Зарлага устгах",
+      title: mur.turul === "orlogo" ? "Орлого устгах" : "Зарлага устгах",
       message: `${ognooKharuul(mur.ognoo)} · ${mur.angilal} · ${formatNumber(mur.dun, 2)}₮`,
       confirmLabel: "Устгах",
     });
     if (!shaltgaan) return;
     try {
-      await uilchilgee(token).delete(`/shilenDansZarlaga/${mur._id}`);
-      openSuccessOverlay("Зарлага устгагдлаа");
+      await uilchilgee(token).delete(`/shilenDansGuilgee/${mur._id}`);
+      openSuccessOverlay("Гүйлгээ устгагдлаа");
       dakhinAchaalakh();
     } catch (err: any) {
       openErrorOverlay(aldaaZurvas(err, "Устгахад алдаа гарлаа"));
@@ -387,7 +438,9 @@ export default function ShilenDansPage() {
         [],
         ["Үзүүлэлт", "Дүн"],
         ["Эхний үлдэгдэл", data.ekhniiUldegdel ?? ""],
-        ["Орлого (төлсөн мөнгө)", data.orlogo],
+        ["Орлого", data.orlogo],
+        ["  Оршин суугчдын төлбөр", data.tulsunOrlogo],
+        ["  Бусад орлого", data.garOrlogo],
         ["Зарлага", data.zarlaga],
         ["Эцсийн үлдэгдэл", data.etssiinUldegdel ?? ""],
         [],
@@ -398,16 +451,17 @@ export default function ShilenDansPage() {
     XLSX.utils.book_append_sheet(
       wb,
       XLSX.utils.aoa_to_sheet([
-        ["Огноо", "Ангилал", "Тайлбар", "Бүртгэсэн", "Дүн"],
-        ...data.zarlaguud.map((z) => [
+        ["Огноо", "Төрөл", "Ангилал", "Тайлбар", "Бүртгэсэн", "Дүн"],
+        ...data.guilgeenuud.map((z) => [
           ognooKharuul(z.ognoo),
+          z.turul === "orlogo" ? "Орлого" : "Зарлага",
           z.angilal,
           z.tailbar || "",
           z.ajiltniiNer || "",
-          z.dun,
+          z.turul === "orlogo" ? z.dun : -z.dun,
         ]),
       ]),
-      "Зарлага",
+      "Гүйлгээ",
     );
     XLSX.writeFile(wb, `Шилэн_данс_${dateRange?.[0] || ""}_${dateRange?.[1] || ""}.xlsx`);
   };
@@ -419,6 +473,17 @@ export default function ShilenDansPage() {
       key: "ognoo",
       width: 110,
       render: (v: string) => ognooKharuul(v),
+    },
+    {
+      title: "Төрөл",
+      dataIndex: "turul",
+      key: "turul",
+      width: 90,
+      render: (v: GuilgeeTurul) => (
+        <span className={v === "orlogo" ? "text-success" : "text-danger"}>
+          {v === "orlogo" ? "Орлого" : "Зарлага"}
+        </span>
+      ),
     },
     { title: "Ангилал", dataIndex: "angilal", key: "angilal", width: 170 },
     {
@@ -440,7 +505,12 @@ export default function ShilenDansPage() {
       key: "dun",
       align: "right" as const,
       width: 140,
-      render: (v: number) => <span className="text-danger">{formatNumber(v, 2)}</span>,
+      render: (v: number, r: GuilgeeMur) =>
+        r.turul === "orlogo" ? (
+          <span className="text-success">+{formatNumber(v, 2)}</span>
+        ) : (
+          <span className="text-danger">−{formatNumber(v, 2)}</span>
+        ),
     },
     ...(zasakhEsekh
       ? [
@@ -449,7 +519,7 @@ export default function ShilenDansPage() {
             key: "uildel",
             width: 84,
             align: "center" as const,
-            render: (_: unknown, r: ZarlagaMur) => (
+            render: (_: unknown, r: GuilgeeMur) => (
               <div className="flex justify-center gap-1 no-print">
                 <button
                   type="button"
@@ -458,6 +528,7 @@ export default function ShilenDansPage() {
                   onClick={() =>
                     setZarlagaTsonkh({
                       _id: r._id,
+                      turul: r.turul,
                       ognoo: ognooKharuul(r.ognoo),
                       dun: Number(r.dun).toFixed(2),
                       angilal: r.angilal,
@@ -486,7 +557,7 @@ export default function ShilenDansPage() {
 
   const kartuud = [
     { nershil: "Эхний үлдэгдэл", utga: mungu(data?.ekhniiUldegdel), ungu: "text-[color:var(--panel-text)]" },
-    { nershil: "Орлого (төлсөн мөнгө)", utga: formatNumber(data?.orlogo || 0, 2), ungu: "text-success" },
+    { nershil: "Орлого", utga: formatNumber(data?.orlogo || 0, 2), ungu: "text-success" },
     { nershil: "Зарлага", utga: formatNumber(data?.zarlaga || 0, 2), ungu: "text-danger" },
     { nershil: "Эцсийн үлдэгдэл", utga: mungu(data?.etssiinUldegdel), ungu: "text-[color:var(--panel-text)]" },
   ];
@@ -623,14 +694,15 @@ export default function ShilenDansPage() {
       </div>
 
       <Khavtas
-        garchig="Зарлага"
-        tailbar="Гараар бүртгэсэн зарлага. Дансны үлдэгдлээс хасагдаж, оршин суугчийн аппын «Зарцуулалт»-д ангиллаар харагдана."
+        garchig="Гүйлгээ"
+        tailbar="Оршин суугчдын төлбөр автоматаар орлогод орно. Бусад орлого, зарлагыг энд гараар бүртгэнэ — үлдэгдэлд нэмэгдэж/хасагдана. Зарлага аппын «Зарцуулалт»-д ангиллаар харагдана."
         uildel={
           zasakhEsekh ? (
             <button
               type="button"
               onClick={() =>
                 setZarlagaTsonkh({
+                  turul: "zarlaga",
                   ognoo: ognooKharuul(new Date().toISOString()),
                   dun: "",
                   angilal: "",
@@ -640,49 +712,66 @@ export default function ShilenDansPage() {
               className="flex h-9 items-center gap-1.5 rounded-[10px] bg-theme px-4 text-[13px] font-medium text-white no-print"
             >
               <Plus className="h-4 w-4" />
-              Зарлага нэмэх
+              Гүйлгээ нэмэх
             </button>
           ) : null
         }
       >
-        {(data?.zarlagaAngilalaar || []).length > 0 && (
-          <div className="mb-4 flex flex-col gap-2">
-            {(data?.zarlagaAngilalaar || []).map((a) => {
-              const khuvi = data?.zarlaga ? Math.round((a.dun / data.zarlaga) * 100) : 0;
-              return (
-                <div key={a.angilal} className="flex items-center gap-3 text-[13px]">
-                  <span className="w-40 shrink-0 truncate text-[color:var(--panel-text)]">
-                    {a.angilal}
-                  </span>
-                  <div className="h-2 flex-1 overflow-hidden rounded-full bg-theme/10">
-                    <div className="h-full rounded-full bg-theme" style={{ width: `${khuvi}%` }} />
-                  </div>
-                  <span className="w-28 shrink-0 text-right tabular-nums">{formatNumber(a.dun, 2)}</span>
-                  <span className="w-10 shrink-0 text-right text-[color:var(--muted-text)]">{khuvi}%</span>
-                </div>
-              );
-            })}
-          </div>
-        )}
+        <div className="mb-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
+          <AngilalZadargaa
+            garchig="Орлого"
+            niit={data?.orlogo || 0}
+            jagsaalt={data?.orlogoAngilalaar || []}
+            ungu="bg-success"
+          />
+          <AngilalZadargaa
+            garchig="Зарлага"
+            niit={data?.zarlaga || 0}
+            jagsaalt={data?.zarlagaAngilalaar || []}
+            ungu="bg-danger"
+          />
+        </div>
         <Table
-          dataSource={data?.zarlaguud || []}
+          dataSource={data?.guilgeenuud || []}
           columns={zarlagaBaganuud}
           rowKey="_id"
           pagination={false}
           loading={loading}
           scroll={{ x: "max-content", y: 480 }}
-          locale={{ emptyText: "Энэ хугацаанд зарлага бүртгэгдээгүй" }}
+          locale={{ emptyText: "Энэ хугацаанд гараар бүртгэсэн гүйлгээ алга" }}
         />
       </Khavtas>
 
       {zarlagaTsonkh && (
         <Tsonkh
-          garchig={zarlagaTsonkh._id ? "Зарлага засах" : "Зарлага нэмэх"}
+          garchig={zarlagaTsonkh._id ? "Гүйлгээ засах" : "Гүйлгээ нэмэх"}
           onClose={() => setZarlagaTsonkh(null)}
           onSave={zarlagaKhadgalakh}
           khadgalj={khadgalj}
           tsonkhRef={tsonkhRef}
         >
+          <div className="grid grid-cols-2 gap-1 rounded-xl border border-[color:var(--surface-border)] p-1">
+            {(["orlogo", "zarlaga"] as const).map((t) => (
+              <button
+                key={t}
+                type="button"
+                onClick={() =>
+                  setZarlagaTsonkh((z) =>
+                    z && z.turul !== t ? { ...z, turul: t, angilal: "" } : z,
+                  )
+                }
+                className={`h-9 rounded-lg text-[13px] transition-colors ${
+                  zarlagaTsonkh.turul === t
+                    ? t === "orlogo"
+                      ? "bg-success/15 font-medium text-success"
+                      : "bg-danger/15 font-medium text-danger"
+                    : "text-[color:var(--muted-text)] hover:bg-[color:var(--surface-hover)]"
+                }`}
+              >
+                {t === "orlogo" ? "Орлого" : "Зарлага"}
+              </button>
+            ))}
+          </div>
           <Shoshgo ner="Огноо">
             <StandardDatePicker
               value={zarlagaTsonkh.ognoo || null}
@@ -697,7 +786,11 @@ export default function ShilenDansPage() {
             <FilterSelect
               value={zarlagaTsonkh.angilal}
               onChange={(v) => setZarlagaTsonkh((z) => (z ? { ...z, angilal: v } : z))}
-              options={(data?.zarlagiinAngilaluud || []).map((a) => ({ value: a, label: a }))}
+              options={(
+                (zarlagaTsonkh.turul === "orlogo"
+                  ? data?.orlogiinAngilaluud
+                  : data?.zarlagiinAngilaluud) || []
+              ).map((a) => ({ value: a, label: a }))}
               placeholder="Ангилал сонгох"
               bugdLabel={null}
               allowClear={false}
@@ -719,7 +812,11 @@ export default function ShilenDansPage() {
               onChange={(e) =>
                 setZarlagaTsonkh((z) => (z ? { ...z, tailbar: e.target.value } : z))
               }
-              placeholder="Жишээ: 11-р сарын цэвэрлэгээний цалин"
+              placeholder={
+                zarlagaTsonkh.turul === "orlogo"
+                  ? "Жишээ: 1-р давхрын лангууны түрээс"
+                  : "Жишээ: 11-р сарын цэвэрлэгээний цалин"
+              }
               className={`${OROLT} h-auto py-2`}
             />
           </label>
