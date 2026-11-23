@@ -107,6 +107,7 @@ export const NAV_ITEMS: NavItem[] = [
       { label: "Мэдэгдэл", path: "medegdel", icon: Bell },
       { label: "Санал хүсэлт", path: "sanalKhuselt", icon: MessageSquare },
       { label: "Санал асуулга", path: "sanalAsuulga", icon: Vote },
+      { label: "Барилгын чат", path: "barilgiinChat", icon: MessageSquare },
     ],
   },
   {

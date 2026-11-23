@@ -170,6 +170,11 @@ export const ALL_PERMISSIONS: PermissionItem[] = [
         label: "Санал асуулга",
         description: "Оршин суугчид руу санал асуулга явуулах эрх",
       },
+      {
+        id: "medegdel.barilgiinChat",
+        label: "Барилгын чат",
+        description: "Барилгын оршин суугчидтай групп чатлах эрх",
+      },
     ],
   },
   {
