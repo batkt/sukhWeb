@@ -116,6 +116,7 @@ export default function NemeltTokhirgoo({
   const [khGuestInvoiceEnabled, setKhGuestInvoiceEnabled] = useState<boolean>(false);
   const [khGuestFrequencyType, setKhGuestFrequencyType] = useState<string>("saraar");
   const [khGuestFrequencyValue, setKhGuestFrequencyValue] = useState<number | string>("");
+  const [khGuestQuotaMode, setKhGuestQuotaMode] = useState<ZochinKvotGorim>("davtamj");
   const [guestNotes, setGuestNotes] = useState<any[]>([]);
   const [guestLimit, setGuestLimit] = useState<number | string>("");
   const [guestFreeMinutes, setGuestFreeMinutes] = useState<number | string>("");
@@ -134,6 +135,11 @@ export default function NemeltTokhirgoo({
   const [guestFrequencyValue, setGuestFrequencyValue] = useState<
     number | string
   >("");
+  // Квотын горим: "davtamj" — өдөр/сар бүр шинэчлэгдэнэ (хуучин зан төлөв);
+  // "zereg" — зочны тоо нь НЭГ ЗЭРЭГ зогсоолд байж болох дээд тоо, урьсан
+  // машин гармагц квот буцаж нэмэгдэнэ (backend `utils/zochinKvot.js`).
+  const [guestQuotaMode, setGuestQuotaMode] =
+    useState<ZochinKvotGorim>("davtamj");
 
   // Resident Gate Open state
   const [residentGateOpenEnabled, setResidentGateOpenEnabled] = useState<boolean>(false);
@@ -523,6 +529,10 @@ export default function NemeltTokhirgoo({
     );
     setKhGuestFrequencyType(khFind("davtamjiinTurul", find("davtamjiinTurul", "saraar")));
     setKhGuestFrequencyValue(khFind("davtamjUtga", find("davtamjUtga", "")));
+    setKhGuestQuotaMode(
+      kvotGorimOlyo(khFind("zochinKvotGorim", find("zochinKvotGorim", ""))),
+    );
+    setGuestQuotaMode(kvotGorimOlyo(find("zochinKvotGorim", "")));
     setGuestNote(find("zochinTailbar", ""));
     setGuestFrequencyType(find("davtamjiinTurul", "saraar"));
     setGuestFrequencyValue(find("davtamjUtga", ""));
@@ -676,6 +686,7 @@ export default function NemeltTokhirgoo({
       zochinTailbar: guestNote || "",
       davtamjiinTurul: guestFrequencyType,
       davtamjUtga: Number(guestFrequencyValue) || null,
+      zochinKvotGorim: guestQuotaMode,
       // Харилцагчийнхыг ҮРГЭЛЖ хамт бичнэ — аль таб нээлттэй байхаас
       // үл хамаарч хоёр багц хоёулаа хадгалагдана.
       khariltsagch: {
@@ -685,6 +696,7 @@ export default function NemeltTokhirgoo({
         zochinNekhemjlekhEsekh: !!khGuestInvoiceEnabled,
         davtamjiinTurul: khGuestFrequencyType,
         davtamjUtga: Number(khGuestFrequencyValue) || null,
+        zochinKvotGorim: khGuestQuotaMode,
       },
     });
   };
@@ -1379,6 +1391,8 @@ export default function NemeltTokhirgoo({
     khGuestEnabled,
     khGuestFrequencyType,
     khGuestFrequencyValue: too(khGuestFrequencyValue),
+    guestQuotaMode,
+    khGuestQuotaMode,
     khGuestInvoiceEnabled,
     khGuestLimit: too(khGuestLimit),
     khGuestFreeMinutes: too(khGuestFreeMinutes),
@@ -1467,6 +1481,8 @@ export default function NemeltTokhirgoo({
         "khGuestInvoiceEnabled",
         "khGuestLimit",
         "khGuestFreeMinutes",
+        "guestQuotaMode",
+        "khGuestQuotaMode",
       ],
       khadgal: () => saveGuestSettings(),
     },
@@ -1603,9 +1619,14 @@ export default function NemeltTokhirgoo({
     ? setKhGuestFrequencyValue
     : setGuestFrequencyValue;
   const zEzenNer = zochinKhEsekh ? "Харилцагч" : "Оршин суугч";
+  const zQuotaMode = zochinKhEsekh ? khGuestQuotaMode : guestQuotaMode;
+  const setZQuotaMode = zochinKhEsekh ? setKhGuestQuotaMode : setGuestQuotaMode;
+  const zZereg = zQuotaMode === "zereg";
 
   const zochniiKhuraangui = zEnabled
-    ? `${zEzenNer}: ${DAVTAMJ_NER[zFreqType] || ""} ${too(zLimit)} зочин, тус бүр ${too(zFreeMinutes)} минут үнэгүй`
+    ? zZereg
+      ? `${zEzenNer}: нэг зэрэг ${too(zLimit)} хүртэл зочин, тус бүр ${too(zFreeMinutes)} минут үнэгүй. Зочин гармагц эрх сэргэнэ.`
+      : `${zEzenNer}: ${DAVTAMJ_NER[zFreqType] || ""} ${too(zLimit)} зочин, тус бүр ${too(zFreeMinutes)} минут үнэгүй`
     : `${zEzenNer} зочин урих боломжгүй.`;
 
   return (
@@ -2143,7 +2164,10 @@ export default function NemeltTokhirgoo({
             <SettingsItem
               icon={<UserPlus />}
               title="Зочин урих эрх"
-              changed={uurchlugdsun(...khesguud[7].talbar)}
+              changed={uurchlugdsun(
+                ...(khesguud.find((k) => k.talbar.includes("guestConfigEnabled"))
+                  ?.talbar || []),
+              )}
               desc={zochniiKhuraangui}
               control={
                 <Switch
@@ -2170,6 +2194,20 @@ export default function NemeltTokhirgoo({
                     </select>
                   </SettingsField>
 
+                  <SettingsField label="Квотын горим">
+                    <select
+                      value={zQuotaMode}
+                      onChange={(e) =>
+                        setZQuotaMode(kvotGorimOlyo(e.target.value))
+                      }
+                      className="stg-select"
+                    >
+                      <option value="davtamj">Хугацаагаар шинэчлэгдэнэ</option>
+                      <option value="zereg">Нэг зэрэг (гармагц сэргэнэ)</option>
+                    </select>
+                  </SettingsField>
+
+                  {!zZereg ? (
                   <SettingsField label="Эрх шинэчлэгдэх">
                     <select
                       value={zFreqType}
@@ -2183,8 +2221,9 @@ export default function NemeltTokhirgoo({
                       ))}
                     </select>
                   </SettingsField>
+                  ) : null}
 
-                  {zFreqType === "saraar" || zFreqType === "jileer" ? (
+                  {!zZereg && (zFreqType === "saraar" || zFreqType === "jileer") ? (
                     <SettingsField
                       label={zFreqType === "saraar" ? "Хэдний өдөр" : "Хэддүгээр сар"}
                     >
@@ -2200,7 +2239,9 @@ export default function NemeltTokhirgoo({
                     </SettingsField>
                   ) : null}
 
-                  <SettingsField label="Зочны тоо">
+                  <SettingsField
+                    label={zZereg ? "Нэг зэрэг байх зочны дээд тоо" : "Зочны тоо"}
+                  >
                     <MNumberInput
                       value={zLimit === "" ? undefined : Number(zLimit)}
                       onChange={toogoor(setZLimit)}
@@ -2311,12 +2352,20 @@ const TOKHIRGOONII_BULEG: Record<string, string[]> = {
     "khGuestInvoiceEnabled",
     "khGuestLimit",
     "khGuestFreeMinutes",
+    "guestQuotaMode",
+    "khGuestQuotaMode",
     "gerBuliinGishuunEnabled",
     "shilenDansAppEsekh",
     "messejYavuulakhEsekh",
     "negSessionEsekh",
   ],
 };
+
+type ZochinKvotGorim = "davtamj" | "zereg";
+
+/** Хадгалсан утгыг горим болгоно — хоосон/хуучин утга нь "davtamj". */
+const kvotGorimOlyo = (utga: unknown): ZochinKvotGorim =>
+  String(utga || "").trim().toLowerCase() === "zereg" ? "zereg" : "davtamj";
 
 const DAVTAMJ_NER: Record<string, string> = {
   udruur: "Өдөр бүр",
