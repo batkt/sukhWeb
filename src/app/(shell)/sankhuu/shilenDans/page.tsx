@@ -10,6 +10,7 @@ import { StandardDatePicker } from "@/components/ui/StandardDatePicker";
 import Table from "@/components/ui/table";
 import ModalPortal from "../../../../../components/shell/ModalPortal";
 import { useBuilding } from "@/context/BuildingContext";
+import { useSearch } from "@/context/SearchContext";
 import { useAuth } from "@/lib/useAuth";
 import uilchilgee from "@/lib/uilchilgee";
 import { getDefaultDateRange } from "@/lib/utils";
@@ -41,6 +42,21 @@ interface GuilgeeMur {
   ajiltniiNer?: string;
 }
 
+/** Тоот (гэрээ) тус бүрийн тооцоо. Эхний + Дебет − Кредит = Эцсийн. */
+interface AilMur {
+  gereeniiId: string;
+  gereeniiDugaar: string;
+  toot: string;
+  orts: string;
+  davkhar: string;
+  ner: string;
+  tsutsalsan: boolean;
+  ekhnii: number;
+  debet: number;
+  kredit: number;
+  etssiin: number;
+}
+
 interface ShilenDansKhariu {
   zarlagiinAngilaluud: string[];
   orlogiinAngilaluud: string[];
@@ -55,6 +71,7 @@ interface ShilenDansKhariu {
   guilgeenuud: GuilgeeMur[];
   orlogoAngilalaar: { angilal: string; dun: number }[];
   zarlagaAngilalaar: { angilal: string; dun: number }[];
+  ailuud: AilMur[];
   zogsool: {
     niit: number;
     turlaar: { turul: string; dun: number }[];
@@ -323,6 +340,9 @@ export default function ShilenDansPage() {
     null,
   );
   const [khadgalj, setKhadgalj] = useState(false);
+  const [ailShuult, setAilShuult] = useState<"bugd" | "tuluugui">("tuluugui");
+  // Хайлт — толгойн (Topbar) нэгдсэн хайлтаас: тоот, нэр, орц
+  const { searchTerm } = useSearch();
   const tsonkhRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -463,6 +483,22 @@ export default function ShilenDansPage() {
       ]),
       "Гүйлгээ",
     );
+    XLSX.utils.book_append_sheet(
+      wb,
+      XLSX.utils.aoa_to_sheet([
+        ["Орц", "Тоот", "Нэр", "Эхний үлдэгдэл", "Дебет", "Кредит", "Эцсийн үлдэгдэл"],
+        ...data.ailuud.map((a) => [
+          a.orts,
+          a.toot,
+          a.ner,
+          a.ekhnii,
+          a.debet,
+          a.kredit,
+          a.etssiin,
+        ]),
+      ]),
+      "Оршин суугчид",
+    );
     XLSX.writeFile(wb, `Шилэн_данс_${dateRange?.[0] || ""}_${dateRange?.[1] || ""}.xlsx`);
   };
 
@@ -553,6 +589,61 @@ export default function ShilenDansPage() {
           },
         ]
       : []),
+  ];
+
+  // ── Оршин суугчдын тооцоо (Дебет/Кредит) ──
+  const ailuud = data?.ailuud || [];
+  const tuluuguiToo = ailuud.filter((a) => a.etssiin > 0).length;
+  const khaikhUg = (searchTerm || "").trim().toLowerCase();
+  const kharagdakhAiluud = ailuud.filter(
+    (a) =>
+      (ailShuult === "bugd" || a.etssiin > 0) &&
+      (!khaikhUg ||
+        [a.toot, a.ner, a.orts, a.gereeniiDugaar].some((v) =>
+          String(v || "").toLowerCase().includes(khaikhUg),
+        )),
+  );
+  const ailNiit = kharagdakhAiluud.reduce(
+    (s, a) => ({
+      ekhnii: s.ekhnii + a.ekhnii,
+      debet: s.debet + a.debet,
+      kredit: s.kredit + a.kredit,
+      etssiin: s.etssiin + a.etssiin,
+    }),
+    { ekhnii: 0, debet: 0, kredit: 0, etssiin: 0 },
+  );
+  const mungunBagana = (title: string, key: keyof AilMur, ungu?: (v: number) => string) => ({
+    title,
+    dataIndex: key,
+    key,
+    align: "right" as const,
+    width: 140,
+    render: (v: number) => (
+      <span className={`tabular-nums ${ungu ? ungu(v) : ""}`}>
+        {v ? formatNumber(v, 2) : <span className="text-[color:var(--muted-text)]">0.00</span>}
+      </span>
+    ),
+  });
+  const ailBaganuud = [
+    { title: "Орц", dataIndex: "orts", key: "orts", width: 70, render: (v: string) => v || "-" },
+    { title: "Тоот", dataIndex: "toot", key: "toot", width: 80, render: (v: string) => v || "-" },
+    {
+      title: "Нэр",
+      dataIndex: "ner",
+      key: "ner",
+      render: (v: string, r: AilMur) => (
+        <span>
+          {v || "-"}
+          {r.tsutsalsan && (
+            <span className="ml-1.5 text-[11px] text-[color:var(--muted-text)]">(цуцалсан)</span>
+          )}
+        </span>
+      ),
+    },
+    mungunBagana("Эхний үлдэгдэл", "ekhnii"),
+    mungunBagana("Дебет", "debet"),
+    mungunBagana("Кредит", "kredit", () => "text-success"),
+    mungunBagana("Эцсийн үлдэгдэл", "etssiin", (v) => (v > 0 ? "font-medium text-danger" : "")),
   ];
 
   const kartuud = [
@@ -692,6 +783,65 @@ export default function ShilenDansPage() {
           )}
         </Khavtas>
       </div>
+
+      <Khavtas
+        garchig="Оршин суугчдын тооцоо"
+        tailbar="Дебет = нэхэмжилсэн, Кредит = төлсөн + хөнгөлөлт. Эхний үлдэгдэл + Дебет − Кредит = Эцсийн үлдэгдэл."
+        uildel={
+          <div className="flex gap-1 no-print">
+            {(
+              [
+                ["bugd", `Бүгд (${ailuud.length})`],
+                ["tuluugui", `Төлөөгүй (${tuluuguiToo})`],
+              ] as const
+            ).map(([k, ner]) => (
+              <button
+                key={k}
+                type="button"
+                onClick={() => setAilShuult(k)}
+                className={`h-8 rounded-[10px] px-3 text-[12px] transition-colors ${
+                  ailShuult === k
+                    ? "bg-theme/15 font-medium text-brand"
+                    : "text-[color:var(--muted-text)] hover:bg-[color:var(--surface-hover)]"
+                }`}
+              >
+                {ner}
+              </button>
+            ))}
+          </div>
+        }
+      >
+        <Table
+          dataSource={kharagdakhAiluud}
+          columns={ailBaganuud}
+          rowKey="gereeniiId"
+          pagination={false}
+          loading={loading}
+          scroll={{ x: "max-content", y: 520 }}
+          locale={{ emptyText: "Мэдээлэл алга" }}
+          summary={() =>
+            kharagdakhAiluud.length > 0 ? (
+              <Table.Summary fixed>
+                <Table.Summary.Row className="bg-theme/5">
+                  <Table.Summary.Cell index={0} colSpan={3} className="text-[13px] font-medium">
+                    Нийт ({kharagdakhAiluud.length})
+                  </Table.Summary.Cell>
+                  {(["ekhnii", "debet", "kredit", "etssiin"] as const).map((k, i) => (
+                    <Table.Summary.Cell
+                      key={k}
+                      index={i + 3}
+                      align="right"
+                      className="text-[13px] font-medium tabular-nums"
+                    >
+                      {formatNumber(ailNiit[k], 2)}
+                    </Table.Summary.Cell>
+                  ))}
+                </Table.Summary.Row>
+              </Table.Summary>
+            ) : null
+          }
+        />
+      </Khavtas>
 
       <Khavtas
         garchig="Гүйлгээ"
