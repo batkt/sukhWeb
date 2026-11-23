@@ -145,13 +145,11 @@ export default function NemeltTokhirgoo({
     useState<boolean>(true);
 
   /**
-   * Шилэн дансыг оршин суугчийн аппад харуулах эсэх, мөн авлагатай айлуудын
-   * (тоот, дүн) жагсаалтыг харуулах эсэх. Тохируулаагүй бол харуулахгүй —
-   * backend-ийн утгатай ижил.
+   * Шилэн дансыг оршин суугчийн аппад харуулах эсэх. Тохируулаагүй бол
+   * харуулахгүй — backend-ийн утгатай ижил. Хугацаа хэтэрсэн айлууд аппад
+   * зөвхөн тоот + дүнгээр харагдана.
    */
   const [shilenDansAppEsekh, setShilenDansAppEsekh] = useState<boolean>(false);
-  const [shilenDansAilKharuulakhEsekh, setShilenDansAilKharuulakhEsekh] =
-    useState<boolean>(false);
 
   /**
    * 1 эрхээр зөвхөн 1 төхөөрөмжөөс хандах эсэх (Single session policy).
@@ -548,7 +546,6 @@ export default function NemeltTokhirgoo({
     setResidentGateOpenEnabled(!!find("orshinSuugchKhaalgaNeehEsekh", false));
     setGerBuliinGishuunEnabled(find("gerBuliinGishuunEsekh", true) !== false);
     setShilenDansAppEsekh(find("shilenDansAppEsekh", false) === true);
-    setShilenDansAilKharuulakhEsekh(find("shilenDansAilKharuulakhEsekh", false) === true);
     setNegSessionEsekh(
       find("negSessionEsekh", false) === true &&
         !find("olonTokhooromjZuvshuurukh", true),
@@ -1082,7 +1079,7 @@ export default function NemeltTokhirgoo({
   };
 
   /** Шилэн дансны аппын хоёр тохиргоог байгууллага/сонгосон барилга дээр хадгална. */
-  const saveShilenDansSettings = async (appEsekh: boolean, ailEsekh: boolean) => {
+  const saveShilenDansSettings = async (appEsekh: boolean) => {
     if (!token || !ajiltan?.baiguullagiinId) {
       aldaaGargay("Нэвтрэх шаардлагатай");
       return;
@@ -1101,7 +1098,6 @@ export default function NemeltTokhirgoo({
       const payload: any = JSON.parse(JSON.stringify(freshOrg));
       const shilenData = {
         shilenDansAppEsekh: appEsekh,
-        shilenDansAilKharuulakhEsekh: appEsekh && ailEsekh,
       };
       if (effectiveBarilgiinId && payload.barilguud) {
         payload.barilguud = payload.barilguud.map((b: any) => {
@@ -1390,7 +1386,6 @@ export default function NemeltTokhirgoo({
     liftBulkInput: parseBulk(liftBulkInput || "").join(","),
     gerBuliinGishuunEnabled,
     shilenDansAppEsekh,
-    shilenDansAilKharuulakhEsekh,
     messejYavuulakhEsekh,
     negSessionEsekh,
   };
@@ -1484,9 +1479,8 @@ export default function NemeltTokhirgoo({
       khadgal: () => saveGerBuliinGishuunSettings(gerBuliinGishuunEnabled),
     },
     {
-      talbar: ["shilenDansAppEsekh", "shilenDansAilKharuulakhEsekh"],
-      khadgal: () =>
-        saveShilenDansSettings(shilenDansAppEsekh, shilenDansAilKharuulakhEsekh),
+      talbar: ["shilenDansAppEsekh"],
+      khadgal: () => saveShilenDansSettings(shilenDansAppEsekh),
     },
     {
       talbar: ["negSessionEsekh"],
@@ -1576,7 +1570,6 @@ export default function NemeltTokhirgoo({
       setKhGuestFreeMinutes(v("khGuestFreeMinutes"));
       setGerBuliinGishuunEnabled(v("gerBuliinGishuunEnabled"));
       setShilenDansAppEsekh(v("shilenDansAppEsekh") === true);
-      setShilenDansAilKharuulakhEsekh(v("shilenDansAilKharuulakhEsekh") === true);
       setMessejYavuulakhEsekh(v("messejYavuulakhEsekh") !== false);
       setNegSessionEsekh(v("negSessionEsekh") === true);
     }
@@ -2036,10 +2029,10 @@ export default function NemeltTokhirgoo({
               id="nemelt-shilendans-box"
               icon={<Eye />}
               title="Шилэн данс аппад харуулах"
-              changed={uurchlugdsun("shilenDansAppEsekh", "shilenDansAilKharuulakhEsekh")}
+              changed={uurchlugdsun("shilenDansAppEsekh")}
               desc={
                 shilenDansAppEsekh
-                  ? "Оршин суугчид аппаас дансны үлдэгдэл, орлого, зарлага, айлын авлагын нийт дүнг харна."
+                  ? "Оршин суугчид аппаас төлсөн, төлөөгүй дүн болон хугацаа хэтэрсэн айлуудыг (зөвхөн тоот, дүн) харна."
                   : "Аппад «Шилэн данс» хэсэг харагдахгүй."
               }
               control={
@@ -2049,17 +2042,7 @@ export default function NemeltTokhirgoo({
                   label="Шилэн данс аппад харуулах"
                 />
               }
-            >
-              {shilenDansAppEsekh ? (
-                <Switch
-                  checked={shilenDansAilKharuulakhEsekh}
-                  onChange={(e) =>
-                    setShilenDansAilKharuulakhEsekh(e.currentTarget.checked)
-                  }
-                  label="Хугацаа хэтэрсэн айлуудын тоот, дүнг харуулах"
-                />
-              ) : null}
-            </SettingsItem>
+            />
           </SettingsCard>
 
           {/* ── 4. Нэвтрэлт ба аюулгүй байдал ────────────────────────── */}
@@ -2330,7 +2313,6 @@ const TOKHIRGOONII_BULEG: Record<string, string[]> = {
     "khGuestFreeMinutes",
     "gerBuliinGishuunEnabled",
     "shilenDansAppEsekh",
-    "shilenDansAilKharuulakhEsekh",
     "messejYavuulakhEsekh",
     "negSessionEsekh",
   ],
