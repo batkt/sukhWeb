@@ -133,6 +133,19 @@ export const ALL_PERMISSIONS: PermissionItem[] = [
     ],
   },
   {
+    // Санхүүгийн модуль — дараа нь 4 тайлан, НДШ, ХХОАТ, цалин энд нэмэгдэнэ.
+    id: "sankhuu",
+    label: "Санхүү",
+    description: "Санхүүгийн хэсэгт хандах эрх",
+    children: [
+      {
+        id: "sankhuu.shilenDans",
+        label: "Шилэн данс",
+        description: "Шилэн дансны мэдээлэл харах эрх",
+      },
+    ],
+  },
+  {
     id: "medegdel",
     label: "Мэдэгдэл",
     description: "Мэдэгдэл харах, илгээх эрх",

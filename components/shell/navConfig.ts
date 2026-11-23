@@ -7,6 +7,7 @@ import {
   ChartNoAxesCombined,
   Clock,
   Contact,
+  Eye,
   FileSpreadsheet,
   FilePen,
   FileText,
@@ -27,6 +28,7 @@ import {
   UserCheck,
   Users,
   Vote,
+  Wallet,
   type LucideIcon,
 } from "lucide-react";
 import { hasPermission } from "@/lib/permissionUtils";
@@ -88,6 +90,14 @@ export const NAV_ITEMS: NavItem[] = [
       { label: "Авлагийн насжилт", path: "avlagiin-nasjilt", icon: Clock },
       { label: "Зогсоол", path: "zogsool", icon: SquareParking },
     ],
+  },
+  {
+    // Санхүүгийн модуль. Дараа нь: санхүүгийн 4 тайлан, НДШ, ХХОАТ, цалин
+    // бодолт — энд дэд цэс, permissions.ts-д `sankhuu.*` эрх нэмнэ.
+    label: "Санхүү",
+    path: "sankhuu",
+    icon: Wallet,
+    submenu: [{ label: "Шилэн данс", path: "shilenDans", icon: Eye }],
   },
   {
     label: "Мэдэгдэл",
