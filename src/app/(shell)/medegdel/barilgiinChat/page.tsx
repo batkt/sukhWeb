@@ -11,14 +11,18 @@
  *   GET  /barilgiinChat/minii
  *   GET  /barilgiinChat/:barilgiinId/messejuud?umnukh=&khemjee=
  *   POST /barilgiinChat/:barilgiinId/messej
+ *   POST /barilgiinChat/:barilgiinId/messej/:messejId/zasakh   (зөвхөн өөрийн)
+ * «Бүх байр» (байгууллагын бүх байрны нийтлэг) чатын түлхүүр нь
+ * `buh_<baiguullagiinId>`. Оршин суугчид тоотоороо харагдана.
  * Бодит цаг: socket "barilgiinChat:join" { token, barilgiinId } → room
- * `chat:<barilgiinId>`; шинэ мессеж "barilgiinChat:messej".
+ * `chat:<barilgiinId>`; шинэ мессеж "barilgiinChat:messej", засвар "barilgiinChat:zasvar".
  */
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import moment from "moment";
+import { notification } from "antd";
 import { useTranslation } from "react-i18next";
-import { Building2, Loader2, MessageSquare, Send, ArrowLeft } from "lucide-react";
+import { Building2, Loader2, MessageSquare, Send, ArrowLeft, Users, Reply, Pencil, X } from "lucide-react";
 import { useAuth } from "@/lib/useAuth";
 import { useBuilding } from "@/context/BuildingContext";
 import { useSocket } from "@/context/SocketContext";
@@ -35,8 +39,16 @@ interface Chat {
   _id: string;
   baiguullagiinId: string;
   barilgiinId: string;
+  turul?: "barilga" | "buh";
   ner: string;
+  miniiNer?: string;
   suuliinMessej?: SuuliinMessej | null;
+}
+
+interface Khariu {
+  messejId: string;
+  ilgeegchNer?: string;
+  text?: string;
 }
 
 interface Messej {
@@ -48,6 +60,8 @@ interface Messej {
   ilgeegchTailbar?: string;
   text: string;
   clientId?: string;
+  khariu?: Khariu | null;
+  zassanEsekh?: boolean;
   createdAt: string;
   /** Илгээж буй (серверээс хариу ирээгүй) мөр */
   _pending?: boolean;
@@ -98,6 +112,9 @@ export default function BarilgiinChatPage() {
   const [umnukhLoading, setUmnukhLoading] = useState(false);
   const [input, setInput] = useState("");
   const [ilgeej, setIlgeej] = useState(false);
+  const [khariulakh, setKhariulakh] = useState<Messej | null>(null);
+  const [zasakh, setZasakh] = useState<Messej | null>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const dooshGuilgekh = useRef(true);
@@ -155,6 +172,8 @@ export default function BarilgiinChatPage() {
     let tsutslagdsan = false;
     setMessejuud([]);
     setDakhiadBii(false);
+    setKhariulakh(null);
+    setZasakh(null);
     setMessejLoading(true);
     dooshGuilgekh.current = true;
     messejTatya(songoson)
@@ -251,29 +270,78 @@ export default function BarilgiinChatPage() {
       });
     };
 
+    const zasvar = (m: Messej) => {
+      if (!m?._id || m.barilgiinId !== songosonRef.current) return;
+      setMessejuud((prev) => prev.map((x) => (x._id === m._id ? m : x)));
+    };
+
     if (socket.connected) negdye();
     socket.on("connect", negdye);
     socket.on("barilgiinChat:messej", shineMessej);
+    socket.on("barilgiinChat:zasvar", zasvar);
     return () => {
       socket.off("connect", negdye);
       socket.off("barilgiinChat:messej", shineMessej);
+      socket.off("barilgiinChat:zasvar", zasvar);
       idnuud.forEach((barilgiinId) => socket.emit("barilgiinChat:leave", { barilgiinId }));
     };
   }, [socket, token, barilgiinIdnuud, minii]);
 
   /* ── Илгээх ── */
+  const textUndurSergeekh = () => {
+    const el = textareaRef.current;
+    if (el) el.style.height = "auto";
+  };
+
+  const boliulakh = () => {
+    if (zasakh) setInput("");
+    setZasakh(null);
+    setKhariulakh(null);
+    textUndurSergeekh();
+  };
+
+  const zasvarKhadgalakh = async () => {
+    const m = zasakh;
+    const text = input.trim();
+    if (!m || !songoson || !text || !token) return;
+    if (text === m.text) return boliulakh();
+    setIlgeej(true);
+    try {
+      const res = await uilchilgee(token).post(
+        `/barilgiinChat/${songoson}/messej/${m._id}/zasakh`,
+        { text },
+      );
+      const shine: Messej | undefined = res.data?.messej;
+      if (shine?._id) setMessejuud((prev) => prev.map((x) => (x._id === shine._id ? shine : x)));
+      setZasakh(null);
+      setInput("");
+      textUndurSergeekh();
+    } catch (e) {
+      notification.error({ message: getErrorMessage(e) || t("Засвар хадгалагдсангүй") });
+    } finally {
+      setIlgeej(false);
+    }
+  };
+
   const ilgeeye = async (dakhin?: Messej) => {
+    if (!dakhin && zasakh) return zasvarKhadgalakh();
     const text = (dakhin ? dakhin.text : input).trim();
     if (!songoson || !text || !token) return;
     const clientId = dakhin?.clientId || shineClientId();
+    const khariu: Khariu | null = dakhin
+      ? dakhin.khariu || null
+      : khariulakh
+        ? { messejId: khariulakh._id, ilgeegchNer: khariulakh.ilgeegchNer, text: khariulakh.text }
+        : null;
     const tur: Messej = {
       _id: `tmp-${clientId}`,
       barilgiinId: songoson,
       ilgeegchId: minii,
       ilgeegchTurul: "ajiltan",
-      ilgeegchNer: ajiltan?.ner || "",
+      ilgeegchNer: songosonChat?.miniiNer || ajiltan?.ner || "",
       text,
       clientId,
+      khariu,
       createdAt: new Date().toISOString(),
       _pending: true,
     };
@@ -281,12 +349,17 @@ export default function BarilgiinChatPage() {
     setMessejuud((prev) =>
       dakhin ? prev.map((x) => (x.clientId === clientId ? tur : x)) : [...prev, tur],
     );
-    if (!dakhin) setInput("");
+    if (!dakhin) {
+      setInput("");
+      setKhariulakh(null);
+      textUndurSergeekh();
+    }
     setIlgeej(true);
     try {
       const res = await uilchilgee(token).post(`/barilgiinChat/${songoson}/messej`, {
         text,
         clientId,
+        ...(khariu ? { khariuId: khariu.messejId } : {}),
       });
       const m: Messej | undefined = res.data?.messej;
       if (m?._id) {
@@ -365,10 +438,19 @@ export default function BarilgiinChatPage() {
               </div>
             ) : (
               <ul className="divide-y divide-[color:var(--ctl-border)]">
-                {chatuud.map((c) => {
+                {/* «Бүх байр» эхэнд, дараа нь байрнууд */}
+                {[...chatuud.filter((c) => c.turul === "buh"), ...chatuud.filter((c) => c.turul !== "buh")].map((c, idx, arr) => {
                   const idevkhtei = c.barilgiinId === songoson;
+                  const buh = c.turul === "buh";
+                  const gartsag =
+                    !buh && (idx === 0 || arr[idx - 1].turul === "buh");
                   return (
                     <li key={c.barilgiinId}>
+                      {gartsag && (
+                        <div className="bg-[color:var(--surface-hover)]/50 px-4 py-1.5 text-[11px] font-medium uppercase tracking-wide text-[color:var(--muted-text)]">
+                          {t("Байрнууд")}
+                        </div>
+                      )}
                       <button
                         type="button"
                         onClick={() => {
@@ -383,7 +465,7 @@ export default function BarilgiinChatPage() {
                           <span className="absolute inset-y-2 left-0 w-[3px] rounded-r bg-theme" />
                         )}
                         <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-theme/10 text-brand">
-                          <Building2 className="h-4 w-4" />
+                          {buh ? <Users className="h-4 w-4" /> : <Building2 className="h-4 w-4" />}
                         </div>
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center gap-2">
@@ -431,7 +513,9 @@ export default function BarilgiinChatPage() {
                 <div className="min-w-0 flex-1">
                   <div className="truncate text-[14px] font-medium">{songosonChat.ner}</div>
                   <div className="text-[11px] text-[color:var(--muted-text)]">
-                    {t("Барилгын оршин суугчид болон ажилтнууд")}
+                    {songosonChat.turul === "buh"
+                      ? t("Байгууллагын бүх байрны оршин суугчид болон ажилтнууд")
+                      : t("Барилгын оршин суугчид болон ажилтнууд")}
                   </div>
                 </div>
               </div>
@@ -484,7 +568,7 @@ export default function BarilgiinChatPage() {
                               </span>
                             </div>
                           )}
-                          <div className={`flex items-end gap-2 ${minii_ ? "justify-end" : "justify-start"}`}>
+                          <div className={`group/msg flex items-end gap-2 ${minii_ ? "justify-end" : "justify-start"}`}>
                             {!minii_ && (
                               <div
                                 className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[11px] font-medium ${
@@ -496,6 +580,17 @@ export default function BarilgiinChatPage() {
                                 }`}
                               >
                                 {initialsOf(m.ilgeegchNer) || "?"}
+                              </div>
+                            )}
+                            {/* Хариулах / засах — hover дээр гарна */}
+                            {minii_ && !m._pending && !m._failed && (
+                              <div className="flex shrink-0 self-center gap-0.5 opacity-0 transition-opacity group-hover/msg:opacity-100">
+                                <button type="button" onClick={() => { setZasakh(null); setKhariulakh(m); textareaRef.current?.focus(); }} className="rounded-md p-1 text-[color:var(--muted-text)] hover:bg-[color:var(--surface-hover)] cursor-pointer" title={t("Хариулах")}>
+                                  <Reply className="h-3.5 w-3.5" />
+                                </button>
+                                <button type="button" onClick={() => { setKhariulakh(null); setZasakh(m); setInput(m.text); textareaRef.current?.focus(); }} className="rounded-md p-1 text-[color:var(--muted-text)] hover:bg-[color:var(--surface-hover)] cursor-pointer" title={t("Засах")}>
+                                  <Pencil className="h-3.5 w-3.5" />
+                                </button>
                               </div>
                             )}
                             <div
@@ -515,6 +610,20 @@ export default function BarilgiinChatPage() {
                                   )}
                                 </div>
                               )}
+                              {m.khariu?.messejId && (
+                                <div
+                                  className={`mb-1 rounded-md border-l-[3px] px-2 py-1 text-[12px] ${
+                                    minii_
+                                      ? "border-white/80 bg-white/15 text-white/90"
+                                      : "border-theme bg-[color:var(--surface-hover)] text-[color:var(--muted-text)]"
+                                  }`}
+                                >
+                                  <div className={`font-medium ${minii_ ? "text-white" : "text-brand"}`}>
+                                    {m.khariu.ilgeegchNer}
+                                  </div>
+                                  <div className="line-clamp-2 break-words">{m.khariu.text}</div>
+                                </div>
+                              )}
                               <div className="whitespace-pre-wrap break-words">{m.text}</div>
                               <div
                                 className={`mt-1 text-right text-[10px] tabular-nums ${
@@ -532,10 +641,20 @@ export default function BarilgiinChatPage() {
                                 ) : m._pending ? (
                                   t("Илгээж байна...")
                                 ) : (
-                                  moment(m.createdAt).format("HH:mm")
+                                  `${m.zassanEsekh ? `${t("засварласан")} · ` : ""}${moment(m.createdAt).format("HH:mm")}`
                                 )}
                               </div>
                             </div>
+                            {!minii_ && !m._pending && (
+                              <button
+                                type="button"
+                                onClick={() => { setZasakh(null); setKhariulakh(m); textareaRef.current?.focus(); }}
+                                className="shrink-0 self-center rounded-md p-1 text-[color:var(--muted-text)] opacity-0 transition-opacity hover:bg-[color:var(--surface-hover)] group-hover/msg:opacity-100 cursor-pointer"
+                                title={t("Хариулах")}
+                              >
+                                <Reply className="h-3.5 w-3.5" />
+                              </button>
+                            )}
                           </div>
                         </React.Fragment>
                       );
@@ -545,9 +664,35 @@ export default function BarilgiinChatPage() {
               </div>
 
               <div className="shrink-0 border-t border-[color:var(--ctl-border)] bg-[color:var(--surface-bg)] p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+                {(zasakh || khariulakh) && (
+                  <div className="mb-2 flex items-center gap-2 rounded-[10px] border-l-[3px] border-theme bg-[color:var(--surface-hover)] py-1.5 pl-3 pr-1">
+                    {zasakh ? (
+                      <Pencil className="h-3.5 w-3.5 shrink-0 text-brand" />
+                    ) : (
+                      <Reply className="h-3.5 w-3.5 shrink-0 text-brand" />
+                    )}
+                    <div className="min-w-0 flex-1">
+                      <div className="text-[12px] font-medium text-brand">
+                        {zasakh ? t("Мессеж засах") : khariulakh?.ilgeegchNer || t("Хэрэглэгч")}
+                      </div>
+                      <div className="truncate text-[12px] text-[color:var(--muted-text)]">
+                        {(zasakh || khariulakh)?.text}
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={boliulakh}
+                      className="rounded-md p-1 text-[color:var(--muted-text)] hover:bg-[color:var(--surface-bg)] cursor-pointer"
+                      aria-label={t("Болих")}
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+                )}
                 <div className="flex items-end gap-2">
                   <div className="flex min-h-9 flex-1 items-center rounded-[10px] border border-[color:var(--ctl-border)] bg-[color:var(--surface-bg)] px-3 shadow-[var(--ctl-shadow)] transition focus-within:border-theme focus-within:shadow-[var(--ctl-focus-ring)]">
                     <textarea
+                      ref={textareaRef}
                       rows={1}
                       value={input}
                       maxLength={2000}
@@ -561,6 +706,8 @@ export default function BarilgiinChatPage() {
                         if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
                           e.preventDefault();
                           ilgeeye();
+                        } else if (e.key === "Escape" && (zasakh || khariulakh)) {
+                          boliulakh();
                         }
                       }}
                       placeholder={t("Мессеж бичих...")}
