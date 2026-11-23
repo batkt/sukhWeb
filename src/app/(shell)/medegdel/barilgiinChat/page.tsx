@@ -22,11 +22,26 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import moment from "moment";
 import { notification } from "antd";
 import { useTranslation } from "react-i18next";
-import { Building2, Loader2, MessageSquare, Send, ArrowLeft, Users, Reply, Pencil, X } from "lucide-react";
+import {
+  Building2,
+  Loader2,
+  MessageSquare,
+  Send,
+  ArrowLeft,
+  Users,
+  Reply,
+  Pencil,
+  X,
+  ImagePlus,
+  Info,
+  Play,
+  Film,
+  Image as ImageIcon,
+} from "lucide-react";
 import { useAuth } from "@/lib/useAuth";
 import { useBuilding } from "@/context/BuildingContext";
 import { useSocket } from "@/context/SocketContext";
-import uilchilgee, { getErrorMessage } from "@/lib/uilchilgee";
+import uilchilgee, { getApiUrl, getErrorMessage } from "@/lib/uilchilgee";
 
 interface SuuliinMessej {
   text?: string;
@@ -51,6 +66,22 @@ interface Khariu {
   text?: string;
 }
 
+interface Khavsralt {
+  ner?: string;
+  turul: "zurag" | "video";
+  zam: string;
+  /** Илгээж буй үеийн локал урьдчилсан харагдац (blob URL) */
+  local?: string;
+}
+
+interface MediaMur {
+  messejId: string;
+  ilgeegchNer?: string;
+  createdAt: string;
+  turul: "zurag" | "video";
+  zam: string;
+}
+
 interface Messej {
   _id: string;
   barilgiinId: string;
@@ -61,6 +92,7 @@ interface Messej {
   text: string;
   clientId?: string;
   khariu?: Khariu | null;
+  khavsralt?: Khavsralt[];
   zassanEsekh?: boolean;
   createdAt: string;
   /** Илгээж буй (серверээс хариу ирээгүй) мөр */
@@ -69,6 +101,20 @@ interface Messej {
 }
 
 const KHUUDAS = 30;
+const MAX_KHAVSRALT = 10;
+const ZURAG_MAX = 20 * 1024 * 1024;
+const VIDEO_MAX = 100 * 1024 * 1024;
+
+/** Серверийн харьцангуй замыг (barilgiinChat/file/...) бүтэн URL болгоно */
+const failUrl = (zam: string) => `${getApiUrl().replace(/\/?$/, "/")}${zam}`;
+
+const urdchilsan = (m: { text?: string; khavsralt?: Khavsralt[] }) =>
+  m.text ||
+  (m.khavsralt?.some((k) => k.turul === "video")
+    ? "🎥 Видео"
+    : m.khavsralt?.length
+      ? "📷 Зураг"
+      : "");
 
 const initialsOf = (ner?: string) =>
   String(ner || "")
@@ -115,6 +161,11 @@ export default function BarilgiinChatPage() {
   const [khariulakh, setKhariulakh] = useState<Messej | null>(null);
   const [zasakh, setZasakh] = useState<Messej | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const failInputRef = useRef<HTMLInputElement>(null);
+  /** Илгээхээр сонгосон файлууд (тайлбар бичээд хамт илгээнэ) */
+  const [failuud, setFailuud] = useState<{ file: File; url: string; video: boolean }[]>([]);
+  const [khajuu, setKhajuu] = useState(false); // «Чатын дэлгэрэнгүй» самбар
+  const [nuurZurag, setNuurZurag] = useState<Khavsralt | null>(null); // бүтэн дэлгэцийн зураг
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const dooshGuilgekh = useRef(true);
@@ -174,6 +225,10 @@ export default function BarilgiinChatPage() {
     setDakhiadBii(false);
     setKhariulakh(null);
     setZasakh(null);
+    setFailuud((prev) => {
+      prev.forEach((f) => URL.revokeObjectURL(f.url));
+      return [];
+    });
     setMessejLoading(true);
     dooshGuilgekh.current = true;
     messejTatya(songoson)
@@ -240,7 +295,7 @@ export default function BarilgiinChatPage() {
               ? {
                   ...c,
                   suuliinMessej: {
-                    text: m.text,
+                    text: urdchilsan(m),
                     ilgeegchNer: m.ilgeegchNer,
                     ilgeegchTurul: m.ilgeegchTurul,
                     ognoo: m.createdAt,
@@ -303,7 +358,7 @@ export default function BarilgiinChatPage() {
   const zasvarKhadgalakh = async () => {
     const m = zasakh;
     const text = input.trim();
-    if (!m || !songoson || !text || !token) return;
+    if (!m || !songoson || !token || (!text && !m.khavsralt?.length)) return;
     if (text === m.text) return boliulakh();
     setIlgeej(true);
     try {
@@ -323,16 +378,66 @@ export default function BarilgiinChatPage() {
     }
   };
 
+  /** Дахин илгээхэд хэрэглэх анхны файлууд (clientId → File[]) */
+  const dakhinFailuud = useRef(new Map<string, File[]>());
+
+  const failNemekh = (list: FileList | null) => {
+    if (!list?.length) return;
+    const shine: { file: File; url: string; video: boolean }[] = [];
+    for (const file of Array.from(list)) {
+      const video = file.type.startsWith("video/");
+      if (!video && !file.type.startsWith("image/")) {
+        notification.warning({ message: t("Зөвхөн зураг эсвэл видео илгээх боломжтой") });
+        continue;
+      }
+      if (file.size > (video ? VIDEO_MAX : ZURAG_MAX)) {
+        notification.warning({
+          message: video ? t("Видео хэт том байна (100MB хүртэл)") : t("Зураг хэт том байна (20MB хүртэл)"),
+        });
+        continue;
+      }
+      shine.push({ file, url: URL.createObjectURL(file), video });
+    }
+    setFailuud((prev) => {
+      const niit = [...prev, ...shine];
+      if (niit.length > MAX_KHAVSRALT) {
+        notification.warning({ message: t("Нэг удаад 10 хүртэл файл илгээнэ") });
+        niit.slice(MAX_KHAVSRALT).forEach((f) => URL.revokeObjectURL(f.url));
+      }
+      return niit.slice(0, MAX_KHAVSRALT);
+    });
+    textareaRef.current?.focus();
+  };
+
+  const failUpload = async (barilgiinId: string, file: File): Promise<string> => {
+    const fd = new FormData();
+    fd.append("file", file, file.name);
+    const res = await uilchilgee(token!).post(`/barilgiinChat/${barilgiinId}/file`, fd, {
+      headers: { "Content-Type": "multipart/form-data" },
+      timeout: 5 * 60 * 1000,
+    });
+    const ner = res.data?.khavsralt?.ner;
+    if (!ner) throw new Error(t("Файл илгээгдсэнгүй"));
+    return ner;
+  };
+
   const ilgeeye = async (dakhin?: Messej) => {
     if (!dakhin && zasakh) return zasvarKhadgalakh();
     const text = (dakhin ? dakhin.text : input).trim();
-    if (!songoson || !text || !token) return;
     const clientId = dakhin?.clientId || shineClientId();
+    const files: File[] = dakhin
+      ? dakhinFailuud.current.get(clientId) || []
+      : failuud.map((f) => f.file);
+    if (!songoson || !token || (!text && !files.length)) return;
     const khariu: Khariu | null = dakhin
       ? dakhin.khariu || null
       : khariulakh
-        ? { messejId: khariulakh._id, ilgeegchNer: khariulakh.ilgeegchNer, text: khariulakh.text }
+        ? { messejId: khariulakh._id, ilgeegchNer: khariulakh.ilgeegchNer, text: urdchilsan(khariulakh) }
         : null;
+    if (files.length) dakhinFailuud.current.set(clientId, files);
+    const lokalKhavsralt: Khavsralt[] = dakhin
+      ? dakhin.khavsralt || []
+      : failuud.map((f) => ({ turul: f.video ? "video" : "zurag", zam: "", local: f.url }));
     const tur: Messej = {
       _id: `tmp-${clientId}`,
       barilgiinId: songoson,
@@ -342,6 +447,7 @@ export default function BarilgiinChatPage() {
       text,
       clientId,
       khariu,
+      khavsralt: lokalKhavsralt,
       createdAt: new Date().toISOString(),
       _pending: true,
     };
@@ -352,15 +458,21 @@ export default function BarilgiinChatPage() {
     if (!dakhin) {
       setInput("");
       setKhariulakh(null);
+      setFailuud([]); // blob URL-ууд илгээж буй мөрөнд үргэлжлэн хэрэглэгдэнэ
       textUndurSergeekh();
     }
+    const chatId = songoson;
     setIlgeej(true);
     try {
-      const res = await uilchilgee(token).post(`/barilgiinChat/${songoson}/messej`, {
+      const nernuud: string[] = [];
+      for (const f of files) nernuud.push(await failUpload(chatId, f));
+      const res = await uilchilgee(token).post(`/barilgiinChat/${chatId}/messej`, {
         text,
         clientId,
         ...(khariu ? { khariuId: khariu.messejId } : {}),
+        ...(nernuud.length ? { khavsralt: nernuud.map((ner) => ({ ner })) } : {}),
       });
+      dakhinFailuud.current.delete(clientId);
       const m: Messej | undefined = res.data?.messej;
       if (m?._id) {
         setMessejuud((prev) => {
@@ -371,7 +483,8 @@ export default function BarilgiinChatPage() {
           return busad;
         });
       }
-    } catch {
+    } catch (e) {
+      if (files.length) notification.error({ message: getErrorMessage(e) || t("Файл илгээгдсэнгүй") });
       setMessejuud((prev) =>
         prev.map((x) =>
           x.clientId === clientId ? { ...x, _pending: false, _failed: true } : x,
@@ -381,6 +494,39 @@ export default function BarilgiinChatPage() {
       setIlgeej(false);
     }
   };
+
+  /* ── Чатын дэлгэрэнгүй: илгээгдсэн зураг, видео ── */
+  const [media, setMedia] = useState<MediaMur[]>([]);
+  const [mediaTurul, setMediaTurul] = useState<"zurag" | "video">("zurag");
+  const [mediaLoading, setMediaLoading] = useState(false);
+  const [mediaUmnukh, setMediaUmnukh] = useState<string | null>(null);
+  const [mediaDakhiad, setMediaDakhiad] = useState(false);
+
+  const mediaTatya = useCallback(
+    async (barilgiinId: string, umnukh?: string | null) => {
+      if (!token) return;
+      setMediaLoading(true);
+      try {
+        const res = await uilchilgee(token).get(`/barilgiinChat/${barilgiinId}/media`, {
+          params: { khemjee: 30, ...(umnukh ? { umnukh } : {}) },
+        });
+        const list: MediaMur[] = res.data?.media || [];
+        setMedia((prev) => (umnukh ? [...prev, ...list] : list));
+        setMediaUmnukh(res.data?.umnukh || null);
+        setMediaDakhiad(!!res.data?.dakhiadBii);
+      } catch (e) {
+        notification.error({ message: getErrorMessage(e) });
+      } finally {
+        setMediaLoading(false);
+      }
+    },
+    [token],
+  );
+
+  useEffect(() => {
+    if (khajuu && songoson) mediaTatya(songoson);
+    else setMedia([]);
+  }, [khajuu, songoson, mediaTatya]);
 
   /* ── UI ── */
   return (
@@ -518,6 +664,19 @@ export default function BarilgiinChatPage() {
                       : t("Барилгын оршин суугчид болон ажилтнууд")}
                   </div>
                 </div>
+                <button
+                  type="button"
+                  onClick={() => setKhajuu((v) => !v)}
+                  className={`flex shrink-0 rounded-[10px] p-1.5 transition-colors cursor-pointer ${
+                    khajuu
+                      ? "bg-theme/10 text-brand"
+                      : "text-[color:var(--muted-text)] hover:bg-[color:var(--surface-hover)]"
+                  }`}
+                  title={t("Чатын дэлгэрэнгүй")}
+                  aria-label={t("Чатын дэлгэрэнгүй")}
+                >
+                  <Info className="h-[18px] w-[18px]" />
+                </button>
               </div>
 
               <div
@@ -624,7 +783,41 @@ export default function BarilgiinChatPage() {
                                   <div className="line-clamp-2 break-words">{m.khariu.text}</div>
                                 </div>
                               )}
-                              <div className="whitespace-pre-wrap break-words">{m.text}</div>
+                              {!!m.khavsralt?.length && (
+                                <div
+                                  className={`mb-1 grid gap-1 ${
+                                    m.khavsralt.length === 1 ? "grid-cols-1" : "grid-cols-2"
+                                  } ${m.text ? "" : "-mx-1"}`}
+                                >
+                                  {m.khavsralt.map((k, ki) => {
+                                    const src = k.local || failUrl(k.zam);
+                                    const negIn = m.khavsralt!.length === 1;
+                                    return k.turul === "video" ? (
+                                      <video
+                                        key={ki}
+                                        src={src}
+                                        controls={!m._pending}
+                                        preload="metadata"
+                                        playsInline
+                                        className={`rounded-lg bg-black ${negIn ? "max-h-[320px] w-[260px] max-w-full" : "h-[130px] w-[130px] object-cover"}`}
+                                      />
+                                    ) : (
+                                       
+                                      <img
+                                        key={ki}
+                                        src={src}
+                                        alt=""
+                                        loading="lazy"
+                                        onClick={() => !m._pending && setNuurZurag(k)}
+                                        className={`rounded-lg object-cover ${m._pending ? "" : "cursor-zoom-in"} ${
+                                          negIn ? "max-h-[320px] w-auto max-w-[260px]" : "h-[130px] w-[130px]"
+                                        }`}
+                                      />
+                                    );
+                                  })}
+                                </div>
+                              )}
+                              {m.text && <div className="whitespace-pre-wrap break-words">{m.text}</div>}
                               <div
                                 className={`mt-1 text-right text-[10px] tabular-nums ${
                                   minii_ ? "text-white/70" : "text-[color:var(--muted-text)]"
@@ -676,7 +869,7 @@ export default function BarilgiinChatPage() {
                         {zasakh ? t("Мессеж засах") : khariulakh?.ilgeegchNer || t("Хэрэглэгч")}
                       </div>
                       <div className="truncate text-[12px] text-[color:var(--muted-text)]">
-                        {(zasakh || khariulakh)?.text}
+                        {urdchilsan(zasakh || khariulakh || {})}
                       </div>
                     </div>
                     <button
@@ -689,13 +882,73 @@ export default function BarilgiinChatPage() {
                     </button>
                   </div>
                 )}
+                {failuud.length > 0 && (
+                  <div className="mb-2 flex flex-wrap gap-2">
+                    {failuud.map((f, i) => (
+                      <div
+                        key={f.url}
+                        className="relative h-16 w-16 overflow-hidden rounded-lg border border-[color:var(--ctl-border)] bg-black/5"
+                      >
+                        {f.video ? (
+                          <div className="flex h-full w-full items-center justify-center bg-black/80 text-white">
+                            <Film className="h-5 w-5" />
+                          </div>
+                        ) : (
+                           
+                          <img src={f.url} alt="" className="h-full w-full object-cover" />
+                        )}
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setFailuud((prev) => {
+                              URL.revokeObjectURL(prev[i].url);
+                              return prev.filter((_, j) => j !== i);
+                            })
+                          }
+                          className="absolute right-0.5 top-0.5 rounded-full bg-black/60 p-0.5 text-white cursor-pointer"
+                          aria-label={t("Хасах")}
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                <input
+                  ref={failInputRef}
+                  type="file"
+                  accept="image/*,video/*"
+                  multiple
+                  className="hidden"
+                  onChange={(e) => {
+                    failNemekh(e.target.files);
+                    e.target.value = "";
+                  }}
+                />
                 <div className="flex items-end gap-2">
+                  {!zasakh && (
+                    <button
+                      type="button"
+                      onClick={() => failInputRef.current?.click()}
+                      className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] border border-[color:var(--ctl-border)] text-[color:var(--muted-text)] transition hover:bg-[color:var(--surface-hover)] hover:text-brand cursor-pointer"
+                      title={t("Зураг, видео хавсаргах")}
+                    >
+                      <ImagePlus className="h-[18px] w-[18px]" />
+                    </button>
+                  )}
                   <div className="flex min-h-9 flex-1 items-center rounded-[10px] border border-[color:var(--ctl-border)] bg-[color:var(--surface-bg)] px-3 shadow-[var(--ctl-shadow)] transition focus-within:border-theme focus-within:shadow-[var(--ctl-focus-ring)]">
                     <textarea
                       ref={textareaRef}
                       rows={1}
                       value={input}
                       maxLength={2000}
+                      onPaste={(e) => {
+                        // Хуулсан зургийг шууд хавсаргана
+                        if (!zasakh && e.clipboardData.files.length) {
+                          e.preventDefault();
+                          failNemekh(e.clipboardData.files);
+                        }
+                      }}
                       onChange={(e) => {
                         setInput(e.target.value);
                         const el = e.currentTarget;
@@ -717,7 +970,7 @@ export default function BarilgiinChatPage() {
                   <button
                     type="button"
                     onClick={() => ilgeeye()}
-                    disabled={ilgeej || !input.trim()}
+                    disabled={ilgeej || (!input.trim() && !failuud.length && !zasakh?.khavsralt?.length)}
                     className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-theme !text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40 cursor-pointer sm:w-auto sm:gap-1.5 sm:px-4 sm:text-[13px] sm:font-medium"
                     title={t("Илгээх")}
                   >
@@ -736,7 +989,137 @@ export default function BarilgiinChatPage() {
             </div>
           )}
         </div>
+
+        {/* Чатын дэлгэрэнгүй — илгээгдсэн зураг, видео */}
+        {khajuu && songosonChat && (
+          <div className="fixed inset-0 z-50 flex flex-col overflow-hidden bg-[color:var(--surface-bg)] md:static md:z-auto md:w-[300px] md:shrink-0 md:rounded-2xl md:border md:border-[color:var(--ctl-border)] md:shadow-[var(--ctl-shadow)] lg:w-[340px]">
+            <div className="flex shrink-0 items-center gap-2 border-b border-[color:var(--ctl-border)] px-4 py-3">
+              <span className="min-w-0 flex-1 truncate text-[14px] font-medium">
+                {t("Чатын дэлгэрэнгүй")}
+              </span>
+              <button
+                type="button"
+                onClick={() => setKhajuu(false)}
+                className="rounded-[10px] p-1.5 text-[color:var(--muted-text)] hover:bg-[color:var(--surface-hover)] cursor-pointer"
+                aria-label={t("Хаах")}
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            <div className="flex shrink-0 items-center gap-3 px-4 py-4">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-theme/10 text-brand">
+                {songosonChat.turul === "buh" ? <Users className="h-5 w-5" /> : <Building2 className="h-5 w-5" />}
+              </div>
+              <div className="min-w-0">
+                <div className="truncate text-[14px] font-medium">{songosonChat.ner}</div>
+                <div className="text-[11px] text-[color:var(--muted-text)]">
+                  {songosonChat.turul === "buh" ? t("Бүх байрны нийтлэг чат") : t("Байрны чат")}
+                </div>
+              </div>
+            </div>
+            <div className="flex shrink-0 gap-1 border-b border-[color:var(--ctl-border)] px-3">
+              {(["zurag", "video"] as const).map((tr) => (
+                <button
+                  key={tr}
+                  type="button"
+                  onClick={() => setMediaTurul(tr)}
+                  className={`-mb-px inline-flex items-center gap-1.5 border-b-2 px-3 py-2 text-[13px] cursor-pointer ${
+                    mediaTurul === tr
+                      ? "border-theme font-medium text-brand"
+                      : "border-transparent text-[color:var(--muted-text)] hover:text-[color:var(--panel-text)]"
+                  }`}
+                >
+                  {tr === "zurag" ? <ImageIcon className="h-3.5 w-3.5" /> : <Film className="h-3.5 w-3.5" />}
+                  {tr === "zurag" ? t("Зураг") : t("Видео")}
+                </button>
+              ))}
+            </div>
+            <div className="custom-scrollbar min-h-0 flex-1 overflow-y-auto p-2">
+              {(() => {
+                const list = media.filter((x) => x.turul === mediaTurul);
+                if (!list.length && mediaLoading)
+                  return (
+                    <div className="flex justify-center py-10">
+                      <Loader2 className="h-5 w-5 animate-spin text-brand" />
+                    </div>
+                  );
+                if (!list.length)
+                  return (
+                    <div className="py-10 text-center text-[13px] text-[color:var(--muted-text)]">
+                      {mediaTurul === "zurag" ? t("Илгээсэн зураг алга") : t("Илгээсэн видео алга")}
+                    </div>
+                  );
+                return (
+                  <div className="grid grid-cols-3 gap-1">
+                    {list.map((x, i) =>
+                      x.turul === "video" ? (
+                        <a
+                          key={`${x.messejId}-${i}`}
+                          href={failUrl(x.zam)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="relative flex aspect-square items-center justify-center overflow-hidden rounded-md bg-black"
+                          title={`${x.ilgeegchNer || ""} · ${moment(x.createdAt).format("YYYY.MM.DD HH:mm")}`}
+                        >
+                          <video src={failUrl(x.zam)} preload="metadata" muted className="h-full w-full object-cover opacity-80" />
+                          <Play className="absolute h-6 w-6 text-white drop-shadow" />
+                        </a>
+                      ) : (
+                        <button
+                          key={`${x.messejId}-${i}`}
+                          type="button"
+                          onClick={() => setNuurZurag({ turul: "zurag", zam: x.zam })}
+                          className="aspect-square overflow-hidden rounded-md bg-[color:var(--surface-hover)] cursor-zoom-in"
+                          title={`${x.ilgeegchNer || ""} · ${moment(x.createdAt).format("YYYY.MM.DD HH:mm")}`}
+                        >
+                          { }
+                          <img src={failUrl(x.zam)} alt="" loading="lazy" className="h-full w-full object-cover" />
+                        </button>
+                      ),
+                    )}
+                  </div>
+                );
+              })()}
+              {mediaDakhiad && (
+                <div className="mt-2 flex justify-center">
+                  <button
+                    type="button"
+                    disabled={mediaLoading}
+                    onClick={() => songoson && mediaTatya(songoson, mediaUmnukh)}
+                    className="btn-minimal h-8 !px-3 text-xs"
+                  >
+                    {mediaLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : t("Цааш үзэх")}
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </div>
+
+      {/* Бүтэн дэлгэцийн зураг */}
+      {nuurZurag && (
+        <div
+          className="fixed inset-0 z-[60] flex items-center justify-center bg-black/85 p-4"
+          onClick={() => setNuurZurag(null)}
+        >
+          <button
+            type="button"
+            onClick={() => setNuurZurag(null)}
+            className="absolute right-4 top-4 rounded-full bg-white/10 p-2 text-white hover:bg-white/20 cursor-pointer"
+            aria-label={t("Хаах")}
+          >
+            <X className="h-5 w-5" />
+          </button>
+          { }
+          <img
+            src={nuurZurag.local || failUrl(nuurZurag.zam)}
+            alt=""
+            onClick={(e) => e.stopPropagation()}
+            className="max-h-[90vh] max-w-full rounded-lg object-contain shadow-2xl"
+          />
+        </div>
+      )}
     </div>
   );
 }
