@@ -75,7 +75,7 @@ function ognooKharuul(utga: string | null | undefined): string {
 }
 
 const mungu = (v: number | null | undefined) =>
-  v === null || v === undefined ? "-" : formatNumber(v);
+  v === null || v === undefined ? "-" : formatNumber(v, 2);
 
 const aldaaZurvas = (err: any, ankhdagch: string) =>
   err?.response?.data?.message || err?.response?.data?.aldaa || err?.message || ankhdagch;
@@ -157,7 +157,9 @@ function Tsonkh({
       <div
         ref={tsonkhRef}
         onClick={(e) => e.stopPropagation()}
-        className="modal-surface fixed left-1/2 top-1/2 z-[12001] flex w-[95vw] max-w-md -translate-x-1/2 -translate-y-1/2 flex-col rounded-2xl shadow-2xl"
+        // .modal-surface өргөнийг --modal-max-w-ээр хязгаарладаг
+        style={{ "--modal-max-w": "440px", width: "min(440px, 95vw)" } as React.CSSProperties}
+        className="modal-surface fixed left-1/2 top-1/2 z-[12001] flex -translate-x-1/2 -translate-y-1/2 flex-col rounded-2xl shadow-2xl"
       >
         <div className="flex items-center gap-3 border-b border-[color:var(--surface-border)] px-5 py-4">
           <h2 className="flex-1 text-base font-medium text-[color:var(--panel-text)]">{garchig}</h2>
@@ -186,6 +188,53 @@ function Tsonkh({
         </div>
       </div>
     </ModalPortal>
+  );
+}
+
+/**
+ * Мөнгөн дүнгийн оролт — бичих явцад «000,000.00» хэлбэрээр харуулна.
+ * Утгыг таслалгүй мөр (ж: "1250000.5") болгож дамжуулна; гарахад 2 оронтой.
+ */
+function dunTseverlekh(utga: string, khasakhZuvshuurukh: boolean): string {
+  let s = utga.replace(khasakhZuvshuurukh ? /[^\d.-]/g : /[^\d.]/g, "");
+  const khasakh = khasakhZuvshuurukh && s.startsWith("-");
+  s = s.replace(/-/g, "");
+  const [bukhel, ...busad] = s.split(".");
+  const butarkhai = busad.join("").slice(0, 2);
+  const tseverBukhel = bukhel.replace(/^0+(?=\d)/, "");
+  return (khasakh ? "-" : "") + tseverBukhel + (busad.length ? "." + butarkhai : "");
+}
+
+function dunKharuulakh(utga: string): string {
+  if (!utga) return "";
+  const khasakh = utga.startsWith("-");
+  const [bukhel, butarkhai] = utga.replace("-", "").split(".");
+  const tasltai = bukhel.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  return (khasakh ? "-" : "") + tasltai + (butarkhai !== undefined ? "." + butarkhai : "");
+}
+
+function DunOrolt({
+  value,
+  onChange,
+  khasakhZuvshuurukh = false,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  khasakhZuvshuurukh?: boolean;
+}) {
+  return (
+    <input
+      inputMode="decimal"
+      value={dunKharuulakh(value)}
+      onChange={(e) => onChange(dunTseverlekh(e.target.value, khasakhZuvshuurukh))}
+      onBlur={() => {
+        if (!value || value === "-") return;
+        const n = Number(value);
+        if (Number.isFinite(n)) onChange(n.toFixed(2));
+      }}
+      placeholder="0.00"
+      className={`${OROLT} text-right tabular-nums`}
+    />
   );
 }
 
@@ -287,7 +336,7 @@ export default function ShilenDansPage() {
     if (!token) return;
     const shaltgaan = await shaltgaanAsuuya({
       title: "Зарлага устгах",
-      message: `${ognooKharuul(mur.ognoo)} · ${mur.angilal} · ${formatNumber(mur.dun)}₮`,
+      message: `${ognooKharuul(mur.ognoo)} · ${mur.angilal} · ${formatNumber(mur.dun, 2)}₮`,
       confirmLabel: "Устгах",
     });
     if (!shaltgaan) return;
@@ -391,7 +440,7 @@ export default function ShilenDansPage() {
       key: "dun",
       align: "right" as const,
       width: 140,
-      render: (v: number) => <span className="text-danger">{formatNumber(v)}</span>,
+      render: (v: number) => <span className="text-danger">{formatNumber(v, 2)}</span>,
     },
     ...(zasakhEsekh
       ? [
@@ -410,7 +459,7 @@ export default function ShilenDansPage() {
                     setZarlagaTsonkh({
                       _id: r._id,
                       ognoo: ognooKharuul(r.ognoo),
-                      dun: String(r.dun),
+                      dun: Number(r.dun).toFixed(2),
                       angilal: r.angilal,
                       tailbar: r.tailbar || "",
                     })
@@ -437,8 +486,8 @@ export default function ShilenDansPage() {
 
   const kartuud = [
     { nershil: "Эхний үлдэгдэл", utga: mungu(data?.ekhniiUldegdel), ungu: "text-[color:var(--panel-text)]" },
-    { nershil: "Орлого (төлсөн мөнгө)", utga: formatNumber(data?.orlogo || 0), ungu: "text-success" },
-    { nershil: "Зарлага", utga: formatNumber(data?.zarlaga || 0), ungu: "text-danger" },
+    { nershil: "Орлого (төлсөн мөнгө)", utga: formatNumber(data?.orlogo || 0, 2), ungu: "text-success" },
+    { nershil: "Зарлага", utga: formatNumber(data?.zarlaga || 0, 2), ungu: "text-danger" },
     { nershil: "Эцсийн үлдэгдэл", utga: mungu(data?.etssiinUldegdel), ungu: "text-[color:var(--panel-text)]" },
   ];
 
@@ -525,7 +574,7 @@ export default function ShilenDansPage() {
                 onClick={() =>
                   setUldegdelTsonkh({
                     ognoo: ognooKharuul(ekhniiBichlel.ognoo),
-                    dun: String(ekhniiBichlel.dun),
+                    dun: Number(ekhniiBichlel.dun).toFixed(2),
                   })
                 }
                 className="btn-minimal flex h-8 items-center gap-1.5 px-3 text-[12px] no-print"
@@ -539,7 +588,7 @@ export default function ShilenDansPage() {
           {ekhniiBichlel ? (
             <>
               <MurUtga ner="Огноо" utga={ognooKharuul(ekhniiBichlel.ognoo)} />
-              <MurUtga ner="Дүн" utga={formatNumber(ekhniiBichlel.dun)} />
+              <MurUtga ner="Дүн" utga={formatNumber(ekhniiBichlel.dun, 2)} />
               {ekhniiBichlel.ajiltniiNer && (
                 <MurUtga ner="Оруулсан" utga={ekhniiBichlel.ajiltniiNer} />
               )}
@@ -561,9 +610,9 @@ export default function ShilenDansPage() {
           {data?.zogsool ? (
             <>
               {data.zogsool.turlaar.map((t) => (
-                <MurUtga key={t.turul} ner={khelberNer(t.turul)} utga={formatNumber(t.dun)} />
+                <MurUtga key={t.turul} ner={khelberNer(t.turul)} utga={formatNumber(t.dun, 2)} />
               ))}
-              <MurUtga ner="Нийт" utga={formatNumber(data.zogsool.niit)} ungu="text-success" />
+              <MurUtga ner="Нийт" utga={formatNumber(data.zogsool.niit, 2)} ungu="text-success" />
             </>
           ) : (
             <p className="text-[13px] text-[color:var(--muted-text)]">
@@ -608,7 +657,7 @@ export default function ShilenDansPage() {
                   <div className="h-2 flex-1 overflow-hidden rounded-full bg-theme/10">
                     <div className="h-full rounded-full bg-theme" style={{ width: `${khuvi}%` }} />
                   </div>
-                  <span className="w-28 shrink-0 text-right tabular-nums">{formatNumber(a.dun)}</span>
+                  <span className="w-28 shrink-0 text-right tabular-nums">{formatNumber(a.dun, 2)}</span>
                   <span className="w-10 shrink-0 text-right text-[color:var(--muted-text)]">{khuvi}%</span>
                 </div>
               );
@@ -652,19 +701,13 @@ export default function ShilenDansPage() {
               placeholder="Ангилал сонгох"
               bugdLabel={null}
               allowClear={false}
+              className="w-full"
             />
           </Shoshgo>
           <Shoshgo ner="Дүн (₮)">
-            <input
-              inputMode="numeric"
+            <DunOrolt
               value={zarlagaTsonkh.dun}
-              onChange={(e) =>
-                setZarlagaTsonkh((z) =>
-                  z ? { ...z, dun: e.target.value.replace(/[^\d.]/g, "") } : z,
-                )
-              }
-              placeholder="0"
-              className={OROLT}
+              onChange={(v) => setZarlagaTsonkh((z) => (z ? { ...z, dun: v } : z))}
             />
           </Shoshgo>
           <label className="flex flex-col gap-1.5">
@@ -709,16 +752,10 @@ export default function ShilenDansPage() {
             />
           </Shoshgo>
           <Shoshgo ner="Дүн (₮)">
-            <input
-              inputMode="numeric"
+            <DunOrolt
+              khasakhZuvshuurukh
               value={uldegdelTsonkh.dun}
-              onChange={(e) =>
-                setUldegdelTsonkh((u) =>
-                  u ? { ...u, dun: e.target.value.replace(/[^\d.-]/g, "") } : u,
-                )
-              }
-              placeholder="0"
-              className={OROLT}
+              onChange={(v) => setUldegdelTsonkh((u) => (u ? { ...u, dun: v } : u))}
             />
           </Shoshgo>
         </Tsonkh>
