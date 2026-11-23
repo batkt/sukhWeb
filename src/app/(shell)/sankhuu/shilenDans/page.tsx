@@ -5,11 +5,13 @@ import * as XLSX from "xlsx";
 import { Info, Printer } from "lucide-react";
 import FilterDatePicker from "@/components/ui/FilterDatePicker";
 import ExcelButton from "@/components/ui/ExcelButton";
+import FilterSelect from "@/components/ui/FilterSelect";
 import Table from "@/components/ui/table";
 import { useBuilding } from "@/context/BuildingContext";
 import { useAuth } from "@/lib/useAuth";
 import uilchilgee from "@/lib/uilchilgee";
 import { getDefaultDateRange } from "@/lib/utils";
+import { openErrorOverlay } from "@/components/ui/ErrorOverlay";
 import formatNumber from "../../../../../tools/function/formatNumber";
 
 /**
@@ -17,7 +19,8 @@ import formatNumber from "../../../../../tools/function/formatNumber";
  * үлдэгдлийг гишүүдэд ил тод харуулах тайлан. Өгөгдөл: POST /shilenDans/tailan
  * (sukhBackv2 controller/shilenDans.js).
  *
- * Төсөв ба зарлагын ангилал одоогоор байхгүй — тусдаа model хэрэгтэй.
+ * Зарлагын ангиллыг ажилтан мөр бүрд онооно (POST /shilenDans/zarlagaAngilal).
+ * Төсөв одоогоор байхгүй — тусдаа model хэрэгтэй.
  */
 
 interface DansMur {
@@ -39,6 +42,7 @@ interface ZarlagaMur {
   utga: string;
   kharitsakhDans: string;
   kharitsakhNer: string;
+  angilal: string;
 }
 
 interface ShilenDansKhariu {
@@ -47,14 +51,13 @@ interface ShilenDansKhariu {
     zarlaga: number;
     dansuud: DansMur[];
     zarlaguud: ZarlagaMur[];
+    zarlagaAngilalaar: { angilal: string; dun: number }[];
   };
+  zarlagiinAngilaluud: string[];
+  /** Төлсөн мөнгө = орлого, төлөөгүй мөнгө = авлага. */
   avlaga: {
-    nekhemjilsen: number;
     tulsun: number;
-    khungulult: number;
-    ekhniiAvlaga: number;
     etssiinAvlaga: number;
-    zardalaar: { ner: string; nekhemjilsen: number; tulsun: number }[];
   };
   zogsool: {
     niit: number;
@@ -163,6 +166,43 @@ export default function ShilenDansPage() {
     };
   }, [token, selectedBuildingId, dateRange]);
 
+  const angilalOnooy = async (mur: ZarlagaMur, angilal: string) => {
+    const umnukh = data;
+    // Шууд харуулна; алдаа гарвал буцаана
+    setData((d) => {
+      if (!d) return d;
+      const zarlaguud = d.bank.zarlaguud.map((z) =>
+        z._id === mur._id ? { ...z, angilal } : z,
+      );
+      const map: Record<string, number> = {};
+      zarlaguud.forEach((z) => {
+        const k = z.angilal || "Ангилаагүй";
+        map[k] = (map[k] || 0) + z.dun;
+      });
+      return {
+        ...d,
+        bank: {
+          ...d.bank,
+          zarlaguud,
+          zarlagaAngilalaar: Object.entries(map)
+            .map(([a, dun]) => ({ angilal: a, dun }))
+            .sort((a, b) => b.dun - a.dun),
+        },
+      };
+    });
+    try {
+      await uilchilgee(token ?? undefined).post("/shilenDans/zarlagaAngilal", {
+        id: mur._id,
+        angilal,
+      });
+    } catch (err: any) {
+      setData(umnukh);
+      openErrorOverlay(
+        err?.response?.data?.message || err?.message || "Ангилал хадгалахад алдаа гарлаа",
+      );
+    }
+  };
+
   const bank = data?.bank;
   const avlaga = data?.avlaga;
   const zogsool = data?.zogsool;
@@ -192,11 +232,8 @@ export default function ShilenDansPage() {
       ["Дансны зарлага", bank?.zarlaga ?? 0],
       ["Дансны эцсийн үлдэгдэл", bankUldegdel.etssiin ?? ""],
       [],
-      ["Нэхэмжилсэн", avlaga?.nekhemjilsen ?? 0],
-      ["Төлөгдсөн", avlaga?.tulsun ?? 0],
-      ["Хөнгөлөлт", avlaga?.khungulult ?? 0],
-      ["Авлагын эхний үлдэгдэл", avlaga?.ekhniiAvlaga ?? 0],
-      ["Авлагын эцсийн үлдэгдэл", avlaga?.etssiinAvlaga ?? 0],
+      ["Орлого (төлсөн мөнгө)", avlaga?.tulsun ?? 0],
+      ["Авлага (төлөөгүй мөнгө)", avlaga?.etssiinAvlaga ?? 0],
       [],
       ["Зогсоолын орлого", zogsool?.niit ?? 0],
     ];
@@ -221,22 +258,14 @@ export default function ShilenDansPage() {
     XLSX.utils.book_append_sheet(
       wb,
       XLSX.utils.aoa_to_sheet([
-        ["Зардал", "Нэхэмжилсэн", "Төлөгдсөн"],
-        ...(avlaga?.zardalaar || []).map((z) => [z.ner, z.nekhemjilsen, z.tulsun]),
-      ]),
-      "Орлого",
-    );
-
-    XLSX.utils.book_append_sheet(
-      wb,
-      XLSX.utils.aoa_to_sheet([
-        ["Огноо", "Данс", "Гүйлгээний утга", "Харьцсан данс", "Харьцсан нэр", "Дүн"],
+        ["Огноо", "Данс", "Гүйлгээний утга", "Харьцсан данс", "Харьцсан нэр", "Ангилал", "Дүн"],
         ...(bank?.zarlaguud || []).map((z) => [
           ognooKharuul(z.ognoo),
           z.dansniiDugaar,
           z.utga,
           z.kharitsakhDans,
           z.kharitsakhNer,
+          z.angilal || "Ангилаагүй",
           z.dun,
         ]),
       ]),
@@ -282,24 +311,6 @@ export default function ShilenDansPage() {
     },
   ];
 
-  const zardalBaganuud = [
-    { title: "Зардлын нэр", dataIndex: "ner", key: "ner" },
-    {
-      title: "Нэхэмжилсэн",
-      dataIndex: "nekhemjilsen",
-      key: "nekhemjilsen",
-      align: "right" as const,
-      render: (v: number) => formatNumber(v),
-    },
-    {
-      title: "Төлөгдсөн",
-      dataIndex: "tulsun",
-      key: "tulsun",
-      align: "right" as const,
-      render: (v: number) => <span className="text-success">{formatNumber(v)}</span>,
-    },
-  ];
-
   const zarlagaBaganuud = [
     {
       title: "Огноо",
@@ -315,6 +326,21 @@ export default function ShilenDansPage() {
       key: "kharitsakh",
       render: (_: unknown, r: ZarlagaMur) =>
         [r.kharitsakhNer, r.kharitsakhDans].filter(Boolean).join(" · ") || "-",
+    },
+    {
+      title: "Ангилал",
+      key: "angilal",
+      width: 200,
+      render: (_: unknown, r: ZarlagaMur) => (
+        <FilterSelect
+          value={r.angilal || ""}
+          onChange={(v) => angilalOnooy(r, v)}
+          options={(data?.zarlagiinAngilaluud || []).map((a) => ({ value: a, label: a }))}
+          placeholder="Ангилаагүй"
+          bugdLabel={null}
+          className="w-[180px]"
+        />
+      ),
     },
     {
       title: "Дүн",
@@ -395,51 +421,21 @@ export default function ShilenDansPage() {
       </Khavtas>
 
       <div className="grid grid-cols-1 gap-3 xl:grid-cols-2">
-        {/* 2. Орлого — нэхэмжилсэн / төлөгдсөн */}
-        <Khavtas
-          garchig="Орлого (нэхэмжлэл)"
-          tailbar="Оршин суугчдад нэхэмжилсэн ба төлөгдсөн дүн, зардлын төрлөөр. Өмнөх үеийн эхний үлдэгдэл орохгүй."
-        >
-          <Table
-            dataSource={avlaga?.zardalaar || []}
-            columns={zardalBaganuud}
-            rowKey="ner"
-            pagination={false}
-            loading={loading}
-            scroll={{ x: "max-content" }}
-            locale={{ emptyText: "Мэдээлэл алга" }}
-            summary={() =>
-              avlaga && avlaga.zardalaar.length > 0 ? (
-                <Table.Summary.Row className="bg-theme/5">
-                  <Table.Summary.Cell index={0} className="text-[13px] font-medium">
-                    Нийт
-                  </Table.Summary.Cell>
-                  <Table.Summary.Cell index={1} align="right" className="text-[13px] font-medium">
-                    {formatNumber(avlaga.nekhemjilsen)}
-                  </Table.Summary.Cell>
-                  <Table.Summary.Cell index={2} align="right" className="text-[13px] font-medium">
-                    {formatNumber(avlaga.tulsun)}
-                  </Table.Summary.Cell>
-                </Table.Summary.Row>
-              ) : null
-            }
+        {/* 2. Орлого ба авлага — төлсөн мөнгө орлого, төлөөгүй мөнгө авлага */}
+        <Khavtas garchig="Орлого ба авлага" tailbar="Оршин суугчдын төлбөр.">
+          <MurUtga
+            ner="Орлого (төлсөн мөнгө)"
+            utga={loading ? "…" : mungu(avlaga?.tulsun)}
+            ungu="text-success"
+          />
+          <MurUtga
+            ner="Авлага (төлөөгүй мөнгө)"
+            utga={loading ? "…" : mungu(avlaga?.etssiinAvlaga)}
+            ungu={(avlaga?.etssiinAvlaga || 0) > 0 ? "text-danger" : undefined}
           />
         </Khavtas>
 
         <div className="flex flex-col gap-3">
-          {/* 4. Авлага */}
-          <Khavtas garchig="Авлага" tailbar="Оршин суугчдын төлөөгүй үлдэгдэл.">
-            <MurUtga ner="Эхний үлдэгдэл" utga={mungu(avlaga?.ekhniiAvlaga)} />
-            <MurUtga ner="Нэхэмжилсэн" utga={`+ ${mungu(avlaga?.nekhemjilsen)}`} />
-            <MurUtga ner="Төлөгдсөн" utga={`− ${mungu(avlaga?.tulsun)}`} ungu="text-success" />
-            <MurUtga ner="Хөнгөлөлт" utga={`− ${mungu(avlaga?.khungulult)}`} />
-            <MurUtga
-              ner="Эцсийн үлдэгдэл"
-              utga={mungu(avlaga?.etssiinAvlaga)}
-              ungu={(avlaga?.etssiinAvlaga || 0) > 0 ? "text-danger" : undefined}
-            />
-          </Khavtas>
-
           {/* 3. Зогсоолын орлого */}
           <Khavtas garchig="Зогсоолын орлого" tailbar="Камер касс болон гараар бүртгэсэн төлбөр.">
             {zogsool ? (
@@ -461,8 +457,30 @@ export default function ShilenDansPage() {
       {/* 5. Зарлага */}
       <Khavtas
         garchig="Зарлага"
-        tailbar="Банкны данснаас гарсан гүйлгээ. Зарлагын ангилал (цалин, ус, дулаан, засвар г.м.) дараагийн шатанд нэмэгдэнэ."
+        tailbar="Банкны данснаас гарсан гүйлгээ. Мөр бүрд ангилал онооход оршин суугчийн аппын «Зарцуулалт» хэсэгт ангиллаар харагдана."
       >
+        {(bank?.zarlagaAngilalaar || []).length > 0 && (
+          <div className="mb-4 flex flex-col gap-2">
+            {(bank?.zarlagaAngilalaar || []).map((a) => {
+              const khuvi = bank?.zarlaga ? Math.round((a.dun / bank.zarlaga) * 100) : 0;
+              return (
+                <div key={a.angilal} className="flex items-center gap-3 text-[13px]">
+                  <span className="w-40 shrink-0 truncate text-[color:var(--panel-text)]">
+                    {a.angilal}
+                  </span>
+                  <div className="h-2 flex-1 overflow-hidden rounded-full bg-theme/10">
+                    <div
+                      className={`h-full rounded-full ${a.angilal === "Ангилаагүй" ? "bg-[color:var(--muted-text)]" : "bg-theme"}`}
+                      style={{ width: `${khuvi}%` }}
+                    />
+                  </div>
+                  <span className="w-28 shrink-0 text-right tabular-nums">{formatNumber(a.dun)}</span>
+                  <span className="w-10 shrink-0 text-right text-[color:var(--muted-text)]">{khuvi}%</span>
+                </div>
+              );
+            })}
+          </div>
+        )}
         <Table
           dataSource={bank?.zarlaguud || []}
           columns={zarlagaBaganuud}
@@ -477,8 +495,8 @@ export default function ShilenDansPage() {
       <div className="flex items-start gap-2 px-1 text-xs text-[color:var(--muted-text)] no-print">
         <Info className="mt-0.5 h-3.5 w-3.5 shrink-0" strokeWidth={1.75} />
         <span>
-          Төсөв ба гүйцэтгэлийн харьцуулалт, зарлагын ангилал нь тусдаа бүртгэл шаардах тул
-          дараагийн шатанд нэмэгдэнэ.
+          Төсөв ба гүйцэтгэлийн харьцуулалт нь тусдаа бүртгэл шаардах тул дараагийн шатанд
+          нэмэгдэнэ. Аппад харуулах эсэхийг «Тохиргоо → Нэмэлт → Шилэн данс аппад харуулах»-аас.
         </span>
       </div>
     </div>

@@ -31,6 +31,7 @@ import {
   MessageSquare,
   ShieldCheck,
   Smartphone,
+  Eye,
 } from "lucide-react";
 import uilchilgee from "@/lib/uilchilgee";
 import deleteMethod from "../../../../tools/function/deleteMethod";
@@ -142,6 +143,15 @@ export default function NemeltTokhirgoo({
    */
   const [gerBuliinGishuunEnabled, setGerBuliinGishuunEnabled] =
     useState<boolean>(true);
+
+  /**
+   * Шилэн дансыг оршин суугчийн аппад харуулах эсэх, мөн авлагатай айлуудын
+   * (тоот, дүн) жагсаалтыг харуулах эсэх. Тохируулаагүй бол харуулахгүй —
+   * backend-ийн утгатай ижил.
+   */
+  const [shilenDansAppEsekh, setShilenDansAppEsekh] = useState<boolean>(false);
+  const [shilenDansAilKharuulakhEsekh, setShilenDansAilKharuulakhEsekh] =
+    useState<boolean>(false);
 
   /**
    * 1 эрхээр зөвхөн 1 төхөөрөмжөөс хандах эсэх (Single session policy).
@@ -537,6 +547,8 @@ export default function NemeltTokhirgoo({
 
     setResidentGateOpenEnabled(!!find("orshinSuugchKhaalgaNeehEsekh", false));
     setGerBuliinGishuunEnabled(find("gerBuliinGishuunEsekh", true) !== false);
+    setShilenDansAppEsekh(find("shilenDansAppEsekh", false) === true);
+    setShilenDansAilKharuulakhEsekh(find("shilenDansAilKharuulakhEsekh", false) === true);
     setNegSessionEsekh(
       find("negSessionEsekh", false) === true &&
         !find("olonTokhooromjZuvshuurukh", true),
@@ -1069,6 +1081,51 @@ export default function NemeltTokhirgoo({
     }
   };
 
+  /** Шилэн дансны аппын хоёр тохиргоог байгууллага/сонгосон барилга дээр хадгална. */
+  const saveShilenDansSettings = async (appEsekh: boolean, ailEsekh: boolean) => {
+    if (!token || !ajiltan?.baiguullagiinId) {
+      aldaaGargay("Нэвтрэх шаардлагатай");
+      return;
+    }
+    showSpinner();
+    try {
+      const effectiveBarilgiinId = selectedBuildingId || barilgiinId;
+      const resp = await uilchilgee(token).get(
+        `/baiguullaga/${ajiltan.baiguullagiinId}`,
+        { headers: { "X-Org-Only": "1" } },
+      );
+      const freshOrg = resp.data;
+      if (!freshOrg || !freshOrg._id) {
+        throw new Error("Байгууллагын мэдээлэл олдсонгүй");
+      }
+      const payload: any = JSON.parse(JSON.stringify(freshOrg));
+      const shilenData = {
+        shilenDansAppEsekh: appEsekh,
+        shilenDansAilKharuulakhEsekh: appEsekh && ailEsekh,
+      };
+      if (effectiveBarilgiinId && payload.barilguud) {
+        payload.barilguud = payload.barilguud.map((b: any) => {
+          const bId = b._id || b.id;
+          if (String(bId).trim() === String(effectiveBarilgiinId).trim()) {
+            return { ...b, tokhirgoo: { ...(b.tokhirgoo || {}), ...shilenData } };
+          }
+          return b;
+        });
+      } else {
+        payload.tokhirgoo = { ...(payload.tokhirgoo || {}), ...shilenData };
+      }
+      const result = await updateMethod("baiguullaga", token, payload);
+      if (!result?.data) throw new Error("Хадгалахад алдаа гарлаа");
+      await baiguullagaMutate(result.data.result || result.data, false);
+      await baiguullagaMutate();
+      amjilt("Шилэн дансны тохиргоо хадгалагдлаа");
+    } catch (error: any) {
+      aldaaGargay(error?.message || "Хадгалахад алдаа гарлаа");
+    } finally {
+      hideSpinner();
+    }
+  };
+
   const saveZaaltaarBodokhSettings = async (utga: boolean) => {
     if (!token || !ajiltan?.baiguullagiinId) {
       aldaaGargay("Нэвтрэх шаардлагатай");
@@ -1332,6 +1389,8 @@ export default function NemeltTokhirgoo({
     liftEnabled,
     liftBulkInput: parseBulk(liftBulkInput || "").join(","),
     gerBuliinGishuunEnabled,
+    shilenDansAppEsekh,
+    shilenDansAilKharuulakhEsekh,
     messejYavuulakhEsekh,
     negSessionEsekh,
   };
@@ -1425,6 +1484,11 @@ export default function NemeltTokhirgoo({
       khadgal: () => saveGerBuliinGishuunSettings(gerBuliinGishuunEnabled),
     },
     {
+      talbar: ["shilenDansAppEsekh", "shilenDansAilKharuulakhEsekh"],
+      khadgal: () =>
+        saveShilenDansSettings(shilenDansAppEsekh, shilenDansAilKharuulakhEsekh),
+    },
+    {
       talbar: ["negSessionEsekh"],
       khadgal: () => saveNegSessionSettings(negSessionEsekh),
     },
@@ -1511,6 +1575,8 @@ export default function NemeltTokhirgoo({
       setKhGuestLimit(v("khGuestLimit"));
       setKhGuestFreeMinutes(v("khGuestFreeMinutes"));
       setGerBuliinGishuunEnabled(v("gerBuliinGishuunEnabled"));
+      setShilenDansAppEsekh(v("shilenDansAppEsekh") === true);
+      setShilenDansAilKharuulakhEsekh(v("shilenDansAilKharuulakhEsekh") === true);
       setMessejYavuulakhEsekh(v("messejYavuulakhEsekh") !== false);
       setNegSessionEsekh(v("negSessionEsekh") === true);
     }
@@ -1965,6 +2031,35 @@ export default function NemeltTokhirgoo({
                 />
               }
             />
+
+            <SettingsItem
+              id="nemelt-shilendans-box"
+              icon={<Eye />}
+              title="Шилэн данс аппад харуулах"
+              changed={uurchlugdsun("shilenDansAppEsekh", "shilenDansAilKharuulakhEsekh")}
+              desc={
+                shilenDansAppEsekh
+                  ? "Оршин суугчид аппаас дансны үлдэгдэл, орлого, зарлага, айлын авлагын нийт дүнг харна."
+                  : "Аппад «Шилэн данс» хэсэг харагдахгүй."
+              }
+              control={
+                <Switch
+                  checked={shilenDansAppEsekh}
+                  onChange={(e) => setShilenDansAppEsekh(e.currentTarget.checked)}
+                  label="Шилэн данс аппад харуулах"
+                />
+              }
+            >
+              {shilenDansAppEsekh ? (
+                <Switch
+                  checked={shilenDansAilKharuulakhEsekh}
+                  onChange={(e) =>
+                    setShilenDansAilKharuulakhEsekh(e.currentTarget.checked)
+                  }
+                  label="Хугацаа хэтэрсэн айлуудын тоот, дүнг харуулах"
+                />
+              ) : null}
+            </SettingsItem>
           </SettingsCard>
 
           {/* ── 4. Нэвтрэлт ба аюулгүй байдал ────────────────────────── */}
@@ -2234,6 +2329,8 @@ const TOKHIRGOONII_BULEG: Record<string, string[]> = {
     "khGuestLimit",
     "khGuestFreeMinutes",
     "gerBuliinGishuunEnabled",
+    "shilenDansAppEsekh",
+    "shilenDansAilKharuulakhEsekh",
     "messejYavuulakhEsekh",
     "negSessionEsekh",
   ],
