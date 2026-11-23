@@ -143,6 +143,11 @@ export const ALL_PERMISSIONS: PermissionItem[] = [
         label: "Шилэн данс",
         description: "Шилэн дансны мэдээлэл харах эрх",
       },
+      {
+        id: "sankhuu.shilenDansZasakh",
+        label: "Шилэн данс зарлага оруулах",
+        description: "СӨХ-ийн зарлага нэмэх, засах, устгах эрх",
+      },
     ],
   },
   {
