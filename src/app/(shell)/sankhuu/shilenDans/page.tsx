@@ -32,7 +32,7 @@ import formatNumber from "../../../../../tools/function/formatNumber";
  * Өгөгдөл: sukhBackv2 controller/shilenDans.js.
  */
 
-/** Тоот (гэрээ) тус бүрийн тооцоо. Эхний + Дебет − Кредит = Эцсийн. */
+/** Тоот (гэрээ) тус бүрийн тооцоо. debet/kredit-ийг сервер явуулдаг ч хүснэгтэд харуулахгүй. */
 interface AilMur {
   gereeniiId: string;
   gereeniiDugaar: string;
@@ -296,12 +296,10 @@ export default function ShilenDansPage() {
   const niit = kharagdakh.reduce(
     (s, a) => ({
       ekhnii: s.ekhnii + a.ekhnii,
-      debet: s.debet + a.debet,
-      kredit: s.kredit + a.kredit,
       etssiin: s.etssiin + a.etssiin,
       khetersen: s.khetersen + a.khetersen,
     }),
-    { ekhnii: 0, debet: 0, kredit: 0, etssiin: 0, khetersen: 0 },
+    { ekhnii: 0, etssiin: 0, khetersen: 0 },
   );
   const tuluuguiToo = ailuud.filter((a) => a.etssiin > 0).length;
   const khetersenKhonog = data?.khetersenKhonog ?? 30;
@@ -350,8 +348,6 @@ export default function ShilenDansPage() {
           "Нэр",
           "Утас",
           "Эхний үлдэгдэл",
-          "Дебет",
-          "Кредит",
           "Эцсийн үлдэгдэл",
           "Хугацаа хэтэрсэн",
           "Хоног",
@@ -363,8 +359,6 @@ export default function ShilenDansPage() {
           a.ner,
           a.utas,
           a.ekhnii,
-          a.debet,
-          a.kredit,
           a.etssiin,
           a.khetersen,
           a.khetersen > 0 ? a.khonog : "",
@@ -407,8 +401,6 @@ export default function ShilenDansPage() {
     },
     { title: "Утас", dataIndex: "utas", key: "utas", width: 110, render: (v: string) => v || "-" },
     mungunBagana("Эхний үлдэгдэл", "ekhnii"),
-    mungunBagana("Дебет", "debet"),
-    mungunBagana("Кредит", "kredit", () => "text-success"),
     mungunBagana("Эцсийн үлдэгдэл", "etssiin", (v) => (v > 0 ? "font-medium text-danger" : "")),
     mungunBagana("Хугацаа хэтэрсэн", "khetersen", (v) => (v > 0 ? "text-warning" : "")),
     {
@@ -607,7 +599,7 @@ export default function ShilenDansPage() {
               ? "Төлөөгүй айлууд"
               : "Оршин суугчдын тооцоо"
         }
-        tailbar={`Дебет = нэхэмжилсэн, Кредит = төлсөн + хөнгөлөлт. Эхний үлдэгдэл + Дебет − Кредит = Эцсийн үлдэгдэл. Хугацаа хэтэрсэн = ${khetersenKhonog} хоногоос дээш төлөгдөөгүй.`}
+        tailbar={`Эхний үлдэгдэл — хугацааны эхэнд, эцсийн үлдэгдэл — хугацааны эцэст төлөөгүй дүн. Хугацаа хэтэрсэн = ${khetersenKhonog} хоногоос дээш төлөгдөөгүй.`}
         uildel={
           <div className="flex flex-wrap gap-1 no-print">
             {(
@@ -648,7 +640,7 @@ export default function ShilenDansPage() {
                   <Table.Summary.Cell index={0} colSpan={4} className="text-[13px] font-medium">
                     Нийт ({kharagdakh.length})
                   </Table.Summary.Cell>
-                  {(["ekhnii", "debet", "kredit", "etssiin", "khetersen"] as const).map((k, i) => (
+                  {(["ekhnii", "etssiin", "khetersen"] as const).map((k, i) => (
                     <Table.Summary.Cell
                       key={k}
                       index={i + 4}
@@ -658,7 +650,7 @@ export default function ShilenDansPage() {
                       {mungu(niit[k])}
                     </Table.Summary.Cell>
                   ))}
-                  <Table.Summary.Cell index={9} />
+                  <Table.Summary.Cell index={7} />
                 </Table.Summary.Row>
               </Table.Summary>
             ) : null
