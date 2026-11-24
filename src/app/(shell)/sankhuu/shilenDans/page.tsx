@@ -292,7 +292,6 @@ export default function ShilenDansPage() {
   const zarlaguud = data?.zarlaguud || [];
   const orloguud = data?.orloguud || [];
   const ailuud = data?.ailuud || [];
-  const tuluuguiToo = ailuud.filter((a: any) => a.etssiin > 0).length;
   const khetersenAilToo = data?.khetersenAilToo || ailuud.filter((a: any) => a.khetersen > 0).length || 0;
   const khetersenKhonog = data?.khetersenKhonog ?? 30;
 
@@ -351,9 +350,6 @@ export default function ShilenDansPage() {
     }
     return list;
   }, [dateRange, orloguud, zarlaguud]);
-
-  const orlogotoiUdruudToo = useMemo(() => udruud.filter((u) => u.orlogo > 0).length, [udruud]);
-  const zarlagataiUdruudToo = useMemo(() => udruud.filter((u) => u.zarlaga > 0).length, [udruud]);
 
   const khaikhUg = (searchTerm || "").trim().toLowerCase();
 
@@ -574,76 +570,9 @@ export default function ShilenDansPage() {
     },
   ];
 
-  const zarlagaBaganuud = [
-    {
-      title: "Огноо",
-      dataIndex: "ognoo",
-      key: "ognoo",
-      width: 110,
-      render: (v: string) => ognooKharuul(v),
-    },
-    { title: "Ангилал", dataIndex: "angilal", key: "angilal", width: 170 },
-    { title: "Тайлбар", dataIndex: "tailbar", key: "tailbar", render: (v: string) => v || "-" },
-    {
-      title: "Бүртгэсэн",
-      dataIndex: "ajiltniiNer",
-      key: "ajiltniiNer",
-      width: 150,
-      render: (v: string) => v || "-",
-    },
-    {
-      title: "Дүн",
-      dataIndex: "dun",
-      key: "dun",
-      align: "right" as const,
-      width: 140,
-      render: (v: number) => <span className="tabular-nums text-danger">{mungu(v)}</span>,
-    },
-    ...(zasakhEsekh
-      ? [
-          {
-            title: "",
-            key: "uildel",
-            width: 84,
-            align: "center" as const,
-            render: (_: unknown, r: ZarlagaMur) => (
-              <div className="flex justify-center gap-1 no-print">
-                <button
-                  type="button"
-                  title="Засах"
-                  aria-label="Засах"
-                  onClick={() =>
-                    setTsonkh({
-                      _id: r._id,
-                      ognoo: ognooKharuul(r.ognoo),
-                      dun: Number(r.dun).toFixed(2),
-                      angilal: r.angilal,
-                      tailbar: r.tailbar || "",
-                    })
-                  }
-                  className="rounded-lg p-1.5 text-[color:var(--muted-text)] hover:bg-[color:var(--surface-hover)] hover:text-[color:var(--panel-text)]"
-                >
-                  <Pencil className="h-4 w-4" />
-                </button>
-                <button
-                  type="button"
-                  title="Устгах"
-                  aria-label="Устгах"
-                  onClick={() => zarlagaUstgakh(r)}
-                  className="rounded-lg p-1.5 text-[color:var(--muted-text)] hover:bg-[color:var(--surface-hover)] hover:text-danger"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </button>
-              </div>
-            ),
-          },
-        ]
-      : []),
-  ];
-
-  // Нийт 4 карт — бүгд нэг мөрөнд, Орлого/Зардал шүүх боломжтой
+  // Нийт 3 карт — авсаархан хэмжээтэй, 1 мөрөнд
   const kartuud: {
-    key: "orlogo" | "zarlaga" | "tuluugui" | "khetersen";
+    key: "orlogo" | "zarlaga" | "khetersen";
     nershil: string;
     utga: string;
     ungu: string;
@@ -663,14 +592,6 @@ export default function ShilenDansPage() {
       utga: mungu(data?.zardal || 0),
       ungu: "text-danger",
       darjBolokh: true,
-    },
-    {
-      key: "tuluugui",
-      nershil: "Төлөөгүй (нийт)",
-      utga: mungu(data?.tuluugui || 0),
-      ungu: "text-danger",
-      tailbar: `${tuluuguiToo} айл`,
-      darjBolokh: false,
     },
     {
       key: "khetersen",
@@ -698,8 +619,8 @@ export default function ShilenDansPage() {
         </div>
       )}
 
-      {/* 4 карт — бүгд 1 мөрөнд */}
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+      {/* 3 карт — авсаархан хэмжээтэй (compact), 1 мөрөнд */}
+      <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-3">
         {kartuud.map((k) => {
           const idevkhtei = k.darjBolokh && shuult === k.key;
           return (
@@ -710,24 +631,24 @@ export default function ShilenDansPage() {
                 setShuult(idevkhtei ? "bugd" : (k.key as Shuult));
               }}
               title={k.darjBolokh ? (idevkhtei ? "Бүх өдрийг харуулах" : `${k.nershil} шүүх`) : undefined}
-              className={`rounded-2xl border px-5 py-4 text-left shadow-[var(--ctl-shadow)] transition-all ${
-                k.darjBolokh ? "cursor-pointer hover:border-theme/60 hover:shadow-md" : ""
+              className={`rounded-xl border px-3.5 py-2 text-left shadow-sm transition-all ${
+                k.darjBolokh ? "cursor-pointer hover:border-theme/60 hover:shadow" : ""
               } ${
                 idevkhtei
                   ? "border-theme ring-2 ring-theme/20 bg-theme/[0.03]"
                   : "border-[color:var(--ctl-border)] bg-[color:var(--surface-bg)]"
               }`}
             >
-              <div className={`text-2xl font-medium leading-tight tabular-nums ${k.ungu}`}>
-                {loading ? "…" : `${k.utga} ₮`}
-              </div>
-              <div className="mt-1 flex items-center justify-between gap-2 text-xs text-[color:var(--muted-text)]">
-                <span className="font-medium text-[color:var(--panel-text)]">{k.nershil}</span>
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-[11px] font-medium text-[color:var(--muted-text)]">{k.nershil}</span>
                 {k.tailbar && (
-                  <span className="rounded-md bg-[color:var(--surface-hover)] px-1.5 py-0.5 text-[11px] font-medium text-[color:var(--muted-text)]">
+                  <span className="rounded bg-[color:var(--surface-hover)] px-1.5 py-0.5 text-[10px] font-medium text-[color:var(--muted-text)]">
                     {k.tailbar}
                   </span>
                 )}
+              </div>
+              <div className={`mt-0.5 text-base sm:text-lg font-semibold leading-tight tabular-nums ${k.ungu}`}>
+                {loading ? "…" : `${k.utga} ₮`}
               </div>
             </div>
           );
@@ -738,15 +659,15 @@ export default function ShilenDansPage() {
       <Khavtas
         garchig={
           shuult === "orlogo"
-            ? `Өдөр тутмын орлого (${orlogotoiUdruudToo} өдөр)`
+            ? "Өдөр тутмын орлого"
             : shuult === "zarlaga"
-              ? `Өдөр тутмын зардал (${zarlagataiUdruudToo} өдөр)`
-              : `Өдөр тутмын орлого, зарлага (${udruud.length} өдөр)`
+              ? "Өдөр тутмын зардал"
+              : "Өдөр тутмын орлого, зарлага"
         }
         tailbar="Мөр дээр дарж тухайн өдрийн орлого, зарлагын дэлгэрэнгүйг харна уу."
         uildel={
           <div className="flex flex-wrap items-center gap-2 no-print">
-            {/* Огнооны шүүлтүүр */}
+            {/* Огнооны шүүлтүүр — эхэнд байрлана */}
             <FilterDatePicker
               id="shilen-dans-date"
               value={dateRange}
@@ -754,22 +675,11 @@ export default function ShilenDansPage() {
                 setDateRange(mur?.[0] && mur?.[1] ? [mur[0], mur[1]] : getDefaultDateRange())
               }
               placeholder="Огноо сонгох"
-              className="w-full sm:w-[260px]"
+              className="w-full sm:w-[240px]"
             />
 
-            {/* Шүүлтүүрийн товчнууд — Бүгд, Орлого, Зарлага */}
+            {/* Шүүлтүүрийн товчнууд — Орлого, Зарлага */}
             <div className="flex items-center gap-1 rounded-xl border border-[color:var(--ctl-border)] bg-[color:var(--surface-bg)] p-1">
-              <button
-                type="button"
-                onClick={() => setShuult("bugd")}
-                className={`h-8 rounded-[9px] px-3 text-[12px] font-medium transition-colors ${
-                  shuult === "bugd"
-                    ? "bg-theme text-white shadow-sm"
-                    : "text-[color:var(--muted-text)] hover:text-[color:var(--panel-text)]"
-                }`}
-              >
-                Бүгд ({udruud.length})
-              </button>
               <button
                 type="button"
                 onClick={() => setShuult(shuult === "orlogo" ? "bugd" : "orlogo")}
@@ -779,7 +689,7 @@ export default function ShilenDansPage() {
                     : "text-[color:var(--muted-text)] hover:text-[color:var(--panel-text)]"
                 }`}
               >
-                Орлого ({orlogotoiUdruudToo})
+                Орлого
               </button>
               <button
                 type="button"
@@ -790,11 +700,29 @@ export default function ShilenDansPage() {
                     : "text-[color:var(--muted-text)] hover:text-[color:var(--panel-text)]"
                 }`}
               >
-                Зарлага ({zarlagataiUdruudToo})
+                Зарлага
               </button>
             </div>
 
+            {/* Баруун талд — Зарлага нэмэх, Хэвлэх, Excel */}
             <div className="flex items-center gap-1.5 ml-auto">
+              {zasakhEsekh && (
+                <button
+                  type="button"
+                  onClick={() =>
+                    setTsonkh({
+                      ognoo: ognooKharuul(new Date().toISOString()),
+                      dun: "",
+                      angilal: "",
+                      tailbar: "",
+                    })
+                  }
+                  className="flex h-8 items-center gap-1.5 rounded-[10px] bg-theme px-3 text-[12px] font-medium text-white shadow-sm hover:bg-theme/90 transition-colors"
+                >
+                  <Plus className="h-3.5 w-3.5" />
+                  Зарлага нэмэх
+                </button>
+              )}
               <button
                 type="button"
                 onClick={() => window.print()}
@@ -849,62 +777,6 @@ export default function ShilenDansPage() {
               </Table.Summary>
             ) : null
           }
-        />
-      </Khavtas>
-
-      {/* Зарлагын ангилал ба нийт зарлагын жагсаалт */}
-      <Khavtas
-        garchig="СӨХ-ийн зарлагын задаргаа"
-        tailbar="СӨХ-ийн бодит зарлагууд ангиллаар."
-        uildel={
-          zasakhEsekh ? (
-            <button
-              type="button"
-              onClick={() =>
-                setTsonkh({
-                  ognoo: ognooKharuul(new Date().toISOString()),
-                  dun: "",
-                  angilal: "",
-                  tailbar: "",
-                })
-              }
-              className="flex h-9 items-center gap-1.5 rounded-[10px] bg-theme px-4 text-[13px] font-medium text-white no-print"
-            >
-              <Plus className="h-4 w-4" />
-              Зарлага нэмэх
-            </button>
-          ) : null
-        }
-      >
-        {(data?.zarlagaAngilalaar || []).length > 0 && (
-          <div className="mb-4 flex flex-col gap-2">
-            {(data?.zarlagaAngilalaar || []).map((a) => {
-              const khuvi = data?.zardal ? Math.round((a.dun / data.zardal) * 100) : 0;
-              return (
-                <div key={a.angilal} className="flex items-center gap-3 text-[13px]">
-                  <span className="w-40 shrink-0 truncate text-[color:var(--panel-text)]">
-                    {a.angilal}
-                  </span>
-                  <div className="h-2 flex-1 overflow-hidden rounded-full bg-theme/10">
-                    <div className="h-full rounded-full bg-danger" style={{ width: `${khuvi}%` }} />
-                  </div>
-                  <span className="w-28 shrink-0 text-right tabular-nums">{mungu(a.dun)}</span>
-                  <span className="w-10 shrink-0 text-right text-[color:var(--muted-text)]">
-                    {khuvi}%
-                  </span>
-                </div>
-              );
-            })}
-          </div>
-        )}
-        <Table
-          dataSource={zarlaguud}
-          columns={zarlagaBaganuud}
-          rowKey="_id"
-          pagination={false}
-          loading={loading}
-          scroll={{ x: "max-content", y: 380 }}
-          locale={{ emptyText: "Энэ хугацаанд зарлага бүртгэгдээгүй" }}
         />
       </Khavtas>
 
