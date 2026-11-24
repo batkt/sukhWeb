@@ -461,17 +461,17 @@ export default function ShilenDansPage() {
     XLSX.utils.book_append_sheet(
       wb,
       XLSX.utils.aoa_to_sheet([
-        ["Огноо", "Бүртгэсэн огноо", "Ангилал", "Ажилтан", "Орлого", "Зардал", "Зөрүү", "Орлогын тоо", "Зарлагын тоо"],
+        ["Огноо", "Орлого", "Зардал", "Зөрүү", "Орлогын тоо", "Зарлагын тоо", "Бүртгэсэн огноо", "Ангилал", "Ажилтан"],
         ...udruud.map((u) => [
           u.ognoo,
-          u.burtgesenOgnoo,
-          u.angilal,
-          u.ajiltan,
           u.orlogo,
           u.zarlaga,
           u.zuruu,
           u.orlogoToo,
           u.zarlagaToo,
+          u.burtgesenOgnoo,
+          u.angilal,
+          u.ajiltan,
         ]),
       ]),
       "Өдөр тутмын тооцоо",
@@ -525,57 +525,10 @@ export default function ShilenDansPage() {
       dataIndex: "ognoo",
       key: "ognoo",
       width: 110,
+      align: "center" as const,
       render: (v: string) => (
         <span className="text-xs font-medium text-[color:var(--panel-text)]">{v}</span>
       ),
-    },
-    {
-      title: "Бүртгэсэн огноо",
-      dataIndex: "burtgesenOgnoo",
-      key: "burtgesenOgnoo",
-      width: 130,
-      render: (v: string) => (
-        <span className="text-xs text-[color:var(--muted-text)]">{v}</span>
-      ),
-    },
-    {
-      title: "Ангилал",
-      dataIndex: "angilal",
-      key: "angilal",
-      width: 140,
-      ellipsis: true,
-      render: (v: string) => (
-        <span className="text-xs text-[color:var(--panel-text)]" title={v}>{v}</span>
-      ),
-    },
-    {
-      title: "Ажилтан",
-      key: "ajiltan",
-      width: 130,
-      render: (_: any, r: UdriinMur) => {
-        const jagsaalt = r.ajiltanJagsaalt || [];
-        if (jagsaalt.length >= 2) {
-          return (
-            <span
-              role="button"
-              tabIndex={0}
-              onClick={(e) => {
-                e.stopPropagation();
-                setSongosonUdur(r.ognoo);
-              }}
-              className="inline-block text-xs font-semibold text-brand underline cursor-pointer hover:text-brand/80"
-              title={jagsaalt.join(", ")}
-            >
-              Олон
-            </span>
-          );
-        }
-        return (
-          <span className="text-xs text-[color:var(--panel-text)]" title={jagsaalt[0] || "—"}>
-            {jagsaalt[0] || "—"}
-          </span>
-        );
-      },
     },
     {
       title: "Орлого",
@@ -621,8 +574,9 @@ export default function ShilenDansPage() {
       title: "Гүйлгээ",
       key: "guilgee",
       width: 130,
+      align: "center" as const,
       render: (_: any, r: UdriinMur) => (
-        <div className="flex flex-wrap items-center gap-1.5 text-xs">
+        <div className="flex flex-wrap items-center justify-center gap-1.5 text-xs">
           {r.orlogoToo > 0 && (
             <span className="rounded-md bg-success/10 px-2 py-0.5 font-medium text-success">
               {r.orlogoToo} орлого
@@ -638,6 +592,56 @@ export default function ShilenDansPage() {
           )}
         </div>
       ),
+    },
+    {
+      title: "Бүртгэсэн огноо",
+      dataIndex: "burtgesenOgnoo",
+      key: "burtgesenOgnoo",
+      width: 130,
+      align: "center" as const,
+      render: (v: string) => (
+        <span className="text-xs text-[color:var(--muted-text)]">{v}</span>
+      ),
+    },
+    {
+      title: "Ангилал",
+      dataIndex: "angilal",
+      key: "angilal",
+      width: 140,
+      align: "center" as const,
+      ellipsis: true,
+      render: (v: string) => (
+        <span className="text-xs text-[color:var(--panel-text)]" title={v}>{v}</span>
+      ),
+    },
+    {
+      title: "Ажилтан",
+      key: "ajiltan",
+      width: 130,
+      render: (_: any, r: UdriinMur) => {
+        const jagsaalt = r.ajiltanJagsaalt || [];
+        if (jagsaalt.length >= 2) {
+          return (
+            <span
+              role="button"
+              tabIndex={0}
+              onClick={(e) => {
+                e.stopPropagation();
+                setSongosonUdur(r.ognoo);
+              }}
+              className="inline-block text-xs font-semibold text-brand underline cursor-pointer hover:text-brand/80"
+              title={jagsaalt.join(", ")}
+            >
+              Олон
+            </span>
+          );
+        }
+        return (
+          <span className="text-xs text-[color:var(--panel-text)]" title={jagsaalt[0] || "—"}>
+            {jagsaalt[0] || "—"}
+          </span>
+        );
+      },
     },
     {
       title: "",
@@ -852,17 +856,17 @@ export default function ShilenDansPage() {
             kharagdakhUdruud.length > 0 ? (
               <Table.Summary fixed>
                 <Table.Summary.Row className="bg-theme/5 font-semibold text-[13px]">
-                  <Table.Summary.Cell index={0} colSpan={5} className="!py-3 !px-3.5 text-[13px]">
+                  <Table.Summary.Cell index={0} colSpan={2} className="!py-3 !px-3.5 text-[13px]">
                     Нийт ({kharagdakhUdruud.length} өдөр)
                   </Table.Summary.Cell>
-                  <Table.Summary.Cell index={5} align="right" className="tabular-nums text-success font-bold !py-3 !px-3.5 text-[13px]">
+                  <Table.Summary.Cell index={2} align="right" className="tabular-nums text-success font-bold !py-3 !px-3.5 text-[13px]">
                     {mungu(udriinNiit.orlogo)}
                   </Table.Summary.Cell>
-                  <Table.Summary.Cell index={6} align="right" className="tabular-nums text-danger font-bold !py-3 !px-3.5 text-[13px]">
+                  <Table.Summary.Cell index={3} align="right" className="tabular-nums text-danger font-bold !py-3 !px-3.5 text-[13px]">
                     {mungu(udriinNiit.zarlaga)}
                   </Table.Summary.Cell>
                   <Table.Summary.Cell
-                    index={7}
+                    index={4}
                     align="right"
                     className={`tabular-nums font-bold !py-3 !px-3.5 text-[13px] ${
                       udriinNiit.zuruu > 0 ? "text-success" : udriinNiit.zuruu < 0 ? "text-danger" : ""
@@ -870,7 +874,7 @@ export default function ShilenDansPage() {
                   >
                     {mungu(udriinNiit.zuruu)}
                   </Table.Summary.Cell>
-                  <Table.Summary.Cell index={8} colSpan={2} className="!py-3 !px-3.5" />
+                  <Table.Summary.Cell index={5} colSpan={5} className="!py-3 !px-3.5" />
                 </Table.Summary.Row>
               </Table.Summary>
             ) : null
