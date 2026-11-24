@@ -108,6 +108,32 @@ const ognooUtga = (d: any): string => {
   return v.slice(0, 10);
 };
 
+function tootHaruul(toot?: string, tailbar?: string, turul?: string): string {
+  const t = toot && toot.trim() && toot.trim() !== "—" ? toot.trim() : "";
+  if (t) return t.toLowerCase().includes("тоот") ? t : `${t} тоот`;
+  const txt = [tailbar, turul].filter(Boolean).join(" ");
+  if (txt) {
+    const m1 = txt.match(/\(?[Тт]оот[:\s\-]*([A-Za-z0-9А-Яа-я_\-]+)\)?/i);
+    if (m1 && m1[1] && m1[1].toLowerCase() !== "төлөлт") {
+      const val = m1[1].trim();
+      return val.toLowerCase().includes("тоот") ? val : `${val} тоот`;
+    }
+    const m2 = txt.match(/([A-Za-z0-9А-Яа-я_\-]+)(?:-?р)?\s*тоот/i);
+    if (m2 && m2[1] && m2[1].toLowerCase() !== "нэмэлт") {
+      const val = m2[1].trim();
+      return val.toLowerCase().includes("тоот") ? val : `${val} тоот`;
+    }
+  }
+  return "—";
+}
+
+function ajiltanHaruul(tailbar?: string, turul?: string): string {
+  const txt = [tailbar, turul].filter(Boolean).join(" ").toLowerCase();
+  if (txt.includes("qpay")) return "QPay";
+  if (txt.includes("банк") || txt.includes("данс")) return "Банк тулгалт";
+  return "Систем";
+}
+
 const OROLT =
   "h-11 w-full rounded-xl border border-[color:var(--surface-border)] " +
   "bg-[color:var(--surface-bg)] px-3 text-sm text-[color:var(--panel-text)] " +
@@ -354,7 +380,7 @@ export default function ShilenDansPage() {
       const ajiltnuud = Array.from(
         new Set([
           ...z.items.map((i) => i.ajiltniiNer).filter(Boolean),
-          ...o.items.map((i) => i.ajiltniiNer).filter(Boolean),
+          ...o.items.map((i) => i.ajiltniiNer || ajiltanHaruul(i.tailbar, i.turul)).filter(Boolean),
         ]),
       ) as string[];
       const ajiltan = ajiltnuud.length > 0 ? ajiltnuud.join(", ") : "—";
@@ -962,7 +988,7 @@ export default function ShilenDansPage() {
                         {songosonUdriinOrloguud.map((o) => (
                           <tr key={o._id} className="hover:bg-[color:var(--surface-hover)]">
                             <td className="px-4 py-2.5 font-medium text-[color:var(--panel-text)]">
-                              {o.toot ? `${o.toot} тоот` : "—"}
+                              {tootHaruul(o.toot, o.tailbar, o.turul)}
                             </td>
                             <td className="px-4 py-2.5 text-[color:var(--panel-text)]">
                               <span>{o.tailbar || "Төлбөр"}</span>
@@ -973,7 +999,7 @@ export default function ShilenDansPage() {
                               )}
                             </td>
                             <td className="px-4 py-2.5 text-[color:var(--muted-text)]">
-                              {o.ajiltniiNer || "—"}
+                              {o.ajiltniiNer || ajiltanHaruul(o.tailbar, o.turul)}
                             </td>
                             <td className="px-4 py-2.5 text-right font-medium tabular-nums text-success">
                               {mungu(o.dun)}
