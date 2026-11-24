@@ -50,6 +50,7 @@ interface OrlogoMur {
 }
 
 interface UdriinMur {
+  udur: number;
   ognoo: string;
   ognooLabel: string;
   garig: string;
@@ -58,23 +59,6 @@ interface UdriinMur {
   zuruu: number;
   orlogoToo: number;
   zarlagaToo: number;
-}
-
-interface AilMur {
-  gereeniiId: string;
-  gereeniiDugaar: string;
-  toot: string;
-  orts: string;
-  davkhar: string;
-  ner: string;
-  utas: string;
-  tsutsalsan: boolean;
-  ekhnii: number;
-  debet: number;
-  kredit: number;
-  etssiin: number;
-  khetersen: number;
-  khonog: number;
 }
 
 interface ShilenDansKhariu {
@@ -91,10 +75,10 @@ interface ShilenDansKhariu {
   zarlaguud: ZarlagaMur[];
   orloguud?: OrlogoMur[];
   zarlagaAngilalaar: { angilal: string; dun: number }[];
-  ailuud?: AilMur[];
+  ailuud?: any[];
 }
 
-type Shuult = "bugd" | "orlogo" | "zarlaga" | "tuluugui" | "khetersen";
+type Shuult = "bugd" | "orlogo" | "zarlaga";
 
 const GARIGUUD = ["Ням", "Даваа", "Мягмар", "Лхагва", "Пүрэв", "Баасан", "Бямба"];
 
@@ -353,6 +337,7 @@ export default function ShilenDansPage() {
       const o = orlogoMap.get(dStr) || { niit: 0, count: 0 };
       const z = zarlagaMap.get(dStr) || { niit: 0, count: 0 };
       list.push({
+        udur: curr.getDate(),
         ognoo: dStr,
         ognooLabel: `${dStr} (${garig})`,
         garig,
@@ -382,6 +367,7 @@ export default function ShilenDansPage() {
     if (khaikhUg) {
       list = list.filter(
         (u) =>
+          String(u.udur) === khaikhUg ||
           u.ognoo.includes(khaikhUg) ||
           u.garig.toLowerCase().includes(khaikhUg) ||
           String(u.orlogo).includes(khaikhUg) ||
@@ -403,35 +389,6 @@ export default function ShilenDansPage() {
       { orlogo: 0, zarlaga: 0, zuruu: 0, orlogoToo: 0, zarlagaToo: 0 },
     );
   }, [kharagdakhUdruud]);
-
-  // ── Дашбордоос сонгогдсон айлуудын жагсаалт (Төлөөгүй эсвэл Хугацаа хэтэрсэн) ──
-  const kharagdakhAiluud = useMemo(() => {
-    let list = ailuud;
-    if (shuult === "tuluugui") {
-      list = list.filter((a: any) => a.etssiin > 0);
-    } else if (shuult === "khetersen") {
-      list = list.filter((a: any) => a.khetersen > 0);
-    }
-    if (khaikhUg) {
-      list = list.filter((a: any) =>
-        [a.toot, a.ner, a.orts, a.utas, a.gereeniiDugaar].some((v) =>
-          String(v || "").toLowerCase().includes(khaikhUg),
-        ),
-      );
-    }
-    return list;
-  }, [ailuud, shuult, khaikhUg]);
-
-  const ailNiit = useMemo(() => {
-    return kharagdakhAiluud.reduce(
-      (s: any, a: any) => ({
-        ekhnii: s.ekhnii + (Number(a.ekhnii) || 0),
-        etssiin: s.etssiin + (Number(a.etssiin) || 0),
-        khetersen: s.khetersen + (Number(a.khetersen) || 0),
-      }),
-      { ekhnii: 0, etssiin: 0, khetersen: 0 },
-    );
-  }, [kharagdakhAiluud]);
 
   // Сонгосон өдрийн орлого, зарлага (модалд)
   const songosonUdriinOrloguud = useMemo(() => {
@@ -519,14 +476,19 @@ export default function ShilenDansPage() {
   // ── Өдөр тутмын хүснэгтийн баганууд ──
   const udriinBaganuud = [
     {
-      title: "Огноо",
+      title: "Өдөр / Огноо",
       dataIndex: "ognoo",
       key: "ognoo",
       width: 170,
       render: (_: any, r: UdriinMur) => (
-        <div className="flex items-center gap-2">
-          <Calendar className="h-4 w-4 text-[color:var(--muted-text)]" />
-          <span className="font-medium text-[color:var(--panel-text)]">{r.ognooLabel}</span>
+        <div className="flex items-center gap-2.5">
+          <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-theme/10 text-xs font-semibold text-theme tabular-nums">
+            {r.udur}
+          </span>
+          <div className="flex flex-col min-w-0">
+            <span className="text-xs font-medium text-[color:var(--panel-text)]">{r.ognoo}</span>
+            <span className="text-[11px] text-[color:var(--muted-text)]">{r.garig}</span>
+          </div>
         </div>
       ),
     },
@@ -538,7 +500,7 @@ export default function ShilenDansPage() {
       width: 150,
       render: (v: number) => (
         <span className={`tabular-nums font-medium ${v > 0 ? "text-success" : "text-[color:var(--muted-text)]"}`}>
-          {v > 0 ? `+${mungu(v)}` : "0.00"}
+          {v > 0 ? `+${mungu(v)} ₮` : "0.00 ₮"}
         </span>
       ),
     },
@@ -550,7 +512,7 @@ export default function ShilenDansPage() {
       width: 150,
       render: (v: number) => (
         <span className={`tabular-nums font-medium ${v > 0 ? "text-danger" : "text-[color:var(--muted-text)]"}`}>
-          {v > 0 ? `-${mungu(v)}` : "0.00"}
+          {v > 0 ? `-${mungu(v)} ₮` : "0.00 ₮"}
         </span>
       ),
     },
@@ -566,7 +528,7 @@ export default function ShilenDansPage() {
             v > 0 ? "text-success" : v < 0 ? "text-danger" : "text-[color:var(--muted-text)]"
           }`}
         >
-          {mungu(v)}
+          {v > 0 ? `+${mungu(v)} ₮` : v < 0 ? `${mungu(v)} ₮` : "0.00 ₮"}
         </span>
       ),
     },
@@ -582,7 +544,7 @@ export default function ShilenDansPage() {
           )}
           {r.zarlagaToo > 0 && (
             <span className="rounded-md bg-danger/10 px-2 py-0.5 font-medium text-danger">
-              {r.zarlagaToo} зардал
+              {r.zarlagaToo} зарлага
             </span>
           )}
           {r.orlogoToo === 0 && r.zarlagaToo === 0 && (
@@ -609,56 +571,6 @@ export default function ShilenDansPage() {
           Харах
         </button>
       ),
-    },
-  ];
-
-  // ── Айлуудын хүснэгтийн баганууд (Төлөөгүй / Хугацаа хэтэрсэн карт дарсан үед) ──
-  const mungunBagana = (title: string, key: keyof AilMur, ungu?: (v: number) => string) => ({
-    title,
-    dataIndex: key,
-    key,
-    align: "right" as const,
-    width: 130,
-    render: (v: number) => (
-      <span className={`tabular-nums ${ungu ? ungu(v) : ""}`}>
-        {v ? mungu(v) : <span className="text-[color:var(--muted-text)]">0.00</span>}
-      </span>
-    ),
-  });
-
-  const ailBaganuud = [
-    { title: "Орц", dataIndex: "orts", key: "orts", width: 60, render: (v: string) => v || "-" },
-    {
-      title: "Тоот",
-      dataIndex: "toot",
-      key: "toot",
-      width: 70,
-      render: (v: string) => <span className="font-medium text-[color:var(--panel-text)]">{v || "-"}</span>,
-    },
-    {
-      title: "Нэр",
-      dataIndex: "ner",
-      key: "ner",
-      render: (v: string, r: AilMur) => (
-        <span>
-          {v || "-"}
-          {r.tsutsalsan && (
-            <span className="ml-1.5 text-[11px] text-[color:var(--muted-text)]">(цуцалсан)</span>
-          )}
-        </span>
-      ),
-    },
-    { title: "Утас", dataIndex: "utas", key: "utas", width: 110, render: (v: string) => v || "-" },
-    mungunBagana("Эхний үлдэгдэл", "ekhnii"),
-    mungunBagana("Эцсийн үлдэгдэл", "etssiin", (v) => (v > 0 ? "font-medium text-danger" : "")),
-    mungunBagana("Хугацаа хэтэрсэн", "khetersen", (v) => (v > 0 ? "text-warning" : "")),
-    {
-      title: "Хоног",
-      dataIndex: "khonog",
-      key: "khonog",
-      width: 75,
-      align: "right" as const,
-      render: (v: number, r: AilMur) => (r.khetersen > 0 ? `${v} хоног` : "-"),
     },
   ];
 
@@ -729,22 +641,36 @@ export default function ShilenDansPage() {
       : []),
   ];
 
-  // Нийт 4 карт — hover болон дарж шүүх боломжтой, нэг мөрөнд
+  // Нийт 4 карт — бүгд нэг мөрөнд, Орлого/Зардал шүүх боломжтой
   const kartuud: {
-    key: Shuult;
+    key: "orlogo" | "zarlaga" | "tuluugui" | "khetersen";
     nershil: string;
     utga: string;
     ungu: string;
     tailbar?: string;
+    darjBolokh: boolean;
   }[] = [
-    { key: "orlogo", nershil: "Орлого (төлсөн)", utga: mungu(data?.tulsun || 0), ungu: "text-success" },
-    { key: "zarlaga", nershil: "Зардал", utga: mungu(data?.zardal || 0), ungu: "text-danger" },
+    {
+      key: "orlogo",
+      nershil: "Орлого (төлсөн)",
+      utga: mungu(data?.tulsun || 0),
+      ungu: "text-success",
+      darjBolokh: true,
+    },
+    {
+      key: "zarlaga",
+      nershil: "Зардал",
+      utga: mungu(data?.zardal || 0),
+      ungu: "text-danger",
+      darjBolokh: true,
+    },
     {
       key: "tuluugui",
       nershil: "Төлөөгүй (нийт)",
       utga: mungu(data?.tuluugui || 0),
       ungu: "text-danger",
       tailbar: `${tuluuguiToo} айл`,
+      darjBolokh: false,
     },
     {
       key: "khetersen",
@@ -752,6 +678,7 @@ export default function ShilenDansPage() {
       utga: mungu(data?.khetersen || 0),
       ungu: "text-warning",
       tailbar: `${khetersenAilToo} айл · ${khetersenKhonog}+ хоног`,
+      darjBolokh: false,
     },
   ];
 
@@ -763,8 +690,6 @@ export default function ShilenDansPage() {
     );
   }
 
-  const ailKharuulakhEsekh = shuult === "tuluugui" || shuult === "khetersen";
-
   return (
     <div className="print-container flex w-full flex-col gap-3 pb-14">
       {aldaa && (
@@ -773,24 +698,28 @@ export default function ShilenDansPage() {
         </div>
       )}
 
-      {/* 4 карт — бүгд 1 мөрөнд, hover болон дарж шүүх боломжтой */}
+      {/* 4 карт — бүгд 1 мөрөнд */}
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         {kartuud.map((k) => {
-          const idevkhtei = shuult === k.key;
+          const idevkhtei = k.darjBolokh && shuult === k.key;
           return (
-            <button
+            <div
               key={k.nershil}
-              type="button"
-              onClick={() => setShuult(idevkhtei ? "bugd" : k.key)}
-              title={idevkhtei ? "Бүгдийг харуулах" : `${k.nershil} шүүх`}
-              className={`rounded-2xl border px-5 py-4 text-left shadow-[var(--ctl-shadow)] cursor-pointer transition-all hover:border-theme/60 hover:shadow-md ${
+              onClick={() => {
+                if (!k.darjBolokh) return;
+                setShuult(idevkhtei ? "bugd" : (k.key as Shuult));
+              }}
+              title={k.darjBolokh ? (idevkhtei ? "Бүх өдрийг харуулах" : `${k.nershil} шүүх`) : undefined}
+              className={`rounded-2xl border px-5 py-4 text-left shadow-[var(--ctl-shadow)] transition-all ${
+                k.darjBolokh ? "cursor-pointer hover:border-theme/60 hover:shadow-md" : ""
+              } ${
                 idevkhtei
                   ? "border-theme ring-2 ring-theme/20 bg-theme/[0.03]"
                   : "border-[color:var(--ctl-border)] bg-[color:var(--surface-bg)]"
               }`}
             >
               <div className={`text-2xl font-medium leading-tight tabular-nums ${k.ungu}`}>
-                {loading ? "…" : k.utga}
+                {loading ? "…" : `${k.utga} ₮`}
               </div>
               <div className="mt-1 flex items-center justify-between gap-2 text-xs text-[color:var(--muted-text)]">
                 <span className="font-medium text-[color:var(--panel-text)]">{k.nershil}</span>
@@ -800,24 +729,21 @@ export default function ShilenDansPage() {
                   </span>
                 )}
               </div>
-            </button>
+            </div>
           );
         })}
       </div>
 
-      {/* Үндсэн хүснэгт — Өдөр тутмын тооцоо (эсвэл дашбордоос сонгосон айлууд) */}
+      {/* Үндсэн хүснэгт — Сонгосон сарын өдөр тутмын тооцоо */}
       <Khavtas
         garchig={
-          shuult === "tuluugui"
-            ? `Төлөөгүй айлууд (${tuluuguiToo})`
-            : shuult === "khetersen"
-              ? `Хугацаа хэтэрсэн айлууд (${khetersenAilToo})`
-              : shuult === "orlogo"
-                ? "Өдөр тутмын орлого"
-                : shuult === "zarlaga"
-                  ? "Өдөр тутмын зардал"
-                  : "Өдөр тутмын орлого, зарлага"
+          shuult === "orlogo"
+            ? `Өдөр тутмын орлого (${orlogotoiUdruudToo} өдөр)`
+            : shuult === "zarlaga"
+              ? `Өдөр тутмын зардал (${zarlagataiUdruudToo} өдөр)`
+              : `Өдөр тутмын орлого, зарлага (${udruud.length} өдөр)`
         }
+        tailbar="Мөр дээр дарж тухайн өдрийн орлого, зарлагын дэлгэрэнгүйг харна уу."
         uildel={
           <div className="flex flex-wrap items-center gap-2 no-print">
             {/* Огнооны шүүлтүүр */}
@@ -831,7 +757,7 @@ export default function ShilenDansPage() {
               className="w-full sm:w-[260px]"
             />
 
-            {/* Шүүлтүүрийн товчнууд — Бүгд, Орлого, Зарлага (эхлэлд байрлана) */}
+            {/* Шүүлтүүрийн товчнууд — Бүгд, Орлого, Зарлага */}
             <div className="flex items-center gap-1 rounded-xl border border-[color:var(--ctl-border)] bg-[color:var(--surface-bg)] p-1">
               <button
                 type="button"
@@ -866,26 +792,6 @@ export default function ShilenDansPage() {
               >
                 Зарлага ({zarlagataiUdruudToo})
               </button>
-              {shuult === "tuluugui" && (
-                <button
-                  type="button"
-                  onClick={() => setShuult("bugd")}
-                  className="h-8 rounded-[9px] bg-danger text-white px-3 text-[12px] font-medium shadow-sm flex items-center gap-1"
-                >
-                  Төлөөгүй ({tuluuguiToo})
-                  <X className="h-3 w-3" />
-                </button>
-              )}
-              {shuult === "khetersen" && (
-                <button
-                  type="button"
-                  onClick={() => setShuult("bugd")}
-                  className="h-8 rounded-[9px] bg-warning text-white px-3 text-[12px] font-medium shadow-sm flex items-center gap-1"
-                >
-                  Хугацаа хэтэрсэн ({khetersenAilToo})
-                  <X className="h-3 w-3" />
-                </button>
-              )}
             </div>
 
             <div className="flex items-center gap-1.5 ml-auto">
@@ -902,84 +808,48 @@ export default function ShilenDansPage() {
           </div>
         }
       >
-        {ailKharuulakhEsekh ? (
-          /* Дашбордоос Төлөөгүй эсвэл Хугацаа хэтэрсэн дарсан үед айлуудын жагсаалт харагдана */
-          <Table
-            dataSource={kharagdakhAiluud}
-            columns={ailBaganuud}
-            rowKey="gereeniiId"
-            pagination={false}
-            loading={loading}
-            scroll={{ x: "max-content", y: 560 }}
-            locale={{ emptyText: "Мэдээлэл алга" }}
-            summary={() =>
-              kharagdakhAiluud.length > 0 ? (
-                <Table.Summary fixed>
-                  <Table.Summary.Row className="bg-theme/5">
-                    <Table.Summary.Cell index={0} colSpan={4} className="text-[13px] font-medium">
-                      Нийт ({kharagdakhAiluud.length} айл)
-                    </Table.Summary.Cell>
-                    {(["ekhnii", "etssiin", "khetersen"] as const).map((k, i) => (
-                      <Table.Summary.Cell
-                        key={k}
-                        index={i + 4}
-                        align="right"
-                        className="text-[13px] font-medium tabular-nums"
-                      >
-                        {mungu(ailNiit[k])}
-                      </Table.Summary.Cell>
-                    ))}
-                    <Table.Summary.Cell index={7} />
-                  </Table.Summary.Row>
-                </Table.Summary>
-              ) : null
-            }
-          />
-        ) : (
-          /* Үндсэн өдөр тутмын орлого, зарлагын хүснэгт */
-          <Table
-            dataSource={kharagdakhUdruud}
-            columns={udriinBaganuud}
-            rowKey="ognoo"
-            pagination={false}
-            loading={loading}
-            scroll={{ x: "max-content", y: 560 }}
-            locale={{ emptyText: "Мэдээлэл алга" }}
-            onRow={(r: UdriinMur) => ({
-              onClick: () => setSongosonUdur(r.ognoo),
-              className: "cursor-pointer transition-colors hover:bg-theme/5",
-            })}
-            summary={() =>
-              kharagdakhUdruud.length > 0 ? (
-                <Table.Summary fixed>
-                  <Table.Summary.Row className="bg-theme/5 font-medium">
-                    <Table.Summary.Cell index={0} className="text-[13px]">
-                      Нийт ({kharagdakhUdruud.length} өдөр)
-                    </Table.Summary.Cell>
-                    <Table.Summary.Cell index={1} align="right" className="text-[13px] tabular-nums text-success">
-                      +{mungu(udriinNiit.orlogo)}
-                    </Table.Summary.Cell>
-                    <Table.Summary.Cell index={2} align="right" className="text-[13px] tabular-nums text-danger">
-                      -{mungu(udriinNiit.zarlaga)}
-                    </Table.Summary.Cell>
-                    <Table.Summary.Cell
-                      index={3}
-                      align="right"
-                      className={`text-[13px] tabular-nums ${
-                        udriinNiit.zuruu > 0 ? "text-success" : udriinNiit.zuruu < 0 ? "text-danger" : ""
-                      }`}
-                    >
-                      {mungu(udriinNiit.zuruu)}
-                    </Table.Summary.Cell>
-                    <Table.Summary.Cell index={4} colSpan={2} className="text-[12px] text-[color:var(--muted-text)]">
-                      Нийт: {udriinNiit.orlogoToo} орлого · {udriinNiit.zarlagaToo} зарлага
-                    </Table.Summary.Cell>
-                  </Table.Summary.Row>
-                </Table.Summary>
-              ) : null
-            }
-          />
-        )}
+        <Table
+          dataSource={kharagdakhUdruud}
+          columns={udriinBaganuud}
+          rowKey="ognoo"
+          pagination={false}
+          loading={loading}
+          scroll={{ x: "max-content", y: 560 }}
+          locale={{ emptyText: "Мэдээлэл алга" }}
+          onRow={(r: UdriinMur) => ({
+            onClick: () => setSongosonUdur(r.ognoo),
+            className: "cursor-pointer transition-colors hover:bg-theme/5",
+          })}
+          summary={() =>
+            kharagdakhUdruud.length > 0 ? (
+              <Table.Summary fixed>
+                <Table.Summary.Row className="bg-theme/5 font-semibold text-[13px]">
+                  <Table.Summary.Cell index={0}>
+                    Нийт ({kharagdakhUdruud.length} өдөр)
+                  </Table.Summary.Cell>
+                  <Table.Summary.Cell index={1} align="right" className="tabular-nums text-success font-bold">
+                    +{mungu(udriinNiit.orlogo)} ₮
+                  </Table.Summary.Cell>
+                  <Table.Summary.Cell index={2} align="right" className="tabular-nums text-danger font-bold">
+                    -{mungu(udriinNiit.zarlaga)} ₮
+                  </Table.Summary.Cell>
+                  <Table.Summary.Cell
+                    index={3}
+                    align="right"
+                    className={`tabular-nums font-bold ${
+                      udriinNiit.zuruu > 0 ? "text-success" : udriinNiit.zuruu < 0 ? "text-danger" : ""
+                    }`}
+                  >
+                    {udriinNiit.zuruu > 0 ? `+${mungu(udriinNiit.zuruu)} ₮` : `${mungu(udriinNiit.zuruu)} ₮`}
+                  </Table.Summary.Cell>
+                  <Table.Summary.Cell index={4} colSpan={2} className="text-[12px] text-[color:var(--muted-text)] font-normal">
+                    Нийт: {udriinNiit.orlogoToo} орлого · {udriinNiit.zarlagaToo} зарлага
+                  </Table.Summary.Cell>
+                </Table.Summary.Row>
+              </Table.Summary>
+            ) : null
+          }
+        />
       </Khavtas>
 
       {/* Зарлагын ангилал ба нийт зарлагын жагсаалт */}
