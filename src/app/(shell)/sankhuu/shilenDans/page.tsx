@@ -644,7 +644,7 @@ export default function ShilenDansPage() {
       },
     },
     {
-      title: "",
+      title: "Үйлдэл",
       key: "uildel",
       width: 75,
       align: "center" as const,
@@ -665,15 +665,26 @@ export default function ShilenDansPage() {
     },
   ];
 
-  // Нийт 4 карт — авсаархан хэмжээтэй, 1 мөрөнд
+  // Нийт 5 карт — авсаархан хэмжээтэй, 1 мөрөнд
   const kartuud: {
-    key: "orlogo" | "zarlaga" | "tuluugui" | "khetersen";
+    key: "bugd" | "orlogo" | "zarlaga" | "tuluugui" | "khetersen";
     nershil: string;
     utga: string;
     ungu: string;
     tailbar?: string;
     darjBolokh: boolean;
   }[] = [
+    {
+      key: "bugd",
+      nershil: "Нийт",
+      utga: mungu((data?.tulsun || 0) - (data?.zardal || 0)),
+      ungu:
+        ((data?.tulsun || 0) - (data?.zardal || 0)) >= 0
+          ? "text-[color:var(--panel-text)]"
+          : "text-danger",
+      tailbar: "Орлого − Зардал",
+      darjBolokh: true,
+    },
     {
       key: "orlogo",
       nershil: "Орлого (төлсөн)",
@@ -715,15 +726,15 @@ export default function ShilenDansPage() {
   }
 
   return (
-    <div className="print-container flex w-full flex-col gap-3 pb-14">
+    <div className="print-container flex w-full flex-col gap-3 pb-3">
       {aldaa && (
         <div className="rounded-xl border border-[color:var(--ctl-border)] px-4 py-3 text-[13px] text-danger">
           Алдаа: {aldaa}
         </div>
       )}
 
-      {/* 4 карт — авсаархан хэмжээтэй, 1 мөрөнд */}
-      <div className="grid grid-cols-2 gap-2.5 lg:grid-cols-4">
+      {/* 5 карт — авсаархан хэмжээтэй, 1 мөрөнд */}
+      <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-5">
         {kartuud.map((k) => {
           const idevkhtei = k.darjBolokh && shuult === k.key;
           return (
@@ -731,7 +742,11 @@ export default function ShilenDansPage() {
               key={k.nershil}
               onClick={() => {
                 if (!k.darjBolokh) return;
-                setShuult(idevkhtei ? "bugd" : (k.key as Shuult));
+                if (k.key === "bugd") {
+                  setShuult("bugd");
+                } else {
+                  setShuult(idevkhtei ? "bugd" : (k.key as Shuult));
+                }
               }}
               title={k.darjBolokh ? (idevkhtei ? "Бүх өдрийг харуулах" : `${k.nershil} шүүх`) : undefined}
               className={`rounded-xl border px-3.5 py-2.5 text-left shadow-sm transition-all ${
@@ -760,7 +775,7 @@ export default function ShilenDansPage() {
 
       {/* Үндсэн хүснэгт */}
       <section className="rounded-2xl border border-[color:var(--ctl-border)] bg-[color:var(--surface-bg)] p-4 shadow-[var(--ctl-shadow)]">
-        {/* Хэрэгслийн мөр — Огноо болон шүүлтүүр шууд эхнээсээ эхэлнэ */}
+        {/* Хэрэгслийн мөр — Огноо болон үйлдлүүд */}
         <div className="mb-3 flex flex-wrap items-center justify-between gap-2.5 no-print">
           <div className="flex flex-wrap items-center gap-2">
             <FilterDatePicker
@@ -772,42 +787,6 @@ export default function ShilenDansPage() {
               placeholder="Огноо сонгох"
               className="w-full sm:w-[240px]"
             />
-
-            <div className="flex h-9 items-center gap-1 rounded-xl border border-[color:var(--ctl-border)] bg-[color:var(--surface-bg)] p-0.5">
-              <button
-                type="button"
-                onClick={() => setShuult("bugd")}
-                className={`flex h-full items-center justify-center rounded-[9px] px-3 text-[12px] font-medium transition-colors ${
-                  shuult === "bugd"
-                    ? "bg-theme text-white shadow-sm"
-                    : "text-[color:var(--muted-text)] hover:text-[color:var(--panel-text)]"
-                }`}
-              >
-                Нийт
-              </button>
-              <button
-                type="button"
-                onClick={() => setShuult(shuult === "orlogo" ? "bugd" : "orlogo")}
-                className={`flex h-full items-center justify-center rounded-[9px] px-3 text-[12px] font-medium transition-colors ${
-                  shuult === "orlogo"
-                    ? "bg-success text-white shadow-sm"
-                    : "text-[color:var(--muted-text)] hover:text-[color:var(--panel-text)]"
-                }`}
-              >
-                Орлого
-              </button>
-              <button
-                type="button"
-                onClick={() => setShuult(shuult === "zarlaga" ? "bugd" : "zarlaga")}
-                className={`flex h-full items-center justify-center rounded-[9px] px-3 text-[12px] font-medium transition-colors ${
-                  shuult === "zarlaga"
-                    ? "bg-danger text-white shadow-sm"
-                    : "text-[color:var(--muted-text)] hover:text-[color:var(--panel-text)]"
-                }`}
-              >
-                Зарлага
-              </button>
-            </div>
           </div>
 
           <div className="flex items-center gap-1.5 ml-auto">
@@ -846,7 +825,8 @@ export default function ShilenDansPage() {
           rowKey="ognoo"
           pagination={false}
           loading={loading}
-          scroll={{ x: "max-content", y: 560 }}
+          scroll={{ x: "max-content" }}
+          fillHeight
           locale={{ emptyText: "Мэдээлэл алга" }}
           onRow={(r: UdriinMur) => ({
             onClick: () => setSongosonUdur(r.ognoo),
@@ -855,26 +835,38 @@ export default function ShilenDansPage() {
           summary={() =>
             kharagdakhUdruud.length > 0 ? (
               <Table.Summary fixed>
-                <Table.Summary.Row className="bg-theme/5 font-semibold text-[13px]">
-                  <Table.Summary.Cell index={0} colSpan={2} className="!py-3 !px-3.5 text-[13px]">
+                <Table.Summary.Row className="bg-theme/5 font-semibold text-xs border-t border-[hsl(var(--zt-border))]">
+                  <Table.Summary.Cell
+                    colSpan={2}
+                    className="px-2 py-2 text-xs font-semibold text-[color:var(--panel-text)] border-r border-[hsl(var(--zt-border))]"
+                  >
                     Нийт ({kharagdakhUdruud.length} өдөр)
                   </Table.Summary.Cell>
-                  <Table.Summary.Cell index={2} align="right" className="tabular-nums text-success font-bold !py-3 !px-3.5 text-[13px]">
+                  <Table.Summary.Cell
+                    align="right"
+                    className="tabular-nums text-success font-semibold px-2 py-2 text-xs border-r border-[hsl(var(--zt-border))]"
+                  >
                     {mungu(udriinNiit.orlogo)}
                   </Table.Summary.Cell>
-                  <Table.Summary.Cell index={3} align="right" className="tabular-nums text-danger font-bold !py-3 !px-3.5 text-[13px]">
+                  <Table.Summary.Cell
+                    align="right"
+                    className="tabular-nums text-danger font-semibold px-2 py-2 text-xs border-r border-[hsl(var(--zt-border))]"
+                  >
                     {mungu(udriinNiit.zarlaga)}
                   </Table.Summary.Cell>
                   <Table.Summary.Cell
-                    index={4}
                     align="right"
-                    className={`tabular-nums font-bold !py-3 !px-3.5 text-[13px] ${
+                    className={`tabular-nums font-semibold px-2 py-2 text-xs border-r border-[hsl(var(--zt-border))] ${
                       udriinNiit.zuruu > 0 ? "text-success" : udriinNiit.zuruu < 0 ? "text-danger" : ""
                     }`}
                   >
                     {mungu(udriinNiit.zuruu)}
                   </Table.Summary.Cell>
-                  <Table.Summary.Cell index={5} colSpan={5} className="!py-3 !px-3.5" />
+                  <Table.Summary.Cell className="px-2 py-2 border-r border-[hsl(var(--zt-border))]" />
+                  <Table.Summary.Cell className="px-2 py-2 border-r border-[hsl(var(--zt-border))]" />
+                  <Table.Summary.Cell className="px-2 py-2 border-r border-[hsl(var(--zt-border))]" />
+                  <Table.Summary.Cell className="px-2 py-2 border-r border-[hsl(var(--zt-border))]" />
+                  <Table.Summary.Cell className="px-2 py-2 last:border-r-0" />
                 </Table.Summary.Row>
               </Table.Summary>
             ) : null
