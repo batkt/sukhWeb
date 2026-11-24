@@ -560,20 +560,21 @@ export default function ShilenDansPage() {
     {
       title: "",
       key: "uildel",
-      width: 80,
+      width: 75,
       align: "center" as const,
       render: (_: any, r: UdriinMur) => (
-        <button
-          type="button"
+        <span
+          role="button"
+          tabIndex={0}
           onClick={(e) => {
             e.stopPropagation();
             setSongosonUdur(r.ognoo);
           }}
-          className="inline-flex h-7 items-center justify-center gap-1 rounded-lg border border-[color:var(--ctl-border)] bg-[color:var(--surface-bg)] px-2.5 text-xs font-medium text-[color:var(--panel-text)] shadow-xs transition-colors hover:border-theme hover:text-theme"
+          className="inline-flex cursor-pointer items-center justify-center gap-1 text-xs font-semibold text-brand hover:underline"
         >
-          <Eye className="h-3.5 w-3.5" />
-          Харах
-        </button>
+          <Eye className="h-3.5 w-3.5 shrink-0" />
+          <span>Харах</span>
+        </span>
       ),
     },
   ];
