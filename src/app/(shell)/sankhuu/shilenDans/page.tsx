@@ -687,11 +687,11 @@ export default function ShilenDansPage() {
               className="w-full sm:w-[240px]"
             />
 
-            <div className="flex items-center gap-1 rounded-xl border border-[color:var(--ctl-border)] bg-[color:var(--surface-bg)] p-1">
+            <div className="flex h-9 items-center gap-1 rounded-xl border border-[color:var(--ctl-border)] bg-[color:var(--surface-bg)] p-0.5">
               <button
                 type="button"
                 onClick={() => setShuult(shuult === "orlogo" ? "bugd" : "orlogo")}
-                className={`h-8 rounded-[9px] px-3 text-[12px] font-medium transition-colors ${
+                className={`flex h-full items-center justify-center rounded-[9px] px-3 text-[12px] font-medium transition-colors ${
                   shuult === "orlogo"
                     ? "bg-success text-white shadow-sm"
                     : "text-[color:var(--muted-text)] hover:text-[color:var(--panel-text)]"
@@ -702,7 +702,7 @@ export default function ShilenDansPage() {
               <button
                 type="button"
                 onClick={() => setShuult(shuult === "zarlaga" ? "bugd" : "zarlaga")}
-                className={`h-8 rounded-[9px] px-3 text-[12px] font-medium transition-colors ${
+                className={`flex h-full items-center justify-center rounded-[9px] px-3 text-[12px] font-medium transition-colors ${
                   shuult === "zarlaga"
                     ? "bg-danger text-white shadow-sm"
                     : "text-[color:var(--muted-text)] hover:text-[color:var(--panel-text)]"
@@ -725,7 +725,7 @@ export default function ShilenDansPage() {
                     tailbar: "",
                   })
                 }
-                className="flex h-8 items-center gap-1.5 rounded-[10px] bg-theme px-3 text-[12px] font-medium text-white shadow-sm hover:bg-theme/90 transition-colors"
+                className="flex h-9 items-center gap-1.5 rounded-xl bg-theme px-3 text-[12px] font-medium text-white shadow-sm hover:bg-theme/90 transition-colors"
               >
                 <Plus className="h-3.5 w-3.5" />
                 Зарлага нэмэх
@@ -734,7 +734,7 @@ export default function ShilenDansPage() {
             <button
               type="button"
               onClick={() => window.print()}
-              className="btn-minimal flex h-8 items-center gap-1.5 px-3 text-[12px]"
+              className="btn-minimal flex h-9 items-center gap-1.5 px-3 text-[12px]"
             >
               <Printer className="h-3.5 w-3.5" strokeWidth={1.75} />
               Хэвлэх
