@@ -861,38 +861,38 @@ export default function ShilenDansPage() {
           summary={() =>
             kharagdakhUdruud.length > 0 ? (
               <Table.Summary fixed>
-                <Table.Summary.Row className="bg-theme/5 font-semibold text-xs border-t border-[hsl(var(--zt-border))]">
+                <Table.Summary.Row className="bg-theme/5 font-medium text-[11px] border-t border-[hsl(var(--zt-border))]">
                   <Table.Summary.Cell
                     colSpan={2}
-                    className="px-2 py-2 text-xs font-semibold text-[color:var(--panel-text)] border-r border-[hsl(var(--zt-border))]"
+                    className="px-2 py-1 text-[11px] font-medium text-[color:var(--panel-text)] border-r border-[hsl(var(--zt-border))]"
                   >
                     Нийт ({kharagdakhUdruud.length} өдөр)
                   </Table.Summary.Cell>
                   <Table.Summary.Cell
                     align="right"
-                    className="tabular-nums text-success font-semibold px-2 py-2 text-xs border-r border-[hsl(var(--zt-border))]"
+                    className="tabular-nums text-success font-medium px-2 py-1 text-[11px] border-r border-[hsl(var(--zt-border))]"
                   >
                     {mungu(udriinNiit.orlogo)}
                   </Table.Summary.Cell>
                   <Table.Summary.Cell
                     align="right"
-                    className="tabular-nums text-danger font-semibold px-2 py-2 text-xs border-r border-[hsl(var(--zt-border))]"
+                    className="tabular-nums text-danger font-medium px-2 py-1 text-[11px] border-r border-[hsl(var(--zt-border))]"
                   >
                     {mungu(udriinNiit.zarlaga)}
                   </Table.Summary.Cell>
                   <Table.Summary.Cell
                     align="right"
-                    className={`tabular-nums font-semibold px-2 py-2 text-xs border-r border-[hsl(var(--zt-border))] ${
+                    className={`tabular-nums font-medium px-2 py-1 text-[11px] border-r border-[hsl(var(--zt-border))] ${
                       udriinNiit.zuruu > 0 ? "text-success" : udriinNiit.zuruu < 0 ? "text-danger" : ""
                     }`}
                   >
                     {mungu(udriinNiit.zuruu)}
                   </Table.Summary.Cell>
-                  <Table.Summary.Cell className="px-2 py-2 border-r border-[hsl(var(--zt-border))]" />
-                  <Table.Summary.Cell className="px-2 py-2 border-r border-[hsl(var(--zt-border))]" />
-                  <Table.Summary.Cell className="px-2 py-2 border-r border-[hsl(var(--zt-border))]" />
-                  <Table.Summary.Cell className="px-2 py-2 border-r border-[hsl(var(--zt-border))]" />
-                  <Table.Summary.Cell className="px-2 py-2 last:border-r-0" />
+                  <Table.Summary.Cell className="px-2 py-1 border-r border-[hsl(var(--zt-border))]" />
+                  <Table.Summary.Cell className="px-2 py-1 border-r border-[hsl(var(--zt-border))]" />
+                  <Table.Summary.Cell className="px-2 py-1 border-r border-[hsl(var(--zt-border))]" />
+                  <Table.Summary.Cell className="px-2 py-1 border-r border-[hsl(var(--zt-border))]" />
+                  <Table.Summary.Cell className="px-2 py-1 last:border-r-0" />
                 </Table.Summary.Row>
               </Table.Summary>
             ) : null
