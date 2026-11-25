@@ -1,10 +1,10 @@
 "use client";
 
 import React, { useMemo } from "react";
-import { Modal, Select, Tooltip } from "antd";
+import { Modal, Popover, Tooltip } from "antd";
 import Table from "@/components/ui/table";
 import type { ColumnsType } from "@/components/ui/table";
-import { Edit, Eye, Trash2, ChevronUp, ChevronDown, X, KeyRound, Plus, Loader2, Unlink } from "lucide-react";
+import { Check, Edit, Eye, Trash2, ChevronUp, ChevronDown, X, KeyRound, Plus, Loader2, Unlink, Search } from "lucide-react";
 import { getPaymentStatusLabel } from "@/lib/utils";
 import { negjiinTurul, negjiinTulkhuur } from "@/lib/negjiinTurul";
 import DeleteConfirmModal from "./modals/DeleteModal";
@@ -85,15 +85,24 @@ const NegjNemekh: React.FC<{
   const [neelttei, setNeelttei] = React.useState(false);
   const [khadgalj, setKhadgalj] = React.useState(false);
   const [utga, setUtga] = React.useState("");
+  const [khailt, setKhailt] = React.useState("");
+  const [songoson, setSongoson] = React.useState<string[]>([]);
 
-  const khadgalakh = async (davkhar: string, toot: string) => {
-    if (khadgalj || !toot.trim()) return;
+  const khadgalakhOlnoor = async (items: Array<{ davkhar: string; toot: string }>) => {
+    const valid = items.filter((it) => it.toot.trim().length > 0);
+    if (khadgalj || valid.length === 0) return;
     setKhadgalj(true);
-    const ok = await onSave(davkhar, toot.trim());
+    let allOk = true;
+    for (const it of valid) {
+      const ok = await onSave(it.davkhar, it.toot.trim());
+      if (!ok) allOk = false;
+    }
     setKhadgalj(false);
-    if (ok) {
+    if (allOk) {
       setNeelttei(false);
       setUtga("");
+      setKhailt("");
+      setSongoson([]);
     }
   };
 
@@ -101,56 +110,160 @@ const NegjNemekh: React.FC<{
     if (khadgalj) return;
     setNeelttei(false);
     setUtga("");
+    setKhailt("");
+    setSongoson([]);
   };
 
-  if (!neelttei) {
-    return (
-      <button
-        type="button"
-        onClick={(e) => {
-          e.stopPropagation();
+  const triggerBtn = (
+    <button
+      type="button"
+      onClick={(e) => {
+        e.stopPropagation();
+        if (songoltuud.length === 0) {
           setNeelttei(true);
-        }}
-        className={
-          jijig
-            ? "inline-flex shrink-0 items-center justify-center rounded-md border border-dashed border-brand/50 p-0.5 text-brand transition-colors hover:bg-brand/10"
-            : "inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-lg border border-dashed border-brand/50 bg-brand/5 px-2 py-0.5 text-brand transition-colors hover:bg-brand/15"
         }
-        title={`${turul} нэмэх`}
-      >
-        <Plus className="!h-3.5 !w-3.5 shrink-0" />
-        {!jijig && <span>Нэмэх</span>}
-      </button>
-    );
-  }
+      }}
+      className={
+        jijig
+          ? "inline-flex shrink-0 items-center justify-center rounded-md border border-dashed border-brand/50 p-0.5 text-brand transition-colors hover:bg-brand/10"
+          : "inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-lg border border-dashed border-brand/50 bg-brand/5 px-2 py-0.5 text-brand transition-colors hover:bg-brand/15"
+      }
+      title={`${turul} нэмэх`}
+    >
+      <Plus className="!h-3.5 !w-3.5 shrink-0" />
+      {!jijig && <span>Нэмэх</span>}
+    </button>
+  );
 
   if (songoltuud.length > 0) {
+    const q = khailt.trim().toLowerCase();
+    const shuusen = q
+      ? songoltuud.filter(
+          (s) =>
+            s.toot.toLowerCase().includes(q) ||
+            s.davkhar.toLowerCase().includes(q),
+        )
+      : songoltuud;
+
+    const toggleItem = (key: string) => {
+      if (khadgalj) return;
+      setSongoson((prev) =>
+        prev.includes(key) ? prev.filter((x) => x !== key) : [...prev, key],
+      );
+    };
+
+    const content = (
+      <div
+        className="w-[240px] select-none"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="relative mb-2">
+          <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[color:var(--muted-text)]" />
+          <input
+            autoFocus
+            value={khailt}
+            onChange={(e) => setKhailt(e.target.value)}
+            placeholder={`${turul} хайх...`}
+            className="w-full rounded-lg border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] py-1.5 pl-8 pr-2.5 text-xs text-[color:var(--panel-text)] outline-none focus:border-theme"
+          />
+        </div>
+
+        <div className="max-h-[210px] space-y-0.5 overflow-y-auto pr-1">
+          {shuusen.length === 0 ? (
+            <div className="py-4 text-center text-xs text-[color:var(--muted-text)]">
+              Олдсонгүй
+            </div>
+          ) : (
+            shuusen.map((s) => {
+              const key = `${s.davkhar}|${s.toot}`;
+              const checked = songoson.includes(key);
+              return (
+                <button
+                  key={key}
+                  type="button"
+                  onClick={() => toggleItem(key)}
+                  className={`flex w-full items-center justify-between gap-2 rounded-lg px-2 py-1.5 text-left text-xs transition-colors ${
+                    checked
+                      ? "bg-theme/10 text-[color:var(--panel-text)]"
+                      : "text-[color:var(--panel-text)] hover:bg-[color:var(--surface-hover)]"
+                  }`}
+                >
+                  <span className="flex items-center gap-2">
+                    <span
+                      className={`flex h-4 w-4 shrink-0 items-center justify-center rounded border transition-colors ${
+                        checked
+                          ? "border-theme bg-theme text-white"
+                          : "border-[color:var(--surface-border)] bg-[color:var(--surface-bg)]"
+                      }`}
+                    >
+                      {checked && <Check className="h-3 w-3" />}
+                    </span>
+                    <span className="font-medium">{s.toot}</span>
+                  </span>
+                  {s.davkhar && (
+                    <span className="text-[11px] text-[color:var(--muted-text)]">
+                      {s.davkhar} давхар
+                    </span>
+                  )}
+                </button>
+              );
+            })
+          )}
+        </div>
+
+        <div className="mt-2 flex items-center justify-between gap-2 border-t border-[color:var(--surface-border)] pt-2">
+          <button
+            type="button"
+            disabled={khadgalj}
+            onClick={khaakh}
+            className="rounded-lg px-2.5 py-1 text-xs text-[color:var(--muted-text)] transition-colors hover:bg-[color:var(--surface-hover)]"
+          >
+            Болих
+          </button>
+          <button
+            type="button"
+            disabled={khadgalj || songoson.length === 0}
+            onClick={() => {
+              const items = songoson.map((v) => {
+                const [davkhar, toot] = String(v).split("|");
+                return { davkhar: davkhar || "", toot: toot || "" };
+              });
+              void khadgalakhOlnoor(items);
+            }}
+            className="inline-flex items-center gap-1 rounded-lg bg-theme px-3 py-1 text-xs font-medium text-white transition-opacity disabled:opacity-40"
+          >
+            {khadgalj && <Loader2 className="h-3 w-3 animate-spin" />}
+            Хадгалах{songoson.length > 0 ? ` (${songoson.length})` : ""}
+          </button>
+        </div>
+      </div>
+    );
+
     return (
       <span onClick={(e) => e.stopPropagation()}>
-        <Select
-          autoFocus
-          defaultOpen
-          showSearch
-          size="small"
-          loading={khadgalj}
-          disabled={khadgalj}
-          placeholder={`${turul} сонгох`}
-          style={{ width: 130 }}
-          popupMatchSelectWidth={false}
-          optionFilterProp="label"
-          options={songoltuud.map((s) => ({
-            value: `${s.davkhar}|${s.toot}`,
-            label: s.davkhar ? `${s.toot} (${s.davkhar} давхар)` : s.toot,
-          }))}
-          onChange={(v: string) => {
-            const [davkhar, toot] = String(v).split("|");
-            void khadgalakh(davkhar || "", toot || "");
+        <Popover
+          trigger="click"
+          placement="bottomLeft"
+          open={neelttei}
+          onOpenChange={(open) => {
+            if (khadgalj) return;
+            if (open) {
+              setSongoson([]);
+              setKhailt("");
+              setNeelttei(true);
+            } else {
+              khaakh();
+            }
           }}
-          onBlur={khaakh}
-        />
+          content={content}
+        >
+          {triggerBtn}
+        </Popover>
       </span>
     );
   }
+
+  if (!neelttei) return triggerBtn;
 
   return (
     <span className="relative inline-flex items-center" onClick={(e) => e.stopPropagation()}>
@@ -158,17 +271,24 @@ const NegjNemekh: React.FC<{
         autoFocus
         value={utga}
         disabled={khadgalj}
-        placeholder={`${turul} дугаар`}
-        maxLength={12}
+        placeholder={`${turul}: 1, 2, 3`}
+        maxLength={60}
         onChange={(e) => setUtga(e.target.value)}
         onKeyDown={(e) => {
-          if (e.key === "Enter") void khadgalakh("", utga);
+          if (e.key === "Enter") {
+            const items = utga
+              .split(/[\s,;]+/)
+              .map((s) => s.trim())
+              .filter(Boolean)
+              .map((toot) => ({ davkhar: "", toot }));
+            void khadgalakhOlnoor(items);
+          }
           if (e.key === "Escape") khaakh();
         }}
         onBlur={() => {
           if (!utga.trim()) khaakh();
         }}
-        className="w-[100px] rounded-lg border border-brand/60 bg-[color:var(--surface-bg)] px-2 py-0.5 text-center text-[color:var(--panel-text)] outline-none focus:ring-2 focus:ring-brand/30"
+        className="w-[110px] rounded-lg border border-brand/60 bg-[color:var(--surface-bg)] px-2 py-0.5 text-center text-[color:var(--panel-text)] outline-none focus:ring-2 focus:ring-brand/30"
       />
       {khadgalj && <Loader2 className="absolute -right-5 h-3.5 w-3.5 animate-spin text-brand" />}
     </span>

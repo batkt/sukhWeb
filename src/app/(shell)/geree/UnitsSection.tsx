@@ -1486,9 +1486,24 @@ export default function UnitsSection({
         title: "Эзэмшигч",
         dataIndex: "ner",
         key: "ner",
-        width: 100,
+        width: 130,
         render: (v: any, row: any) => (
-          <span className={row.isOccupied ? "" : "text-[color:var(--muted-text)]"}>{v}</span>
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              setQuickRegister({ unit: row.id, floor: selectedFloor || "" });
+            }}
+            title={row.isOccupied ? "Эзэмшигч солих / бүртгэх" : "Оршин суугч / харилцагч сонгох"}
+            className={
+              row.isOccupied
+                ? "inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-left text-[color:var(--panel-text)] transition-colors hover:bg-theme/10 hover:text-brand"
+                : "inline-flex items-center gap-1 rounded-md border border-dashed border-transparent px-1.5 py-0.5 text-left text-[color:var(--muted-text)] transition-colors hover:border-brand/40 hover:bg-brand/5 hover:text-brand"
+            }
+          >
+            {!row.isOccupied && <Plus className="h-3 w-3 shrink-0" />}
+            <span className="truncate">{v}</span>
+          </button>
         ),
       },
       {

@@ -163,10 +163,11 @@ export default function BarilgaZasakhKhuudas() {
     setZogsoolCount(bDavkhar.length);
 
     const map = (tok.davkhariinToonuud || {}) as Record<string, any>;
+    const zogsoolMap = (tok.davkhariinZogsoolnuud || {}) as Record<string, any>;
     const bichvner: Record<string, string> = {};
     const ortsgui: string[] = [];
     const ortsuud = ortsNum > 0 ? Array.from({ length: ortsNum }, (_, i) => String(i + 1)) : [""];
-    ortsuud.forEach((o) =>
+    ortsuud.forEach((o) => {
       engiin.forEach((d) => {
         const k = tootiinTulkhuur(o, d);
         let list = tootJagsaalt(map[k]);
@@ -176,8 +177,16 @@ export default function BarilgaZasakhKhuudas() {
           if (list.length) ortsgui.push(d);
         }
         if (list.length) bichvner[k] = list.join(", ");
-      }),
-    );
+      });
+      bDavkhar.forEach((d) => {
+        const k = tootiinTulkhuur(o, d);
+        let list = tootJagsaalt(zogsoolMap[k]);
+        if (list.length === 0 && o === "1" && zogsoolMap[d] !== undefined) {
+          list = tootJagsaalt(zogsoolMap[d]);
+        }
+        if (list.length) bichvner[k] = list.join(", ");
+      });
+    });
     setTootBichvner(bichvner);
     setOrtsguiTulkhuuruud(ortsgui);
     setAchaalsan(true);
@@ -245,6 +254,14 @@ export default function BarilgaZasakhKhuudas() {
     () => Array.from({ length: davNum }, (_, i) => String(i + 1)),
     [davNum],
   );
+  const zogsoolDavkharuud = useMemo(
+    () => Array.from({ length: zogsoolNum }, (_, i) => `B${i + 1}`),
+    [zogsoolNum],
+  );
+  const bugdDavkhar = useMemo(
+    () => [...[...davkharuud].reverse(), ...zogsoolDavkharuud],
+    [davkharuud, zogsoolDavkharuud],
+  );
 
   // Одоогийн орц/давхрын хүрээн дэх тоотууд
   const davkhariinToonuud = useMemo(() => {
@@ -258,6 +275,17 @@ export default function BarilgaZasakhKhuudas() {
     return out;
   }, [tootBichvner, ortsuud, davkharuud]);
 
+  const davkhariinZogsoolnuud = useMemo(() => {
+    const out: Record<string, string[]> = {};
+    ortsuud.forEach((o) =>
+      zogsoolDavkharuud.forEach((d) => {
+        const list = tootJagsaalt(tootBichvner[tootiinTulkhuur(o, d)]);
+        if (list.length) out[tootiinTulkhuur(o, d)] = list;
+      }),
+    );
+    return out;
+  }, [tootBichvner, ortsuud, zogsoolDavkharuud]);
+
   const davkhardsanToot = useMemo(() => {
     const toolol: Record<string, number> = {};
     Object.values(davkhariinToonuud)
@@ -267,7 +295,9 @@ export default function BarilgaZasakhKhuudas() {
       });
     return Object.keys(toolol).filter((t) => toolol[t] > 1);
   }, [davkhariinToonuud]);
-  const niitToot = Object.values(davkhariinToonuud).reduce((s, l) => s + l.length, 0);
+  const niitToot =
+    Object.values(davkhariinToonuud).reduce((s, l) => s + l.length, 0) +
+    Object.values(davkhariinZogsoolnuud).reduce((s, l) => s + l.length, 0);
 
   // Давхар бүрт N тоот — орц тус бүрээр, доороос дээш дараалсан дугаар
   const avtomataarBuglukh = () => {
@@ -277,13 +307,15 @@ export default function BarilgaZasakhKhuudas() {
       return;
     }
     let dugaar = 1;
-    const next: Record<string, string> = {};
-    ortsuud.forEach((o) =>
-      davkharuud.forEach((d) => {
-        next[tootiinTulkhuur(o, d)] = Array.from({ length: n }, () => String(dugaar++)).join(", ");
-      }),
-    );
-    setTootBichvner(next);
+    setTootBichvner((prev) => {
+      const next: Record<string, string> = { ...prev };
+      ortsuud.forEach((o) =>
+        davkharuud.forEach((d) => {
+          next[tootiinTulkhuur(o, d)] = Array.from({ length: n }, () => String(dugaar++)).join(", ");
+        }),
+      );
+      return next;
+    });
   };
 
   // ── Excel: «Орц | Давхар | Тоот» багана. Тоот нүдэнд нэг эсвэл таслалаар олон.
@@ -292,13 +324,18 @@ export default function BarilgaZasakhKhuudas() {
   const excelZagvarTatakh = async () => {
     const XLSX = await import("xlsx");
     const mur: (string | number)[][] = [["Орц", "Давхар", "Тоот"]];
-    ortsuud.forEach((o) =>
+    ortsuud.forEach((o) => {
       davkharuud.forEach((d) => {
         const list = davkhariinToonuud[tootiinTulkhuur(o, d)] || [];
         if (list.length) list.forEach((t) => mur.push([o, d, t]));
         else mur.push([o, d, ""]);
-      }),
-    );
+      });
+      zogsoolDavkharuud.forEach((d) => {
+        const list = davkhariinZogsoolnuud[tootiinTulkhuur(o, d)] || [];
+        if (list.length) list.forEach((t) => mur.push([o, d, t]));
+        else mur.push([o, d, ""]);
+      });
+    });
     if (mur.length === 1) mur.push(["1", "1", "101"], ["1", "1", "102"]);
     const ws = XLSX.utils.aoa_to_sheet(mur);
     ws["!cols"] = [{ wch: 8 }, { wch: 10 }, { wch: 14 }];
@@ -388,6 +425,7 @@ export default function BarilgaZasakhKhuudas() {
         orts: String(ortsNum),
         davkhar: davkharJagsaalt(),
         ...(Object.keys(davkhariinToonuud).length > 0 && { davkhariinToonuud }),
+        ...(Object.keys(davkhariinZogsoolnuud).length > 0 && { davkhariinZogsoolnuud }),
         ...khayagiinTokhirgoo(),
       },
     };
@@ -411,13 +449,20 @@ export default function BarilgaZasakhKhuudas() {
     const updated = (org.barilguud || []).map((b: any) => {
       if (String(b._id) !== id) return b;
 
-      // Хасагдсан зогсоолын давхрын (B) нэгжийг цэвэрлэнэ
+      // Хасагдсан зогсоолын давхрын (B) нэгжийг цэвэрлэнэ, байгаа B давхруудыг шинэчилнэ
       const zogsoolMap = { ...((b.tokhirgoo?.davkhariinZogsoolnuud || {}) as Record<string, any>) };
       Object.keys(zogsoolMap).forEach((k) => {
         const f = String(k.includes("::") ? k.split("::")[1] : k).trim();
         const m = f.match(/^b(\d+)$/i);
         if (m && parseInt(m[1], 10) > zogsoolNum) delete zogsoolMap[k];
       });
+      ortsuud.forEach((o) =>
+        zogsoolDavkharuud.forEach((d) => {
+          const k = tootiinTulkhuur(o, d);
+          if (davkhariinZogsoolnuud[k]) zogsoolMap[k] = davkhariinZogsoolnuud[k];
+          else delete zogsoolMap[k];
+        }),
+      );
 
       // Тоот: хүрээнээс гарсан энгийн давхрыг устгаад, хүснэгтийн утгаар дарна
       const tootMap = { ...((b.tokhirgoo?.davkhariinToonuud || {}) as Record<string, any>) };
@@ -674,7 +719,7 @@ export default function BarilgaZasakhKhuudas() {
             </span>
           </div>
 
-          {davNum === 0 ? (
+          {davNum === 0 && zogsoolNum === 0 ? (
             <p className="text-xs text-[color:var(--muted-text)]">
               Орц, давхрын тоог оруулбал (эсвэл Excel оруулбал) давхар бүрийн тоот оруулах талбар гарна.
             </p>
@@ -707,7 +752,7 @@ export default function BarilgaZasakhKhuudas() {
                       setTootBichvner((prev) => {
                         const next: Record<string, string> = {};
                         ortsuud.forEach((o) =>
-                          davkharuud.forEach((d) => {
+                          [...davkharuud, ...zogsoolDavkharuud].forEach((d) => {
                             const k = tootiinTulkhuur(o, d);
                             const uldekh = tootJagsaalt(prev[k]).filter((t) => idevkhteiEsekh(o, d, t));
                             if (uldekh.length) next[k] = uldekh.join(", ");
@@ -744,27 +789,32 @@ export default function BarilgaZasakhKhuudas() {
                     </tr>
                   </thead>
                   <tbody>
-                    {[...davkharuud].reverse().map((d) => (
-                      <tr key={d} className="border-t border-[color:var(--surface-border)]">
-                        <td className="px-3 py-1.5 text-[color:var(--panel-text)]">{d}-р давхар</td>
-                        {ortsuud.map((o) => {
-                          const k = tootiinTulkhuur(o, d);
-                          const toonuud = tootJagsaalt(tootBichvner[k]);
-                          return (
-                            <td key={k} className="px-2 py-1.5">
-                              <TootNud
-                                toonuud={toonuud}
-                                idevkhtei={(t) => idevkhteiEsekh(o, d, t)}
-                                davkhardsan={(t) => davkhardsanToot.includes(t)}
-                                onChange={(next) =>
-                                  setTootBichvner((prev) => ({ ...prev, [k]: next.join(", ") }))
-                                }
-                              />
-                            </td>
-                          );
-                        })}
-                      </tr>
-                    ))}
+                    {bugdDavkhar.map((d) => {
+                      const isB = /^B\d+$/i.test(d);
+                      return (
+                        <tr key={d} className="border-t border-[color:var(--surface-border)]">
+                          <td className="px-3 py-1.5 text-[color:var(--panel-text)]">
+                            {isB ? `${d} давхар` : `${d}-р давхар`}
+                          </td>
+                          {ortsuud.map((o) => {
+                            const k = tootiinTulkhuur(o, d);
+                            const toonuud = tootJagsaalt(tootBichvner[k]);
+                            return (
+                              <td key={k} className="px-2 py-1.5">
+                                <TootNud
+                                  toonuud={toonuud}
+                                  idevkhtei={(t) => idevkhteiEsekh(o, d, t)}
+                                  davkhardsan={(t) => !isB && davkhardsanToot.includes(t)}
+                                  onChange={(next) =>
+                                    setTootBichvner((prev) => ({ ...prev, [k]: next.join(", ") }))
+                                  }
+                                />
+                              </td>
+                            );
+                          })}
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
