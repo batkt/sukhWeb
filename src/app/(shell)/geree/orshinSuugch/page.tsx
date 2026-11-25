@@ -24,33 +24,53 @@ export default function OrshinSuugchPage() {
   const [resetPasswordResident, setResetPasswordResident] = useState<any>(null);
 
   // «Гараж», «Агуулах» нүдэнд дарж нэмэх: барилгын тохиргоон дахь дугааруудаас
-  // хэн нэгэнд (оршин суугч, харилцагч) аль хэдийн холбогдсоныг хасна.
+  // хэн нэгэнд (оршин суугч, харилцагч, гэрээ) аль хэдийн холбогдсоныг хасна.
   const negjiinSongoltuud = useMemo(() => {
     const barilgiinId = String((data.selectedBarilga as any)?._id || "");
+    const normDav = (d: any) =>
+      String(d || "")
+        .trim()
+        .toUpperCase()
+        .replace(/^В/, "B");
     const ezemshsen = new Set<string>();
     const davkhargui = new Set<string>();
+    const markOccupied = (turulRaw: any, davRaw: any, tootRaw: any, bId?: any, orgId?: any) => {
+      if (!tootRaw) return;
+      if (ajiltan?.baiguullagiinId && orgId && String(orgId) !== String(ajiltan.baiguullagiinId)) return;
+      if (barilgiinId && bId && String(bId) !== barilgiinId) return;
+      const turul = negjiinTurul(typeof turulRaw === "object" ? turulRaw : { turul: turulRaw, davkhar: davRaw });
+      if (turul === "Орон сууц") return;
+      const toot = String(tootRaw).trim();
+      const davkhar = normDav(davRaw);
+      if (davkhar) ezemshsen.add(`${turul}|${davkhar}|${toot}`);
+      else davkhargui.add(`${turul}|${toot}`);
+    };
+
     [...(data.residentsList || []), ...(data.clientsList || [])].forEach((r: any) => {
       (Array.isArray(r?.toots) ? r.toots : []).forEach((t: any) => {
-        if (!t?.toot) return;
-        if (ajiltan?.baiguullagiinId && t.baiguullagiinId && String(t.baiguullagiinId) !== String(ajiltan.baiguullagiinId)) return;
-        if (barilgiinId && t.barilgiinId && String(t.barilgiinId) !== barilgiinId) return;
-        const turul = negjiinTurul(t);
-        if (turul === "Орон сууц") return;
-        const toot = String(t.toot).trim();
-        const davkhar = String(t.davkhar || "").trim();
-        if (davkhar) ezemshsen.add(`${turul}|${davkhar}|${toot}`);
-        else davkhargui.add(`${turul}|${toot}`);
+        markOccupied(t, t?.davkhar, t?.toot, t?.barilgiinId, t?.baiguullagiinId);
       });
     });
+
+    (Array.isArray(data.contracts) ? data.contracts : []).forEach((c: any) => {
+      const tuluv = String(c?.tuluv || c?.status || "").trim().toLowerCase();
+      if (["цуцалсан", "tsutlsasan", "идэвхгүй"].includes(tuluv)) return;
+      markOccupied(c, c?.davkhar, c?.toot, c?.barilgiinId, c?.baiguullagiinId);
+      (Array.isArray(c?.nemeltTootnuud) ? c.nemeltTootnuud : []).forEach((n: any) => {
+        markOccupied(n, n?.davkhar, n?.toot, n?.barilgiinId || c?.barilgiinId, c?.baiguullagiinId);
+      });
+    });
+
     const jagsaalt = (turul: NegjNemekhTurul, map: Record<string, string[]> | undefined) => {
       const seen = new Set<string>();
       const out: NegjiinSongolt[] = [];
       Object.entries(map || {}).forEach(([key, toonuud]) => {
         // "орц::давхар" түлхүүрийг parseMap давхраар нь давхардуулдаг — давхарыг л авна
         if (key.includes("::")) return;
+        const normKey = normDav(key);
         (toonuud || []).forEach((x) => {
           const toot = String(x).trim();
-          const k = `${key}|${toot}`;
+          const k = `${normKey}|${toot}`;
           if (!toot || seen.has(k)) return;
           seen.add(k);
           if (ezemshsen.has(`${turul}|${k}`) || davkhargui.has(`${turul}|${toot}`)) return;
@@ -64,7 +84,7 @@ export default function OrshinSuugchPage() {
       Гараж: jagsaalt("Гараж", data.garaazhMap),
       Агуулах: jagsaalt("Агуулах", data.aguulakhMap),
     };
-  }, [data.selectedBarilga, data.residentsList, data.clientsList, data.garaazhMap, data.aguulakhMap, ajiltan?.baiguullagiinId]);
+  }, [data.selectedBarilga, data.residentsList, data.clientsList, data.contracts, data.garaazhMap, data.aguulakhMap, ajiltan?.baiguullagiinId]);
 
   const onNegjNemekh = useCallback<NegjNemekhTokhirgoo["onNemekh"]>(
     async (resident, turul, davkhar, toot) => {

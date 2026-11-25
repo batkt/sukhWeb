@@ -815,25 +815,23 @@ export function useGereeData(
       });
     }
 
-    if (statusFilter && statusFilter !== "all") {
-      filtered = filtered.filter((c: any) => {
-        const status = String(c?.tuluv || c?.status || "Идэвхтэй").trim();
-        const isCancelled =
-          status === "Цуцалсан" ||
-          status.toLowerCase() === "цуцалсан" ||
-          status === "tsutlsasan" ||
-          status.toLowerCase() === "tsutlsasan" ||
-          status === "Идэвхгүй" ||
-          status.toLowerCase() === "идэвхгүй";
-        // Дашбоардын тоотой ижил: цуцлагдаагүй бүх гэрээ идэвхтэй.
-        if (statusFilter === "active") return !isCancelled;
-        if (statusFilter === "cancelled") return isCancelled;
-        // Харилцагчийн гэрээ khariltsagchId-тай үүсдэг (ContractsTable-тай ижил).
-        if (statusFilter === "khariltsagch") return !!c?.khariltsagchId;
-        if (statusFilter === "orshinSuugch") return !c?.khariltsagchId;
-        return true;
-      });
-    }
+    filtered = filtered.filter((c: any) => {
+      const status = String(c?.tuluv || c?.status || "Идэвхтэй").trim();
+      const isCancelled =
+        status === "Цуцалсан" ||
+        status.toLowerCase() === "цуцалсан" ||
+        status === "tsutlsasan" ||
+        status.toLowerCase() === "tsutlsasan" ||
+        status === "Идэвхгүй" ||
+        status.toLowerCase() === "идэвхгүй";
+
+      if (statusFilter === "cancelled") return isCancelled;
+      if (isCancelled) return false;
+
+      if (statusFilter === "khariltsagch") return !!c?.khariltsagchId;
+      if (statusFilter === "orshinSuugch") return !c?.khariltsagchId;
+      return true;
+    });
 
     if (searchTerm && searchTerm.trim() !== "") {
       const term = searchTerm.toLowerCase().trim();

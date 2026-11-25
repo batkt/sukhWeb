@@ -3068,8 +3068,15 @@ export function useGereeActions(
           return true;
         }
       } catch (err: any) {
+        const msg =
+          err?.response?.data?.aldaa ||
+          err?.response?.data?.message ||
+          err?.response?.data?.error ||
+          getErrorMessage(err);
         openErrorOverlay(
-          `Алдаа гарлаа: ${err.response?.data?.error || err.message}`
+          msg && !/^Request failed with status code/i.test(String(msg))
+            ? String(msg)
+            : "Хүсэлт амжилтгүй боллоо (400). Мэдээллээ шалгаад дахин оролдоно уу.",
         );
         return false;
       }

@@ -35,16 +35,21 @@ export default function GereeGereePage() {
     let khariltsagch = 0;
     jagsaalt.forEach((c: any) => {
       const t = String(c?.tuluv || c?.status || "").trim().toLowerCase();
-      if (t === "цуцалсан" || t === "tsutlsasan" || t === "идэвхгүй") idevkhgui++;
-      // Харилцагчийн гэрээ khariltsagchId-тай үүсдэг, бусад нь оршин суугчийнх.
-      if (c?.khariltsagchId) khariltsagch++;
+      const isCancelled = t === "цуцалсан" || t === "tsutlsasan" || t === "идэвхгүй";
+      if (isCancelled) {
+        idevkhgui++;
+      } else if (c?.khariltsagchId) {
+        // Зөвхөн идэвхтэй харилцагчийн гэрээг тоолно
+        khariltsagch++;
+      }
     });
+    const idevkhtei = jagsaalt.length - idevkhgui;
     return {
-      bugd: jagsaalt.length,
-      idevkhtei: jagsaalt.length - idevkhgui,
+      bugd: idevkhtei,
+      idevkhtei,
       idevkhgui,
       khariltsagch,
-      orshinSuugch: jagsaalt.length - khariltsagch,
+      orshinSuugch: idevkhtei - khariltsagch,
     };
   }, [data.contracts]);
   const kartuud: {
@@ -61,7 +66,7 @@ export default function GereeGereePage() {
     { key: "active", ner: "Идэвхтэй", too: toonuud.idevkhtei, ungu: "22, 163, 74" },
     { key: "khariltsagch", ner: "Харилцагч", too: toonuud.khariltsagch, ungu: "168, 85, 247", togglekh: true },
     { key: "orshinSuugch", ner: "Оршин суугч", too: toonuud.orshinSuugch, ungu: "59, 130, 246", togglekh: true },
-    { key: "cancelled", ner: "Идэвхгүй", too: toonuud.idevkhgui, ungu: "239, 68, 68" },
+    { key: "cancelled", ner: "Цуцалсан гэрээ", too: toonuud.idevkhgui, ungu: "239, 68, 68" },
   ];
 
   // Tour steps
