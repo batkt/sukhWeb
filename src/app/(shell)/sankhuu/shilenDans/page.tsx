@@ -322,6 +322,15 @@ export default function ShilenDansPage() {
   const zarlaguud = data?.zarlaguud || [];
   const orloguud = data?.orloguud || [];
   const ailuud = data?.ailuud || [];
+
+  const angilalOptions = useMemo(() => {
+    const set = new Set<string>(data?.zarlagiinAngilaluud || []);
+    zarlaguud.forEach((z) => {
+      if (z.angilal?.trim()) set.add(z.angilal.trim());
+    });
+    if (tsonkh?.angilal?.trim()) set.add(tsonkh.angilal.trim());
+    return Array.from(set).map((a) => ({ value: a, label: a }));
+  }, [data?.zarlagiinAngilaluud, zarlaguud, tsonkh?.angilal]);
   const tuluuguiToo = ailuud.filter((a: any) => a.etssiin > 0).length;
   const khetersenAilToo = data?.khetersenAilToo || ailuud.filter((a: any) => a.khetersen > 0).length || 0;
   const khetersenKhonog = data?.khetersenKhonog ?? 30;
@@ -1162,10 +1171,13 @@ export default function ShilenDansPage() {
                 <FilterSelect
                   value={tsonkh.angilal}
                   onChange={(v) => setTsonkh((z) => (z ? { ...z, angilal: v } : z))}
-                  options={(data?.zarlagiinAngilaluud || []).map((a) => ({ value: a, label: a }))}
+                  options={angilalOptions}
                   placeholder="Ангилал сонгох"
                   bugdLabel={null}
                   allowClear={false}
+                  searchable
+                  allowCreate
+                  searchPlaceholder="Ангилал хайх эсвэл шинээр бичих..."
                   className="w-full"
                 />
               </Shoshgo>

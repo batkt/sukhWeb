@@ -11,7 +11,7 @@
 
 import React, { useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { Check, ChevronDown, Search, X } from "lucide-react";
+import { Check, ChevronDown, Plus, Search, X } from "lucide-react";
 
 export interface FilterSelectOption {
   value: string;
@@ -35,6 +35,8 @@ interface FilterSelectProps {
   /** Жагсаалт дотор хайх талбар */
   searchable?: boolean;
   searchPlaceholder?: string;
+  /** Жагсаалтад байхгүй утгыг шинээр үүсгэж сонгох эсэх */
+  allowCreate?: boolean;
   className?: string;
   style?: React.CSSProperties;
   id?: string;
@@ -63,6 +65,7 @@ export default function FilterSelect({
   allowClear = true,
   searchable = false,
   searchPlaceholder = "Хайх...",
+  allowCreate = false,
   className = "",
   style,
   id,
@@ -77,6 +80,16 @@ export default function FilterSelect({
   const defaultWidthClass = /(^|\s)(w|min-w|max-w)-/.test(className) ? "" : "w-fit";
 
   const songogdson = options.find((o) => o.value === value);
+  const songogdsonLabel = songogdson?.label || (allowCreate && value ? value : "");
+  const shineUtga = khaikh.trim();
+  const yagTaarsan = shineUtga
+    ? options.some(
+        (o) =>
+          o.label.toLowerCase() === shineUtga.toLowerCase() ||
+          o.value.toLowerCase() === shineUtga.toLowerCase(),
+      )
+    : false;
+  const createBolomjtoi = allowCreate && Boolean(shineUtga) && !yagTaarsan;
 
   const khaakh = () => {
     setNeelttei(false);
@@ -196,20 +209,21 @@ export default function FilterSelect({
                 e.preventDefault();
                 const ekhnii = shuugdsen[0];
                 if (ekhnii) songokh(ekhnii.value);
+                else if (createBolomjtoi) songokh(shineUtga);
               }
             }}
-            placeholder={songogdson?.label || (label ? `${label} хайх...` : searchPlaceholder)}
+            placeholder={songogdsonLabel || (label ? `${label} хайх...` : searchPlaceholder)}
             size={1}
             className="min-w-0 flex-1 cursor-text"
           />
         ) : (
-          (songogdson?.label || placeholder) ? (
+          (songogdsonLabel || placeholder) ? (
             <span
               className={`min-w-0 flex-1 truncate text-[13px] ${
-                songogdson ? "text-[color:var(--panel-text)]" : "text-[color:var(--muted-text)]"
+                songogdsonLabel ? "text-[color:var(--panel-text)]" : "text-[color:var(--muted-text)]"
               }`}
             >
-              {songogdson?.label || placeholder}
+              {songogdsonLabel || placeholder}
             </span>
           ) : null
         )}
@@ -255,7 +269,17 @@ export default function FilterSelect({
             <div className="max-h-64 overflow-y-auto">
               {!khaikh && bugdLabel !== null && mur("", bugdLabel)}
               {shuugdsen.map((o) => mur(o.value, o.label, o.tailbar))}
-              {shuugdsen.length === 0 && (
+              {createBolomjtoi && (
+                <button
+                  type="button"
+                  onClick={() => songokh(shineUtga)}
+                  className="flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-left text-[13px] font-medium text-brand transition-colors hover:bg-[color:var(--surface-hover)]"
+                >
+                  <Plus className="h-3.5 w-3.5 shrink-0" />
+                  <span className="min-w-0 flex-1 truncate">«{shineUtga}» шинээр нэмэх</span>
+                </button>
+              )}
+              {shuugdsen.length === 0 && !createBolomjtoi && (
                 <div className="px-2.5 py-3 text-center text-xs text-[color:var(--muted-text)]">
                   Олдсонгүй
                 </div>
