@@ -561,6 +561,7 @@ export default function ShilenDansPage() {
       key: "ognoo",
       width: 110,
       align: "center" as const,
+      sorter: (a, b) => a.ognoo.localeCompare(b.ognoo),
       render: (v: string) => (
         <span className="text-xs font-medium text-[color:var(--panel-text)]">{v}</span>
       ),
@@ -571,6 +572,7 @@ export default function ShilenDansPage() {
       key: "orlogo",
       align: "right" as const,
       width: 130,
+      sorter: (a, b) => a.orlogo - b.orlogo,
       render: (v: number) => (
         <span className={`tabular-nums font-medium ${v > 0 ? "text-success" : "text-[color:var(--muted-text)]"}`}>
           {mungu(v)}
@@ -583,6 +585,7 @@ export default function ShilenDansPage() {
       key: "zarlaga",
       align: "right" as const,
       width: 130,
+      sorter: (a, b) => a.zarlaga - b.zarlaga,
       render: (v: number) => (
         <span className={`tabular-nums font-medium ${v > 0 ? "text-danger" : "text-[color:var(--muted-text)]"}`}>
           {mungu(v)}
@@ -595,11 +598,11 @@ export default function ShilenDansPage() {
       key: "zuruu",
       align: "right" as const,
       width: 130,
+      sorter: (a, b) => a.zuruu - b.zuruu,
       render: (v: number) => (
         <span
-          className={`tabular-nums font-semibold ${
-            v > 0 ? "text-success" : v < 0 ? "text-danger" : "text-[color:var(--muted-text)]"
-          }`}
+          className={`tabular-nums font-semibold ${v > 0 ? "text-success" : v < 0 ? "text-danger" : "text-[color:var(--muted-text)]"
+            }`}
         >
           {mungu(v)}
         </span>
@@ -610,6 +613,7 @@ export default function ShilenDansPage() {
       key: "guilgee",
       width: 130,
       align: "center" as const,
+      sorter: (a, b) => a.orlogoToo + a.zarlagaToo - (b.orlogoToo + b.zarlagaToo),
       render: (_: any, r: UdriinMur) => (
         <div className="flex flex-wrap items-center justify-center gap-1.5 text-xs">
           {r.orlogoToo > 0 && (
@@ -634,6 +638,7 @@ export default function ShilenDansPage() {
       key: "burtgesenOgnoo",
       width: 130,
       align: "center" as const,
+      sorter: (a, b) => (a.burtgesenOgnoo || "").localeCompare(b.burtgesenOgnoo || ""),
       render: (v: string) => (
         <span className="text-xs text-[color:var(--muted-text)]">{v}</span>
       ),
@@ -645,6 +650,7 @@ export default function ShilenDansPage() {
       width: 140,
       align: "center" as const,
       ellipsis: true,
+      sorter: (a, b) => (a.angilal || "").localeCompare(b.angilal || "", "mn"),
       render: (v: string) => (
         <span className="text-xs text-[color:var(--panel-text)]" title={v}>{v}</span>
       ),
@@ -653,6 +659,9 @@ export default function ShilenDansPage() {
       title: "Ажилтан",
       key: "ajiltan",
       width: 130,
+      align: "center" as const,
+      sorter: (a, b) =>
+        (a.ajiltanJagsaalt?.[0] || "").localeCompare(b.ajiltanJagsaalt?.[0] || "", "mn"),
       render: (_: any, r: UdriinMur) => {
         const jagsaalt = r.ajiltanJagsaalt || [];
         if (jagsaalt.length >= 2) {
@@ -687,14 +696,15 @@ export default function ShilenDansPage() {
         <span
           role="button"
           tabIndex={0}
+          aria-label="Харах"
+          title="Харах"
           onClick={(e) => {
             e.stopPropagation();
             setSongosonUdur(r.ognoo);
           }}
-          className="inline-flex cursor-pointer items-center justify-center gap-1 text-xs font-semibold text-brand hover:underline"
+          className="inline-flex cursor-pointer items-center justify-center text-brand hover:opacity-80"
         >
-          <Eye className="h-3.5 w-3.5 shrink-0" />
-          <span>Харах</span>
+          <Eye className="h-4 w-4 shrink-0" />
         </span>
       ),
     },
@@ -709,48 +719,48 @@ export default function ShilenDansPage() {
     tailbar?: string;
     darjBolokh: boolean;
   }[] = [
-    {
-      key: "bugd",
-      nershil: "Нийт",
-      utga: mungu((data?.tulsun || 0) - (data?.zardal || 0)),
-      ungu:
-        ((data?.tulsun || 0) - (data?.zardal || 0)) >= 0
-          ? "text-[color:var(--panel-text)]"
-          : "text-danger",
-      tailbar: "Орлого − Зардал",
-      darjBolokh: true,
-    },
-    {
-      key: "orlogo",
-      nershil: "Орлого (төлсөн)",
-      utga: mungu(data?.tulsun || 0),
-      ungu: "text-success",
-      darjBolokh: true,
-    },
-    {
-      key: "zarlaga",
-      nershil: "Зардал",
-      utga: mungu(data?.zardal || 0),
-      ungu: "text-danger",
-      darjBolokh: true,
-    },
-    {
-      key: "tuluugui",
-      nershil: "Төлөөгүй (нийт)",
-      utga: mungu(data?.tuluugui || 0),
-      ungu: "text-danger",
-      tailbar: `${tuluuguiToo} айл`,
-      darjBolokh: false,
-    },
-    {
-      key: "khetersen",
-      nershil: "Хугацаа хэтэрсэн",
-      utga: mungu(data?.khetersen || 0),
-      ungu: "text-warning",
-      tailbar: `${khetersenAilToo} айл · ${khetersenKhonog}+ хоног`,
-      darjBolokh: false,
-    },
-  ];
+      {
+        key: "bugd",
+        nershil: "Нийт",
+        utga: mungu((data?.tulsun || 0) - (data?.zardal || 0)),
+        ungu:
+          ((data?.tulsun || 0) - (data?.zardal || 0)) >= 0
+            ? "text-[color:var(--panel-text)]"
+            : "text-danger",
+        tailbar: "Орлого − Зардал",
+        darjBolokh: true,
+      },
+      {
+        key: "orlogo",
+        nershil: "Орлого (төлсөн)",
+        utga: mungu(data?.tulsun || 0),
+        ungu: "text-success",
+        darjBolokh: true,
+      },
+      {
+        key: "zarlaga",
+        nershil: "Зардал",
+        utga: mungu(data?.zardal || 0),
+        ungu: "text-danger",
+        darjBolokh: true,
+      },
+      {
+        key: "tuluugui",
+        nershil: "Төлөөгүй (нийт)",
+        utga: mungu(data?.tuluugui || 0),
+        ungu: "text-danger",
+        tailbar: `${tuluuguiToo} айл`,
+        darjBolokh: false,
+      },
+      {
+        key: "khetersen",
+        nershil: "Хугацаа хэтэрсэн",
+        utga: mungu(data?.khetersen || 0),
+        ungu: "text-warning",
+        tailbar: `${khetersenAilToo} айл · ${khetersenKhonog}+ хоног`,
+        darjBolokh: false,
+      },
+    ];
 
   if (!selectedBuildingId) {
     return (
@@ -784,13 +794,11 @@ export default function ShilenDansPage() {
                 }
               }}
               title={k.darjBolokh ? (idevkhtei ? "Бүх өдрийг харуулах" : `${k.nershil} шүүх`) : undefined}
-              className={`rounded-xl border px-3.5 py-2.5 text-left shadow-sm transition-all ${
-                k.darjBolokh ? "cursor-pointer hover:border-theme/60 hover:shadow" : ""
-              } ${
-                idevkhtei
+              className={`rounded-xl border px-3.5 py-2.5 text-left shadow-sm transition-all ${k.darjBolokh ? "cursor-pointer hover:border-theme/60 hover:shadow" : ""
+                } ${idevkhtei
                   ? "border-theme ring-2 ring-theme/20 bg-theme/[0.03]"
                   : "border-[color:var(--ctl-border)] bg-[color:var(--surface-bg)]"
-              }`}
+                }`}
             >
               <div className="flex items-center justify-between gap-1.5">
                 <span className="text-xs font-medium text-[color:var(--muted-text)]">{k.nershil}</span>
@@ -891,9 +899,8 @@ export default function ShilenDansPage() {
                   </Table.Summary.Cell>
                   <Table.Summary.Cell
                     align="right"
-                    className={`tabular-nums font-medium px-2 py-1 text-[11px] border-r border-[hsl(var(--zt-border))] ${
-                      udriinNiit.zuruu > 0 ? "text-success" : udriinNiit.zuruu < 0 ? "text-danger" : ""
-                    }`}
+                    className={`tabular-nums font-medium px-2 py-1 text-[11px] border-r border-[hsl(var(--zt-border))] ${udriinNiit.zuruu > 0 ? "text-success" : udriinNiit.zuruu < 0 ? "text-danger" : ""
+                      }`}
                   >
                     {mungu(udriinNiit.zuruu)}
                   </Table.Summary.Cell>
@@ -955,9 +962,8 @@ export default function ShilenDansPage() {
               <div className="rounded-xl border border-[color:var(--ctl-border)] bg-[color:var(--surface-bg)] p-3">
                 <div className="text-xs text-[color:var(--muted-text)]">Цэвэр зөрүү</div>
                 <div
-                  className={`mt-0.5 text-lg font-semibold tabular-nums ${
-                    songosonUdriinOrlogoNiit - songosonUdriinZarlagaNiit >= 0 ? "text-success" : "text-danger"
-                  }`}
+                  className={`mt-0.5 text-lg font-semibold tabular-nums ${songosonUdriinOrlogoNiit - songosonUdriinZarlagaNiit >= 0 ? "text-success" : "text-danger"
+                    }`}
                 >
                   {mungu(songosonUdriinOrlogoNiit - songosonUdriinZarlagaNiit)}
                 </div>
