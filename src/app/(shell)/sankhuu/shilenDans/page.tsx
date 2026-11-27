@@ -839,7 +839,7 @@ export default function ShilenDansPage() {
                 className="flex h-9 items-center gap-1.5 rounded-xl bg-theme px-3 text-[12px] font-medium text-white shadow-sm hover:bg-theme/90 transition-colors"
               >
                 <Plus className="h-3.5 w-3.5" />
-                Зарлага нэмэх
+                Зарлага
               </button>
             )}
             <button
@@ -1044,7 +1044,7 @@ export default function ShilenDansPage() {
                       className="inline-flex h-7 items-center gap-1 rounded-lg bg-theme px-2.5 text-xs font-medium text-white"
                     >
                       <Plus className="h-3.5 w-3.5" />
-                      Зарлага нэмэх
+                      Зарлага
                     </button>
                   )}
                 </div>
